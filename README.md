@@ -309,7 +309,7 @@ te dice en castellano qué secreto revisar.
 
 1. Pestaña **Actions** del repo → a la izquierda **TestFlight** → botón **Run workflow**.
    - El botón aparece solo cuando el archivo `.github/workflows/testflight.yml`
-     ya está en la rama principal del repo (normalmente `main`).
+     ya está en la rama principal del repo (`prod`).
 2. Dos campos opcionales:
    - **Qué probar**: un texto para TestFlight (sin emojis).
    - **Versión**: por ejemplo `1.0.1`. Vacío = la del proyecto (`1.0.0`). El
@@ -479,13 +479,11 @@ español y en inglés: [`store/privacy.html`](store/privacy.html) y
 
 - **En la web de 247WC (recomendado):** ya están subidas al repo de la web
   ([4zid/247wc](https://github.com/4zid/247wc)), en la raíz, en la rama
-  `claude/hopeful-hawking-x3dk6x`. Vercel solo publica en producción la rama
-  `claude/wizardly-turing-5opkyj`: abrí un pull request de una a la otra y
-  mergealo. En unos segundos quedan en
-  **https://247-wc.vercel.app/privacy.html** y
+  `prod`, y publicadas en **https://247-wc.vercel.app/privacy.html** y
   **https://247-wc.vercel.app/support.html**. Abrí las dos URLs desde el
   celular para confirmar que cargan. Si algún día las cambiás acá, copialas
-  de nuevo a la raíz de ese repo (en GitHub: **Add file → Upload files**).
+  de nuevo a la raíz de ese repo, en la rama `prod` (en GitHub: **Add file →
+  Upload files**).
 - **En Framer (o Webflow):** creá dos páginas (por ejemplo `/privacidad` y
   `/soporte`) y pegá los textos. Tienen que ser públicas y no pedir login.
   **Ojo:** la app ya trae un link a `https://247-wc.vercel.app/privacy.html`
@@ -631,7 +629,7 @@ llevar los cambios de la web a la app:
    `npm run web:update -- --force`.
 2. **Probar:** `npm test` (ver [Pruebas](#pruebas)).
 3. **Guardar el cambio en git:** `git add -A && git commit -m "Web al día" && git push`
-   (o, en GitHub Desktop, **Commit to main** y **Push origin**).
+   (o, en GitHub Desktop, **Commit to prod** y **Push origin**).
 4. **Subir la versión:** cada subida necesita un **Build** más alto; si la
    versión anterior ya se publicó, también una **Version** más alta (por
    ejemplo `1.0.1`).
