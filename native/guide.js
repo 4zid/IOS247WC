@@ -33,14 +33,16 @@
   const TAG = '[247WC guía]';
   const PHONE = '(max-width: 759px)';
   const SNAP = 25;            // m: más cerca que esto, la línea sale de tu punto
-  const AHEAD = 80;           // m: saltar más adelante en el recorrido cuesta (vueltas que se cruzan)
-  const STEP_SLACK = 5;       // m: una maniobra a menos de esto ya quedó atrás
+  const AHEAD = 80;           // m: un salto mayor sobre el recorrido (adelante o atrás) cuesta y pide confirmación
+  const STEP_SLACK = 5;       // m: una maniobra que ya pasaste por más de esto quedó atrás
   const DEPART = 15;          // m: al arrancar, la primera indicación («Caminá hacia…»)
   const SAY_DIST = 30;        // m: más lejos que esto, la indicación dice cuánto falta
+  const STILL = 2;            // m: moverse menos que esto (el GPS tiembla aunque estés quieto) no rehace nada
   const MAX_ZOOM = 17.5;
   const SIDE = 44;            // px de margen a los costados al encuadrar
   const TOP_GAP = 60;         // px bajo la barra de arriba: el pin del baño se dibuja hacia arriba de su punta
   const GAP = 24;             // px sobre el panel
+  const MIN_MAP = 40;         // px: con menos mapa a la vista que esto, no encuadra
 
   const kit = () => window.WC?.guideKit;
   const $ = (sel) => document.querySelector(sel);
@@ -50,8 +52,10 @@
   let follow = true;
   let route = null;           // la ruta que tenemos medida (la de state.route)
   let geo = null;             // sus medidas: acumulados y posición de cada maniobra
-  let lastMe = null;
+  let lastMe = null;          // la última posición con la que se rehízo todo
   let progress = 0;           // m recorridos sobre la ruta
+  let pending = null;         // un salto grande sobre el recorrido, esperando la confirmación de la próxima posición
+  let stale = true;           // hay que rehacer todo aunque no te hayas movido
   let texts = null;           // { dist, eta, step } que pisan los de app.js
   let recenter = null;
   let panelH = 0;
@@ -72,6 +76,7 @@
     const [ax, ay] = pl.xy(a); const [bx, by] = pl.xy(b);
     return Math.hypot(bx - ax, by - ay);
   };
+  const meters = (a, b) => segLen([a.lat, a.lng], [b.lat, b.lng], planar(a));
 
   // Medidas de una ruta, una sola vez: cuánto llevás recorrido en cada punto
   // y dónde cae cada maniobra sobre el recorrido.
@@ -87,10 +92,12 @@
     return { cum, total: cum[cum.length - 1], steps };
   }
 
-  // Tu lugar sobre el recorrido: el punto más cercano de cada tramo, pero
-  // saltar muy adelante cuesta (si el recorrido da una vuelta y pasa cerca de
-  // sí mismo, no te adelanta de golpe). Volver atrás no cuesta: si das la
-  // vuelta, la línea te sigue.
+  // Tu lugar sobre el recorrido: el punto más cercano de cada tramo. Si el
+  // recorrido va y vuelve cerca de sí mismo (cruzar una avenida y volver por
+  // la otra vereda, rodear una plaza), el tramo más cercano puede ser el
+  // equivocado: alejarse más de AHEAD de donde ibas (adelante o atrás) cuesta
+  // medio metro por metro, y update() lo acepta solo si la posición siguiente
+  // lo confirma.
   function locate(c, cum, me, from) {
     const pl = planar(me);
     let best = null;
@@ -103,7 +110,7 @@
       const qx = ax + u * dx, qy = ay + u * dy;
       const d = Math.hypot(qx, qy);
       const s = cum[i] + u * Math.sqrt(l2);
-      const cost = d + (from == null ? 0 : Math.max(0, s - from - AHEAD) * 0.5);
+      const cost = d + (from == null ? 0 : Math.max(0, Math.abs(s - from) - AHEAD) * 0.5);
       if (!best || cost < best.cost) best = { i, s, d, cost, q: pl.ll([qx, qy]) };
     }
     return best;
@@ -111,6 +118,8 @@
 
   /* -------------------------------------------------------- en cada vuelta */
 
+  // Corre con cada posición y con cada lectura de la brújula (10 a 30 por
+  // segundo): lo pesado, solo si te moviste o cambió la ruta.
   function tick() {
     const k = kit();
     if (!k || !open) return;
@@ -118,15 +127,19 @@
     if (!state.guiding || !state.me || !state.selected) return;
 
     const r = state.route && state.routeFor === state.selected.id ? state.route : null;
-    const moved = !lastMe || lastMe.lat !== state.me.lat || lastMe.lng !== state.me.lng;
-    const fresh = r !== route;
-    if (fresh) {
+    if (r !== route) {
       route = r;
       geo = r && r.coords?.length > 1 && !r.fallback ? measure(r) : null;
       progress = 0;
+      pending = null;
+      stale = true;
     }
-    if (moved || fresh || !texts) update(k, r);
-    lastMe = { ...state.me };
+    const moved = !lastMe || meters(lastMe, state.me) >= STILL;
+    if (moved || stale) {
+      stale = false;
+      lastMe = { ...state.me };
+      update(k, r);
+    }
     apply(k);
   }
 
@@ -135,33 +148,48 @@
     const me = state.me;
     const target = state.selected;
     texts = null;
-    if (!r) return;
 
-    let line, left;
-    if (geo) {
-      const p = locate(r.coords, geo.cum, me, progress);
+    let line;
+    if (r && geo) {
+      let p = locate(r.coords, geo.cum, me, progress);
+      // Un salto de más de AHEAD (adelante o atrás) se toma recién cuando dos
+      // posiciones seguidas lo confirman: una sola puede ser ruido del GPS.
+      const raw = locate(r.coords, geo.cum, me, null);
+      const far = Math.abs(raw.s - p.s) > AHEAD;
+      if (far && pending != null && Math.abs(raw.s - pending) <= AHEAD) { p = raw; pending = null; }
+      else pending = far ? raw.s : null;
       progress = p.s;
-      left = Math.max(0, geo.total - p.s);
       line = [p.q, ...r.coords.slice(p.i + 1)];
       if (p.d <= SNAP) line.unshift([me.lat, me.lng]);
+      // La ruta termina donde el camino toca el baño, que puede estar unos
+      // metros más allá (adentro de una plaza o un edificio): se suman. Pasado
+      // el final de la ruta, en línea recta.
+      const along = Math.max(0, geo.total - p.s);
+      const end = r.coords[r.coords.length - 1];
+      const left = along > 1 ? along + k.distance({ lat: end[0], lng: end[1] }, target) : k.distance(me, target);
       texts = { dist: fmtDistance(left), eta: fmtMinutes(left), step: stepText(k) };
     } else {
-      // Sin ruta a pie (línea recta punteada): sale de tu punto.
-      left = k.distance(me, target);
+      // Sin ruta a pie (línea recta punteada), o mientras llega la primera:
+      // de tu punto al baño.
       line = [[me.lat, me.lng], [target.lat, target.lng]];
-      texts = { dist: fmtDistance(left), eta: fmtMinutes(left), step: null };
+      if (r) {
+        const left = k.distance(me, target);
+        texts = { dist: fmtDistance(left), eta: fmtMinutes(left), step: null };
+      }
     }
-    try { k.setRoute(k.map, line, Boolean(r.fallback)); } catch (err) { console.warn(TAG, 'ruta', err); }
+    try { k.setRoute(k.map, line, !r || Boolean(r.fallback)); } catch (err) { console.warn(TAG, 'ruta', err); }
     if (follow) frame(k, line);
   }
 
-  // La próxima maniobra que tenés adelante.
+  // La próxima maniobra: la primera que no pasaste por más de STEP_SLACK (así
+  // «Girá a la derecha» se sigue viendo hasta que doblaste). Al arrancar, la
+  // de salida, salvo que la siguiente esté ahí nomás.
   function stepText(k) {
     const { t, fmtDistance } = k;
     const steps = geo.steps;
     if (!steps.length) return null;
-    if (progress < DEPART && steps[0].at < DEPART) return steps[0].text;
-    const next = steps.find((s) => s.at > progress + STEP_SLACK);
+    if (progress < DEPART && steps[0].at < DEPART && !(steps[1]?.at < DEPART + STEP_SLACK)) return steps[0].text;
+    const next = steps.find((s) => s.at > progress - STEP_SLACK && s !== steps[0]) || null;
     if (!next) return null;
     const d = next.at - progress;
     return d > SAY_DIST ? t('untilStep', { dist: fmtDistance(d), text: next.text }) : next.text;
@@ -169,42 +197,64 @@
 
   // app.js reescribe estos textos en cada vuelta (también con cada lectura de
   // la brújula): los nuestros van después, en el mismo instante, sin parpadeo.
+  // Al llegar manda app.js («¡Llegaste!» y la distancia en línea recta).
   function apply(k) {
     if (!texts) return;
     const { el, state } = k;
+    if (state.arrived) return;
     if (el.gDist.textContent !== texts.dist) el.gDist.textContent = texts.dist;
     if (el.gEta.textContent !== texts.eta) el.gEta.textContent = texts.eta;
-    if (texts.step && !state.arrived && el.gStep.textContent !== texts.step) el.gStep.textContent = texts.step;
+    if (texts.step && el.gStep.textContent !== texts.step) el.gStep.textContent = texts.step;
   }
 
   /* ------------------------------------------------------------- el mapa */
 
-  // Tu punto y lo que falta del recorrido, entre la barra de arriba y el panel.
+  // Tu punto y lo que falta del recorrido, entre la barra de arriba y el
+  // panel. En pantallas bajas (320 × 568) los márgenes se achican antes de
+  // rendirse. Devuelve si pudo encuadrar.
   function frame(k, line) {
     const { state, map, fitPoints } = k;
-    if (!state.me) return;
+    if (!state.me) return false;
     const pts = line?.length ? line : [[state.me.lat, state.me.lng]];
-    const top = ($('.guide-top')?.getBoundingClientRect().bottom || 0) + TOP_GAP;
-    const bottom = (panelH || $('#guide')?.getBoundingClientRect().height || 0) + GAP;
-    if (top + bottom > window.innerHeight - 80) return;   // sin lugar para el mapa
+    const bar = $('.guide-top')?.getBoundingClientRect().bottom || 0;
+    const panel = panelH || $('#guide')?.getBoundingClientRect().height || 0;
+    const free = window.innerHeight - bar - panel;   // el mapa que se ve
+    if (free < MIN_MAP) return false;
+    const f = Math.min(1, Math.max(0, free - MIN_MAP) / (TOP_GAP + GAP));
+    const padding = { top: bar + TOP_GAP * f, bottom: panel + GAP * f, left: SIDE, right: SIDE };
     try {
-      fitPoints(map, pts, { top, bottom, left: SIDE, right: SIDE, maxZoom: MAX_ZOOM });
-    } catch (err) { console.warn(TAG, 'encuadre', err); }
+      // Si el encuadre nuevo es casi el mismo que el de ahora, no anima: con
+      // una posición por segundo, el mapa no está siempre en movimiento.
+      const gl = window.maplibregl;
+      if (gl?.LngLatBounds && map.cameraForBounds && !map.isMoving()) {
+        const b = new gl.LngLatBounds();
+        for (const [lat, lng] of pts) b.extend([lng, lat]);
+        const cam = map.cameraForBounds(b, { padding, maxZoom: MAX_ZOOM });
+        if (cam) {
+          const a = map.project(cam.center);
+          const c = map.project(map.getCenter());
+          if (Math.abs(cam.zoom - map.getZoom()) < 0.04 && Math.hypot(a.x - c.x, a.y - c.y) < 4) return true;
+        }
+      }
+      fitPoints(map, pts, { ...padding, maxZoom: MAX_ZOOM });
+      return true;
+    } catch (err) { console.warn(TAG, 'encuadre', err); return false; }
   }
 
   function refit() {
     const k = kit();
-    if (!k || !open || !follow) return;
+    if (!k || !open || !follow) return false;
     const src = k.map.getSource?.('route');
     const data = src?.serialize?.().data;
     const coords = data?.features?.[0]?.geometry?.coordinates?.map(([lng, lat]) => [lat, lng]);
-    frame(k, coords);
+    return frame(k, coords);
   }
 
   function setFollow(on) {
     follow = on;
     if (recenter) recenter.hidden = on;
-    if (on) refit();
+    // Si no hay lugar para encuadrar, el botón queda: tocarlo no hizo nada.
+    if (on && refit() === false) { follow = false; if (recenter) recenter.hidden = false; }
   }
 
   /* -------------------------------------------------- abrir y cerrar */
@@ -212,23 +262,23 @@
   function onOpen() {
     open = true;
     follow = true;
-    route = null; geo = null; lastMe = null; progress = 0; texts = null;
+    route = null; geo = null; lastMe = null; progress = 0; pending = null; stale = true; texts = null;
     root.classList.add('guiding');
     if (recenter) {
       recenter.hidden = true;
       const label = kit()?.t?.('locateAria');
       if (label) recenter.setAttribute('aria-label', label);
     }
-    // La primera vuelta de app.js pasó antes de este aviso: una ahora mismo
-    // (si todavía no hay ruta medida, encuadra la que ya está dibujada) y otra
-    // en el próximo cuadro, con el panel ya en su lugar.
-    tick(); if (!texts) refit();
+    // La primera vuelta de app.js pasó antes de este aviso: una ahora mismo y
+    // otra en el próximo cuadro, con el panel ya en su lugar.
+    tick();
     requestAnimationFrame(() => { if (open) refit(); });
   }
 
   function onClose() {
     open = false;
     root.classList.remove('guiding');
+    if (recenter) recenter.hidden = true;
   }
 
   function attach() {
@@ -245,7 +295,9 @@
     recenter.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.6"/>' +
       '<circle cx="12" cy="12" r="3.9" style="fill: var(--blue); stroke: none"/></svg>';
     recenter.addEventListener('click', () => setFollow(true));
-    guide.append(recenter);
+    // Fuera de #guide: el panel puede desplazarse por dentro (pantallas bajas)
+    // y lo recortaría.
+    document.body.append(recenter);
 
     // Alto del panel: para encuadrar arriba de él y subir los avisos.
     if (typeof ResizeObserver === 'function') {

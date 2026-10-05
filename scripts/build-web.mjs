@@ -198,9 +198,13 @@ const PATCHES = {
     {
       name: 'guía con el mapa: piezas para native/guide.js',
       anchor: /^window\.WC\.ready = true;$/gm,
+      // En un try: si el upstream renombra alguna, la app arranca igual (la
+      // guía queda con el panel pero sin seguirte) en vez de caerse.
       replace: (m) => [
         '// App iOS: native/guide.js arma la guía con el mapa con estas piezas.',
-        'window.WC.guideKit = { state, el, map, setRoute, fitPoints, distance, fmtDistance, fmtMinutes, t };',
+        'try {',
+        '  window.WC.guideKit = { state, el, map, setRoute, fitPoints, distance, fmtDistance, fmtMinutes, t };',
+        "} catch (err) { console.warn('[247WC guía] sin guideKit', err); }",
         m,
       ].join('\n'),
     },
@@ -219,6 +223,14 @@ const PATCHES = {
       name: 'guía con el mapa: desvío medido contra la línea del recorrido',
       anchor: /\.every\(\(c\) => distance\(state\.me, \{ lat: c\[0\], lng: c\[1\] \}\) > 45\);/g,
       replace: () => '.every((c) => distance(state.me, { lat: c[0], lng: c[1] }) > 45) &&\n    (window.WCGuide?.offRoute?.(state.me, state.route.coords, 45) ?? true);',
+    },
+    // Mientras guía, el mapa se puede mover con el dedo, y app.js baja la hoja
+    // (que está oculta detrás de la guía) al arrastrarlo: al cerrar la guía,
+    // la tarjeta del más cercano aparecía achicada.
+    {
+      name: 'guía con el mapa: arrastrar el mapa no baja la hoja oculta',
+      anchor: /if \(!wide\.matches && el\.sheet\.dataset\.open === 'full' && el\.viewDetail\.hidden\) openSheet\('peek'\);/g,
+      replace: () => "if (!wide.matches && !state.guiding && el.sheet.dataset.open === 'full' && el.viewDetail.hidden) openSheet('peek');",
     },
     {
       name: 'guía con el mapa: aviso al recalcular la ruta',

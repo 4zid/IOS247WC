@@ -45,7 +45,7 @@ para volver, y la guía muestra el mapa con el recorrido mientras caminás.
 web/      la web, copiada tal cual de 4zid/247wc (no se edita a mano)
 native/   la capa nativa del lado web: bridge.js, text.js, gestures.js, guide.js, native.css
    │
-   │  npm run build   copia web/ + native/ a www/ y aplica 16 parches chiquitos
+   │  npm run build   copia web/ + native/ a www/ y aplica 17 parches chiquitos
    ▼
 www/      la web lista para la app (se genera, no está en git)
    │

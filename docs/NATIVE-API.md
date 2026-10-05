@@ -2,7 +2,7 @@
 
 La app iOS es la web app de `web/` empaquetada con Capacitor 8. La web **no se
 modifica a mano**: `scripts/build-web.mjs` la copia a `www/`, le inyecta la capa
-nativa (`native/`) y aplica dieciséis parches chicos y verificados. La capa
+nativa (`native/`) y aplica diecisiete parches chicos y verificados. La capa
 nativa reemplaza las APIs del navegador que en una app no alcanzan o se ven
 mal (diálogos de permiso con «localhost», sin vibración, sin bloqueo de
 pantalla, links que salen a Safari) y suma lo que se espera de una app de
@@ -54,7 +54,7 @@ todas sus reglas van con `html.native`, la clase que pone `bridge.js`.
 
 ## Parches del build (todos verificados: si el ancla no aparece exactamente una vez, el build falla)
 
-Son dieciséis, en `PATCHES` de `scripts/build-web.mjs`. Se aplican en memoria: si
+Son diecisiete, en `PATCHES` de `scripts/build-web.mjs`. Se aplican en memoria: si
 uno falla, `www/` queda como estaba.
 
 `index.html` (8):
@@ -87,7 +87,7 @@ uno falla, `www/` queda como estaba.
    pasa a
    `const v = globalThis.WC_NATIVE_TEXT?.[LANG]?.[key] ?? (MOUSE ? dict.mouse?.[key] : undefined) ?? dict[key] ?? DICT.es[key] ?? key;`
 
-`app.js` (7). El 10 y el 12 son para el respaldo directo a Overpass desde el
+`app.js` (8). El 10 y el 12 son para el respaldo directo a Overpass desde el
 teléfono (solo cuando `/api/toilets` falla o contesta `parcial`): así la
 posición exacta solo sale hacia el servicio de rutas (Valhalla u OSRM), como
 dice la política.
@@ -136,11 +136,13 @@ dice la política.
     `const query = overpassQuery({ lat: snap(center.lat), lng: snap(center.lng) }, radius + 250);`:
     el mismo punto redondeado a ~250 m (y el mismo margen de radio) que va a la API.
 
-Del 13 al 16, para la guía con el mapa (ver «Guía con el mapa»):
+Del 13 al 17, para la guía con el mapa (ver «Guía con el mapa»):
 
-13. Antes de `window.WC.ready = true;` agrega
+13. Antes de `window.WC.ready = true;` agrega, dentro de un `try`,
     `window.WC.guideKit = { state, el, map, setRoute, fitPoints, distance, fmtDistance, fmtMinutes, t };`:
-    las piezas internas de app.js (un módulo) que usa `guide.js`.
+    las piezas internas de app.js (un módulo) que usa `guide.js`. Con el
+    `try`, si el upstream renombra alguna, la app arranca igual (y avisa en la
+    consola) en vez de caerse con un `ReferenceError`.
 14. Al final de `updateGuide()` (después de `maybeRecalculateRoute();`)
     agrega `window.WCGuide?.tick();`. `updateGuide` corre con cada posición y
     con cada lectura de la brújula.
@@ -155,12 +157,17 @@ Del 13 al 16, para la guía con el mapa (ver «Guía con el mapa»):
 16. Después de `setRoute(map, fresh.coords, false);` (la ruta recalculada)
     agrega `window.WCGuide?.tick();`, para dibujarla desde tu punto en el
     acto.
+17. En el `dragstart` del mapa, `if (!wide.matches && el.sheet.dataset.open === 'full' && el.viewDetail.hidden) openSheet('peek');`
+    pasa a exigir además `!state.guiding`. Durante la guía el mapa se puede
+    mover con el dedo, y app.js bajaba la hoja (oculta detrás de la guía): al
+    cerrar, la tarjeta del más cercano aparecía achicada.
 
 El aviso va a `window.WCGuide` y no a `window.WC` porque `index.html` vuelve a
 crear `window.WC` (`window.WC = { build, … }`) después de los scripts nativos.
 Los nombres de adentro de `guideKit` no son anclas: si el upstream renombra
-alguno, el build pasa y la guía queda como en la web (sin recorrido que se
-acorta). Lo atrapa la prueba T17.
+alguno, el build pasa, la app arranca (por el `try` del parche 13) y la guía
+queda con el panel pero sin seguirte ni acortar el recorrido. Lo atrapa la
+prueba T17.
 
 El build además verifica que todo `href`/`src` local de `www/index.html`
 exista en `www/`.
@@ -419,9 +426,10 @@ vertical, siempre) y solo en la app.
 Los selectores van con `#guide` para ganarles a los de `styles.css` (que
 carga después y gana los empates, como el degradé del tema oscuro).
 
-- `#guide` pasa de `inset: 0` a `inset: auto 0 0 0`: fondo `--surface`, bordes
-  de arriba redondeados (28 px), sombra hacia arriba y `--safe-b` abajo. Es
-  una grilla de 3 columnas (`1fr auto 1fr`) con estas áreas:
+- `#guide` pasa de `inset: 0` a `inset: auto 0 0 0` (sin `max-height` ni
+  scroll: entra entero, ver abajo las pantallas chicas): fondo `--surface`,
+  bordes de arriba redondeados (28 px), sombra hacia arriba y `--safe-b`
+  abajo. Es una grilla de 3 columnas (`1fr auto 1fr`) con estas áreas:
 
   ```
   "dist dial eta"        distancia · brújula · minutos
@@ -434,15 +442,26 @@ carga después y gana los empates, como el degradé del tema oscuro).
   `.guide-modules` y `.guide-stats` van con `display: contents` para que sus
   hijos sean celdas de esa grilla; `.guide-sep` se oculta.
 - La brújula (`.dial`) baja de `min(60vw, 240px)` a 112 px, con las letras a
-  20 px del aro (en vez de 26) y la cara a 14 px (en vez de 20).
+  20 px del aro (en vez de 26) y la cara a 14 px (en vez de 20). Lleva 20 px
+  de margen a los costados: el lugar de la O y la E, que así no pisan los
+  números.
 - Distancia y minutos en 22 px (en vez de 32), con su rótulo en 12 px.
-- La indicación (`.guide-step-row`) en una franja `--surface-2` sin sombra, 14 px.
+- La indicación (`.guide-step-row`) en una franja `--surface-2` sin sombra,
+  14 px, de hasta 3 líneas (`-webkit-line-clamp`).
+- «Activar brújula» (`#guide-compass`, cuando iOS la pide con un toque) va
+  como botón azul lleno.
 - «Ver en el mapa» (`#guide-map`) se oculta: el mapa ya está a la vista.
   «Abrir en Mapas» (`#guide-maps`) va a lo ancho, `--blue-soft` con texto
   `--blue`, con el ícono y el texto de su `aria-label` (`::after { content:
   attr(aria-label) }`; la app ya lo traduce, `openMaps` de `text.js`).
 - `.guide-top` (la X y «Yendo a …») queda arriba, `position: fixed`, como una
-  barra blanca redondeada que flota sobre el mapa.
+  barra blanca redondeada que flota sobre el mapa. El nombre va en una línea
+  (`white-space` y `text-wrap: nowrap`: el `text-wrap: balance` de la web, en
+  iOS 17.4+, lo dejaba partirse en varias).
+- Pantallas angostas (`max-width: 359px`, o sea 320 px): relleno de 12 px a
+  los costados y distancia y minutos en 17 px. Pantallas bajas
+  (`max-height: 640px`, de 568 a 640 px de alto): brújula de 92 px y todo un
+  poco más compacto, para que quede mapa a la vista.
 - Mientras guía (`html.guiding`, la pone `guide.js`; no `:has()`, que iOS
   15.0–15.3 no tiene), se ocultan la barra de arriba de la web (`.topbar`),
   la hoja (`#sheet`), el botón azul y «Mi ubicación» (`visibility: hidden`).
@@ -459,32 +478,48 @@ y cierra con un `MutationObserver` sobre el atributo `hidden` de `#guide`.
 
 - **El recorrido se acorta.** Con una ruta a pie (Valhalla u OSRM), busca tu
   lugar sobre la línea: el punto más cercano de cada tramo, en un plano
-  local en metros. Saltar más de 80 m adelante de donde ibas cuesta medio
-  metro por metro (si el recorrido da una vuelta y pasa cerca de sí mismo, no
-  te adelanta de golpe); volver atrás no cuesta. Dibuja (`setRoute`) desde
-  ese punto hasta el final: lo caminado desaparece. Si estás a 25 m o menos
-  de la línea, la línea sale de tu punto mismo. Con la línea recta punteada
-  (sin ruta a pie), la redibuja de tu punto al baño.
+  local en metros. Si el recorrido va y vuelve cerca de sí mismo (cruzar una
+  avenida y volver por la otra vereda, rodear una plaza), el tramo más
+  cercano puede ser el equivocado: alejarse más de 80 m (adelante o atrás)
+  de donde ibas cuesta medio metro por metro, y un salto así se toma recién
+  cuando **dos posiciones seguidas** lo confirman (una sola puede ser ruido
+  del GPS). Al abrir la guía con una ruta ya medida (cerrar y volver a abrir
+  a mitad de camino), la segunda posición pone todo en su lugar. Dibuja
+  (`setRoute`) desde ese punto hasta el final: lo caminado desaparece. Si
+  estás a 25 m o menos de la línea, la línea sale de tu punto mismo. Con la
+  línea recta punteada (sin ruta a pie) y mientras llega la primera ruta, la
+  dibuja punteada de tu punto al baño.
 - **Lo que falta.** Distancia y minutos (`fmtDistance`, `fmtMinutes`) por lo
-  que falta del recorrido, no en línea recta como la web.
-- **La próxima indicación.** La primera maniobra que está más de 5 m adelante
-  de tu lugar en el recorrido; si está a más de 30 m, con `untilStep`
-  («Seguí hasta 120 m: …»). En los primeros 15 m, la de salida («Caminá hacia
-  el norte por …»). La web mostraba la maniobra más cercana en línea recta,
-  aunque ya la hubieras pasado. Al llegar manda el «¡Llegaste!» de app.js.
+  que falta del recorrido, no en línea recta como la web, más lo que hay
+  entre el final de la ruta y el baño (la ruta termina donde el camino toca
+  el baño, que puede estar adentro de una plaza o un edificio). Pasado el
+  final de la ruta, en línea recta.
+- **La próxima indicación.** La primera maniobra que no pasaste por más de
+  5 m (así «Girá a la derecha» se sigue viendo hasta que doblaste); si está a
+  más de 30 m, con `untilStep` («Seguí hasta 120 m: …»). En los primeros
+  15 m, la de salida («Caminá hacia el norte por …»), salvo que la siguiente
+  esté a menos de 20 m del arranque. La web mostraba la maniobra más cercana
+  en línea recta, aunque ya la hubieras pasado.
 - app.js reescribe la distancia, los minutos y la indicación en cada vuelta
   (también con cada lectura de la brújula): `guide.js` los vuelve a poner
-  enseguida, en el mismo instante, así que no parpadean. Los cálculos solo se
-  rehacen cuando cambia tu posición o la ruta.
+  enseguida, en el mismo instante, así que no parpadean. Al llegar (25 m en
+  línea recta) los deja: manda el «¡Llegaste!» de app.js.
+- Los cálculos solo se rehacen si te moviste 2 m o más, o cambió la ruta: el
+  GPS tiembla aunque estés quieto (esperando para cruzar), y la brújula llama
+  10 a 30 veces por segundo.
 - **El mapa te sigue.** Con cada posición (y cuando cambia el alto del panel)
   encuadra tu punto y lo que falta del recorrido con `fitPoints` (animación
   de 600 ms, `maxZoom` 17.5): entre la barra de arriba (+60 px, porque el pin
   del baño se dibuja hacia arriba de su punta) y el panel (+24 px), con 44 px a
-  los costados. A medida que te acercás, se acerca.
+  los costados. Si el encuadre nuevo es casi el de ahora (menos de 0,04 de
+  zoom y 4 px), no anima. En pantallas bajas los márgenes de arriba y abajo
+  se achican en vez de dejar de encuadrar; solo con menos de 40 px de mapa a
+  la vista no encuadra. A medida que te acercás, se acerca.
 - **Si movés el mapa con el dedo** (`dragstart`, `zoomstart`, `rotatestart` o
   `pitchstart` con `originalEvent`), deja de seguirte y aparece
   `#guide-recenter` (el mismo ícono que «Mi ubicación», arriba del panel a la
-  derecha). Al tocarlo vuelve a seguirte.
+  derecha; va en `<body>`, `position: fixed` sobre `--guide-h`). Al tocarlo
+  vuelve a seguirte; si no hay lugar para encuadrar, el botón queda.
 - **Si te desviás**, app.js recalcula la ruta como siempre (como mucho cada
   20 s), pero con el desvío medido contra la línea (parche 15,
   `WCGuide.offRoute`). La ruta nueva se dibuja desde tu punto apenas llega.

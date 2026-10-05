@@ -114,6 +114,8 @@ async function blockNetwork(context, blocked, { overpass = false } = {}) {
             shape: encodePolyline(coords),
             maneuvers: [
               { instruction: 'Caminá hacia el norte por Avenida Corrientes.', length: km, begin_shape_index: 0 },
+              // Con una esquina de verdad (origen y destino en otra longitud), el giro.
+              ...(a.lon !== b.lon ? [{ instruction: 'Girá a la izquierda en Avenida Corrientes.', length: km / 2, begin_shape_index: 1 }] : []),
               { instruction: 'Llegaste a tu destino.', length: 0, begin_shape_index: 2 },
             ],
           }],
@@ -1082,30 +1084,43 @@ const SCENARIOS = [
   }],
 
   ['T17', 'guide-map', 'Guía con el mapa: panel abajo, el recorrido se acorta al caminar, recalcula al desviarte y el mapa te sigue', async (b, base) => {
-    const { context, page, errors } = await openApp(b, base, { config: { permission: 'prompt' } });
+    // Arranca ~130 m al oeste del punto de siempre: el stub de Valhalla va primero
+    // al este (hasta la longitud del baño), dobla en la esquina y sigue al norte.
+    // Así la distancia por el recorrido no es la de la línea recta.
+    const START = { lat: STATE_ME.lat, lng: STATE_ME.lng - 0.0014 };
+    const { context, page, errors } = await openApp(b, base, {
+      config: { permission: 'prompt', position: { latitude: START.lat, longitude: START.lng, accuracy: 12 } },
+    });
     try {
       const cdp = await context.newCDPSession(page);
       const emitPos = (lat, lng) => page.evaluate(([la, ln]) => window.__mock.emit('WCNative', 'locationUpdate', {
         timestamp: Date.now(),
         coords: { latitude: la, longitude: ln, accuracy: 5, altitude: null, altitudeAccuracy: null, heading: null, speed: null },
       }), [lat, lng]);
+      // En el iPhone la brújula manda lecturas todo el tiempo, y con cada una
+      // app.js reescribe distancia, minutos e indicación.
+      const compass = (heading = 40) => page.evaluate((h) => { for (let i = 0; i < 3; i++) window.__mock.emit('WCNative', 'heading', { heading: h + i, accuracy: 5 }); }, heading);
       const line = () => page.evaluate(() => (window.WC.map.getSource('route')?.serialize().data?.features?.[0]?.geometry?.coordinates || [])
         .map(([lng, lat]) => ({ lat, lng })));
       const ui = () => page.evaluate(() => {
         const r = (s) => document.querySelector(s)?.getBoundingClientRect();
         const vis = (s) => { const n = document.querySelector(s); return Boolean(n) && getComputedStyle(n).visibility !== 'hidden' && n.getClientRects().length > 0; };
         const maps = document.getElementById('guide-maps');
+        const others = [...document.querySelectorAll('.wc-pin[data-selected="0"]')];
         return {
           H: innerHeight, W: innerWidth,
           guiding: document.documentElement.classList.contains('guiding'),
           panel: r('#guide'), top: r('.guide-top'), dial: r('#guide .dial'), maps: r('#guide-maps'),
+          distBox: r('#guide-dist'), etaBox: r('#guide-eta'),
           mapsText: getComputedStyle(maps, '::after').content,
-          seeMap: vis('#guide-map'), topbar: vis('.topbar'), sheet: vis('#sheet'), fab: vis('.scan-fab'),
+          seeMap: vis('#guide-map'), topbar: vis('.topbar'), sheet: vis('#sheet'), fab: vis('.scan-fab'), locate: vis('.map-controls'),
           recenter: vis('#guide-recenter'),
           dist: document.getElementById('guide-dist').textContent,
           eta: document.getElementById('guide-eta').textContent,
           step: document.getElementById('guide-step').textContent,
           pinEvents: [...document.querySelectorAll('.mk-pin')].map((n) => getComputedStyle(n).pointerEvents),
+          dimmed: others.length > 0 && others.every((n) => parseFloat(getComputedStyle(n).opacity) < 1),
+          sheetOpen: document.getElementById('sheet').dataset.open,
         };
       });
       // Dónde se ve un punto: entre la barra de arriba y el panel.
@@ -1115,8 +1130,6 @@ const SCENARIOS = [
         const bottom = document.getElementById('guide').getBoundingClientRect().top;
         return list.map((p) => { const q = m.project([p.lng, p.lat]); return { x: q.x, y: q.y, ok: q.x >= 0 && q.x <= innerWidth && q.y >= top && q.y <= bottom }; });
       }, pts);
-      // El encuadre se rehace cuando cambia el alto del panel (una indicación que
-      // pasa a dos líneas): se espera a que el mapa quede quieto un rato.
       // Con la máquina cargada el encuadre puede tardar: hasta 5 s a que se vean.
       const waitOnMap = async (pts) => {
         let seen = [];
@@ -1138,13 +1151,19 @@ const SCENARIOS = [
         throw new Fail('el mapa no se quedó quieto');
       };
       const meters0 = (s) => { const m = /([\d.,]+)\s*(k?m)/.exec(s.replace(/ /g, ' ')); if (!m) return NaN; const v = parseFloat(m[1].replace(',', '.')); return m[2] === 'km' ? v * 1000 : v; };
+      const lineFrom = (p) => page.waitForFunction((q) => {
+        const c = window.WC.map.getSource('route').serialize().data.features[0]?.geometry.coordinates[0];
+        return c && Math.abs(c[0] - q.lng) < 2e-6 && Math.abs(c[1] - q.lat) < 2e-6;
+      }, p, { timeout: 4000 });
 
       await scanFlow(page);
       const target = { lat: NEAREST.lat, lng: NEAREST.lon };
       await page.locator('#best-guide').click();
       await page.locator('#guide').waitFor({ state: 'visible' });
-      await page.waitForFunction(() => /Caminá hacia el norte/.test(document.getElementById('guide-step').textContent), null, { timeout: 6000 })
-        .catch(async () => { throw new Fail(`la guía no mostró la primera indicación: «${(await ui()).step}»`); });
+      await page.waitForFunction(() => window.__mock.listenerCount('WCNative', 'heading') > 0, null, { timeout: 5000 });
+      await page.waitForFunction(() => document.getElementById('guide-dist').textContent !== '—' && !/Calculando/.test(document.getElementById('guide-step').textContent), null, { timeout: 8000 })
+        .catch(async () => { throw new Fail(`la guía no calculó la ruta: «${(await ui()).step}»`); });
+      await compass();
       await idle();
 
       // a) El panel abajo y el mapa arriba; lo demás se va.
@@ -1155,23 +1174,25 @@ const SCENARIOS = [
       assert(u.dial.width <= 120, `la brújula no se achicó: ${u.dial.width} px`);
       assert(!u.seeMap, '«Ver en el mapa» sigue visible');
       assert(u.maps.width >= u.W - 40 && /Abrir en Mapas/.test(u.mapsText), `el botón de Mapas: ancho ${u.maps.width}, texto ${u.mapsText}`);
-      assert(!u.topbar && !u.sheet && !u.fab, `quedó algo de la pantalla de atrás: barra ${u.topbar}, hoja ${u.sheet}, botón azul ${u.fab}`);
+      assert(!u.topbar && !u.sheet && !u.fab && !u.locate, `quedó algo de la pantalla de atrás: barra ${u.topbar}, hoja ${u.sheet}, botón azul ${u.fab}, «Mi ubicación» ${u.locate}`);
       assert(u.pinEvents.length > 0 && u.pinEvents.every((v) => v === 'none'), `los pins se pueden tocar durante la guía: ${u.pinEvents.join(',')}`);
+      assert(u.dimmed, 'los otros baños no quedaron tenues');
       const hit = await page.evaluate(([x, y]) => Boolean(document.elementFromPoint(x, y)?.closest('#map')), [u.W / 2, (u.top.bottom + u.panel.top) / 2]);
       assert(hit, 'entre la barra y el panel no se ve el mapa');
-      let seen = await waitOnMap([STATE_ME, target]);
+      let seen = await waitOnMap([START, target]);
       assert(seen.every((p) => p.ok), `vos y el baño no entran en el mapa visible: ${JSON.stringify(seen)}`);
       await shot(page, 'T17-guide-map');
 
-      // b) Caminás por el recorrido: la línea sale de tu punto, lo que falta baja
-      //    y la indicación pasa a la próxima maniobra.
-      let first = await line();
+      // b) Caminás por el recorrido: la línea sale de tu punto, lo que falta es
+      //    por el recorrido (no en línea recta) y la indicación es la próxima
+      //    maniobra: el giro de la esquina y, pasado, la llegada.
+      const first = await line();
       assert(first.length >= 3, `no hay recorrido dibujado (${first.length} puntos)`);
       const a = first[0];
-      const mid = { lat: a.lat, lng: target.lng };   // el stub de Valhalla: primero este-oeste, después norte-sur
+      const mid = { lat: a.lat, lng: target.lng };
+      assert(meters(a, mid) > 60, `el recorrido de prueba no dobla: primer tramo de ${meters(a, mid).toFixed(0)} m`);
       const legs = [[a, mid], [mid, target]];
       const total = meters(a, mid) + meters(mid, target);
-      // El punto a `s` metros del arranque, sobre el recorrido.
       const along = (s0) => {
         let s1 = s0;
         for (const [p, q] of legs) {
@@ -1182,47 +1203,68 @@ const SCENARIOS = [
         return target;
       };
       let prev = meters0(u.dist);
-      assert(Math.abs(prev - total) <= 15, `al arrancar faltan ${u.dist} (el recorrido mide ${total.toFixed(0)} m)`);
+      assert(Math.abs(prev - total) <= 15, `al arrancar faltan ${u.dist} (el recorrido mide ${total.toFixed(0)} m; en línea recta ${meters(a, target).toFixed(0)})`);
       let me = a;
-      for (const f of [0.3, 0.6]) {
+      for (const f of [0.15, 0.6]) {
         me = along(f * total);
+        const onFirst = f * total < meters(a, mid);
         await emitPos(me.lat, me.lng);
-        await page.waitForFunction((p) => {
-          const c = window.WC.map.getSource('route').serialize().data.features[0].geometry.coordinates[0];
-          return Math.abs(c[0] - p.lng) < 2e-6 && Math.abs(c[1] - p.lat) < 2e-6;
-        }, me, { timeout: 3000 }).catch(async () => { throw new Fail(`(b ${f}) la línea no sale de tu punto: ${JSON.stringify((await line())[0])}`); });
+        await lineFrom(me).catch(async () => { throw new Fail(`(b ${f}) la línea no sale de tu punto: ${JSON.stringify((await line())[0])}`); });
+        await compass();
         u = await ui();
         const left = (1 - f) * total;
         const shown = meters0(u.dist);
-        assert(Math.abs(shown - left) <= 15 && shown < prev, `(b ${f}) faltan ${u.dist} (esperaba ~${left.toFixed(0)} m, antes ${prev})`);
-        assert(/^Seguí hasta .+: Llegaste a tu destino\.$/.test(u.step), `(b ${f}) indicación: «${u.step}»`);
+        assert(Math.abs(shown - left) <= 15 && shown < prev, `(b ${f}) faltan ${u.dist} (esperaba ~${left.toFixed(0)} m por el recorrido, antes ${prev})`);
+        if (onFirst) assert(Math.abs(shown - meters(me, target)) > 15, `(b ${f}) muestra la distancia en línea recta (${u.dist})`);
+        const want = onFirst ? /^Seguí hasta .+: Girá a la izquierda en Avenida Corrientes\.$/ : /^Seguí hasta .+: Llegaste a tu destino\.$/;
+        assert(want.test(u.step), `(b ${f}) indicación: «${u.step}»`);
         prev = shown;
         seen = await waitOnMap([me, target]);
         assert(seen.every((p) => p.ok), `(b ${f}) el mapa no te siguió: ${JSON.stringify(seen)}`);
       }
-      // Lo ya caminado no se dibuja: la línea es tu punto y lo que falta.
       const walked = await line();
-      const tail = walked.at(-1);
-      const behind = walked.some((p) => meters(p, a) < 1 && meters(a, me) > 5);
-      assert(!behind && meters(tail, target) < 1, `(b) la línea todavía dibuja lo caminado: ${JSON.stringify(walked)}`);
+      const behind = walked.some((p) => meters(p, a) < 1);
+      assert(!behind && meters(walked.at(-1), target) < 1, `(b) la línea todavía dibuja lo caminado: ${JSON.stringify(walked)}`);
 
-      // c) Te desviás ~110 m (de costado al tramo en el que estás): app.js
-      //    recalcula y la línea nueva sale de donde estás.
-      const onFirstLeg = meters(a, me) < meters(a, mid);
-      const off = onFirstLeg ? { lat: me.lat + 0.001, lng: me.lng } : { lat: me.lat, lng: me.lng + 0.0012 };
+      // b2) Cerrás la guía y la volvés a abrir a mitad de camino: sigue bien.
+      await page.locator('#guide-close').click();
+      await page.waitForFunction(() => !document.documentElement.classList.contains('guiding'));
+      await page.locator('#best-guide').click();
+      await page.locator('#guide').waitFor({ state: 'visible' });
+      me = along(0.7 * total);
+      await emitPos(me.lat, me.lng);
+      await lineFrom(me).catch(() => { throw new Fail('(b2) al volver a abrir, la línea no sale de tu punto'); });
+      await compass();
+      u = await ui();
+      assert(Math.abs(meters0(u.dist) - 0.3 * total) <= 15, `(b2) al volver a abrir faltan ${u.dist} (esperaba ~${(0.3 * total).toFixed(0)} m)`);
+
+      // c) Te desviás ~110 m (de costado al tramo norte-sur): app.js recalcula,
+      //    y la línea nueva y lo que falta salen de donde estás.
+      const off = { lat: me.lat, lng: me.lng + 0.0012 };
+      const newMid = { lat: off.lat, lng: target.lng };
       await emitPos(off.lat, off.lng);
       await page.waitForFunction(([p, t]) => {
         const c = window.WC.map.getSource('route').serialize().data.features[0].geometry.coordinates;
         const near = (x, y) => Math.abs(x - y) < 2e-6;
         return near(c[0][0], p.lng) && near(c[0][1], p.lat) && c.some((q) => near(q[1], p.lat) && near(q[0], t.lng));
       }, [off, target], { timeout: 5000 }).catch(async () => { throw new Fail(`(c) no recalculó desde tu posición: ${JSON.stringify(await line())}`); });
+      await compass();
+      const newTotal = meters(off, newMid) + meters(newMid, target);
+      await page.waitForFunction((want) => {
+        const t = document.getElementById('guide-dist').textContent.replace(/ /g, ' ');
+        const m = /([\d.,]+)\s*(k?m)/.exec(t);
+        return m && Math.abs((m[2] === 'km' ? parseFloat(m[1].replace(',', '.')) * 1000 : parseFloat(m[1])) - want) <= 15;
+      }, newTotal, { timeout: 3000 }).catch(async () => { throw new Fail(`(c) con la ruta nueva faltan ${(await ui()).dist} (esperaba ~${newTotal.toFixed(0)} m)`); });
 
-      // d) Movés el mapa con el dedo: deja de seguirte y aparece «centrar».
+      // d) Movés el mapa con el dedo: deja de seguirte y aparece «centrar»; la
+      //    hoja de atrás (oculta) no se toca.
       await idle();
+      const sheetBefore = (await ui()).sheetOpen;
       await swipe(page, cdp, { from: 120, to: 300, y: (u.top.bottom + u.panel.top) / 2, steps: 12 });
       await idle();
       u = await ui();
       assert(u.recenter, '(d) no apareció el botón para volver a centrar');
+      assert(u.sheetOpen === sheetBefore, `(d) arrastrar el mapa cambió la hoja de atrás: ${sheetBefore} → ${u.sheetOpen}`);
       const center0 = await page.evaluate(() => window.WC.map.getCenter().toArray());
       await emitPos(off.lat + 0.0002, off.lng);
       await page.waitForTimeout(800);
@@ -1231,18 +1273,32 @@ const SCENARIOS = [
       const moved = await armMoveEnd(page);
       await page.locator('#guide-recenter').click();
       await moved();
-      await idle();
       u = await ui();
       assert(!u.recenter, '(d) «centrar» no se fue al tocarlo');
       seen = await waitOnMap([{ lat: off.lat + 0.0002, lng: off.lng }]);
       assert(seen[0].ok, `(d) al centrar no te volvió a mostrar: ${JSON.stringify(seen)}`);
       await shot(page, 'T17-guide-map-walk');
 
-      // e) La X cierra: vuelve todo lo de antes.
+      // e) Pantalla chica (320 × 568): el panel entra entero, la brújula no pisa
+      //    los números y el mapa te sigue mostrando.
+      await page.setViewportSize({ width: 320, height: 568 });
+      const here = { lat: off.lat + 0.0004, lng: off.lng };
+      await emitPos(here.lat, here.lng);
+      await compass();
+      seen = await waitOnMap([here]);
+      u = await ui();
+      assert(u.panel.top > u.top.bottom + 40 && u.maps.bottom <= u.H, `(e) 320 × 568: el panel no entra (top ${u.panel.top.toFixed(0)}, Mapas hasta ${u.maps.bottom.toFixed(0)} de ${u.H})`);
+      assert(u.distBox.right <= u.dial.left - 16 && u.etaBox.left >= u.dial.right + 16, `(e) 320 × 568: la brújula pisa los números: ${JSON.stringify({ dist: u.distBox, dial: u.dial, eta: u.etaBox })}`);
+      assert(seen[0].ok, `(e) 320 × 568: tu punto no se ve: ${JSON.stringify(seen)}`);
+      await shot(page, 'T17-guide-map-320');
+      await page.setViewportSize({ width: 393, height: 852 });
+
+      // f) La X cierra: vuelve todo lo de antes.
       await page.locator('#guide-close').click();
       await page.waitForFunction(() => !document.documentElement.classList.contains('guiding'));
       u = await ui();
       assert(u.topbar && u.sheet, `al cerrar no volvió la pantalla: barra ${u.topbar}, hoja ${u.sheet}`);
+      assert(!u.recenter, 'al cerrar quedó el botón de centrar');
       await healthy(page, errors);
       return page;
     } finally { await shot(page, 'T17-guide-map-end'); await context.close(); }
