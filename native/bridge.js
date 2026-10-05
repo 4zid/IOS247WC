@@ -587,6 +587,16 @@
     }));
   });
 
+  // El estilo del mapa (OpenFreeMap, basado en OpenMapTiles, CC-BY) pide
+  // atribución, y el mapa tiene el control de atribución apagado: va en la
+  // fila «Datos» del modal de info, junto a las fuentes de los baños.
+  safe('atribución del mapa', () => {
+    onReady(() => safe('atribución del mapa', () => {
+      const value = document.querySelector('[data-i18n="dataSources"]')?.closest('.row')?.querySelector('.row-value');
+      if (value && !/OpenMapTiles/.test(value.textContent)) value.textContent += ' · OpenFreeMap © OpenMapTiles';
+    }));
+  });
+
   /* ------------------------------------------------------- acceso directo */
 
   // «Baño más cercano» desde el ícono: mismo camino que el acceso directo de

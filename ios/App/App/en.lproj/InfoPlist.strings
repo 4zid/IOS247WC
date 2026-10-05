@@ -1,4 +1,4 @@
 "CFBundleDisplayName" = "247WC";
-"NSLocationWhenInUseUsageDescription" = "247WC uses your location to show you the nearest public toilets and guide you there on foot. We don't store your location.";
+"NSLocationWhenInUseUsageDescription" = "247WC uses your location to show you the nearest public toilets and guide you there on foot. We don't store your location on our servers.";
 "NearestToilet" = "247WC needs your precise location to find the toilet that is really closest to you and guide you right to it.";
 "Nearest toilet" = "Nearest toilet";

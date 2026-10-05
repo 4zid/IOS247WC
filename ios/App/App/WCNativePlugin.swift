@@ -160,7 +160,8 @@ public class WCNativePlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManagerDeleg
 
         let center = NotificationCenter.default
         // Si el diálogo de permiso no llegó a mostrarse (la app no estaba
-        // activa), lo volvemos a pedir al volver.
+        // activa) o venció un «Permitir una vez» con la guía en curso, lo
+        // volvemos a pedir al volver.
         observers.append(center.addObserver(forName: UIApplication.didBecomeActiveNotification,
                                             object: nil, queue: .main) { [weak self] _ in
             self?.retryPermissionRequest()
@@ -374,16 +375,33 @@ public class WCNativePlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManagerDeleg
 
     public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
-        // También llega apenas se crea el manager, con el permiso sin decidir: no es una respuesta.
-        guard status != .notDetermined else { return }
+        if status == .notDetermined {
+            // También llega apenas se crea el manager: si nadie espera nada, no es
+            // una respuesta. Con un watch o un pedido en curso es un «Permitir una
+            // vez» que venció (iOS lo hace cuando la app deja de usarse): sin
+            // permiso no hay posiciones, así que lo pedimos de nuevo. Si no, la
+            // guía quedaría congelada en la última posición sin ningún aviso.
+            if watching || !pendingRequests.isEmpty {
+                refreshLocationUpdates()
+                if UIApplication.shared.applicationState == .active {
+                    manager.requestWhenInUseAuthorization()
+                }
+            }
+            return
+        }
 
         let waiters = permissionWaiters
         permissionWaiters.removeAll()
         waiters.forEach { $0(status) }
 
-        // Si lo revocaron (por ejemplo desde Ajustes) cortamos todo lo que estaba en curso.
-        if !WCNativePlugin.isAuthorized(status) {
-            failLocation(code: ErrorCode.permissionDenied, message: "User denied Geolocation", stopWatch: true)
+        if WCNativePlugin.isAuthorized(status) {
+            // Volvió el permiso (lo dieron de nuevo o lo reactivaron en Ajustes):
+            // el watch sigue donde estaba.
+            refreshLocationUpdates()
+        } else {
+            // Lo revocaron: avisamos y frenamos, pero el watch queda pedido para
+            // retomar solo si el permiso vuelve.
+            failLocation(code: ErrorCode.permissionDenied, message: "User denied Geolocation")
         }
     }
 
@@ -418,9 +436,9 @@ public class WCNativePlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManagerDeleg
         if code == .locationUnknown || code == .headingFailure { return }
 
         if code == .denied {
-            failLocation(code: ErrorCode.permissionDenied, message: "User denied Geolocation", stopWatch: true)
+            failLocation(code: ErrorCode.permissionDenied, message: "User denied Geolocation")
         } else {
-            failLocation(code: ErrorCode.positionUnavailable, message: error.localizedDescription, stopWatch: false)
+            failLocation(code: ErrorCode.positionUnavailable, message: error.localizedDescription)
         }
     }
 
@@ -462,8 +480,8 @@ public class WCNativePlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManagerDeleg
     }
 
     private func retryPermissionRequest() {
-        guard !permissionWaiters.isEmpty, let manager = locationManager,
-              manager.authorizationStatus == .notDetermined else { return }
+        guard let manager = locationManager, manager.authorizationStatus == .notDetermined,
+              !permissionWaiters.isEmpty || watching || !pendingRequests.isEmpty else { return }
         manager.requestWhenInUseAuthorization()
     }
 
@@ -497,9 +515,11 @@ public class WCNativePlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManagerDeleg
     }
 
     /// Prende o apaga las actualizaciones según quién las necesita: un watch o
-    /// algún getCurrentPosition pendiente. Nunca las apaga si alguien espera.
+    /// algún getCurrentPosition pendiente, y solo con permiso (sin permiso
+    /// quedan pedidas y arrancan cuando vuelve).
     private func refreshLocationUpdates() {
-        let needed = watching || !pendingRequests.isEmpty
+        let authorized = locationManager.map { WCNativePlugin.isAuthorized($0.authorizationStatus) } ?? false
+        let needed = (watching || !pendingRequests.isEmpty) && authorized
         guard needed else {
             if updatingLocation {
                 locationManager?.stopUpdatingLocation()
@@ -527,8 +547,10 @@ public class WCNativePlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManagerDeleg
         refreshLocationUpdates()
     }
 
-    /// Rechaza los pedidos pendientes y avisa al watch.
-    private func failLocation(code: String, message: String, stopWatch: Bool) {
+    /// Rechaza los pedidos pendientes y avisa al watch. El watch no se borra:
+    /// solo stopLocationUpdates (o una recarga de la página) lo termina, así
+    /// retoma solo si el problema se resuelve (por ejemplo, vuelve el permiso).
+    private func failLocation(code: String, message: String) {
         let failed = pendingRequests
         pendingRequests.removeAll()
         for request in failed {
@@ -537,7 +559,6 @@ public class WCNativePlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManagerDeleg
         }
         if watching {
             notifyListeners("locationError", data: ["code": code, "message": message])
-            if stopWatch { watching = false }
         }
         refreshLocationUpdates()
     }

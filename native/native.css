@@ -37,3 +37,12 @@ html.native .about a {
   font-weight: 600;
   text-decoration: none;
 }
+
+/* Último paso de la introducción (justo antes del diálogo de ubicación del
+   sistema): sin «Ahora no». App Review rechaza una salida o un «más tarde» en
+   la pantalla previa al pedido de permiso (5.1.1); se puede decir que no en el
+   diálogo mismo. visibility (y no display) para que el bloque no cambie de
+   alto entre pasos. */
+html.native #scan[data-onb="2"] #onb-skip {
+  visibility: hidden;
+}

@@ -18,8 +18,15 @@ window.WC_NATIVE_TEXT = {
   es: {
     // Modal de info: además del resumen, el link a la política completa. A la
     // búsqueda llega un punto redondeado de la zona (grilla de ~250 m).
-    infoP: 'El baño público más cercano, sin vueltas. <strong>Tu ubicación no se guarda</strong>: se usa en el teléfono para ordenar por cercanía, y a nuestra búsqueda solo llega un punto aproximado de la zona. ' +
+    infoP: 'El baño público más cercano, sin vueltas. <strong>Tu ubicación no se guarda en nuestros servidores</strong>: se usa en el teléfono para ordenar por cercanía, a nuestra búsqueda llega solo un punto aproximado de la zona y, para la ruta a pie, tu posición va a un servicio de rutas. ' +
       `<a href="${PRIVACY_URL}">Política de privacidad</a>`,
+
+    // Pantalla previa al diálogo de ubicación del sistema. App Review rechaza
+    // los botones tipo «Activar ubicación» o «Ahora no» justo antes del
+    // pedido (5.1.1): acá va «Continuar» y native.css oculta el secundario en
+    // este paso. Tampoco se le dice a la persona qué opción elegir.
+    onb3Sub: 'Te guiamos caminando hasta la puerta. Para eso usamos tu ubicación mientras usás la app; no la guardamos en nuestros servidores.',
+    onbAllow: 'Continuar',
 
     // Fila «Instalar» del modal de info: bridge.js la oculta. Por si algún día
     // vuelve a verse, que diga algo cierto en la app (el acceso directo del ícono).
@@ -32,7 +39,7 @@ window.WC_NATIVE_TEXT = {
     handoffNoQr: 'No pudimos generar el QR. Copiá el link o abrí la ruta en Mapas.',
     toastLinkFail: 'No pudimos copiar el link. Abrí la ruta con el botón de Mapas.',
 
-    scanLocatingSub: 'Si el iPhone te pregunta, elegí «Al usar la app».',
+    scanLocatingSub: 'Buscando tu ubicación…',
     noGeo: 'No pudimos acceder a la ubicación del iPhone. Revisá que Localización esté activada en Ajustes → Privacidad y seguridad.',
     noHttps: 'No pudimos acceder a la ubicación. Cerrá la app y volvé a abrirla.',
 
@@ -58,8 +65,11 @@ window.WC_NATIVE_TEXT = {
   },
 
   en: {
-    infoP: 'The closest public toilet, no fuss. <strong>Your location is not stored</strong>: it is used on your phone to sort by distance, and our search only receives an approximate point of the area. ' +
+    infoP: 'The closest public toilet, no fuss. <strong>Your location is not stored on our servers</strong>: it is used on your phone to sort by distance, our search only receives an approximate point of the area and, for the walking route, your position goes to a routing service. ' +
       `<a href="${PRIVACY_URL}">Privacy Policy</a>`,
+
+    onb3Sub: "We guide you on foot to the door. For that we use your location while you use the app; we don't store it on our servers.",
+    onbAllow: 'Continue',
 
     install: 'Quick action',
     installHow: 'Touch and hold the icon → “Nearest toilet”',
@@ -69,7 +79,7 @@ window.WC_NATIVE_TEXT = {
     handoffNoQr: "Couldn't create the QR code. Copy the link or open the route in Maps.",
     toastLinkFail: "Couldn't copy the link. Open the route with the Maps button.",
 
-    scanLocatingSub: 'If your iPhone asks, choose “While Using the App”.',
+    scanLocatingSub: 'Getting your location…',
     noGeo: "Couldn't access your iPhone's location. Check that Location Services is on in Settings → Privacy & Security.",
     noHttps: "Couldn't access your location. Close the app and open it again.",
 

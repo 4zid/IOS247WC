@@ -113,6 +113,23 @@ const PATCHES = {
       replace: () => LANG_LINE_NEW,
     },
   ],
+  // Privacidad del respaldo directo a Overpass (cuando nuestra API no
+  // responde): desde el teléfono sale el mismo punto redondeado (~250 m) que
+  // le mandamos a la API, no la posición exacta, y no va al espejo de Mail.ru
+  // (VK, Rusia). Así la política puede decir que la posición exacta solo va
+  // al servicio de rutas.
+  'app.js': [
+    {
+      name: 'respaldo a Overpass sin el espejo de Mail.ru',
+      anchor: wholeLine("'https://maps\\.mail\\.ru/osm/tools/overpass/api/interpreter',"),
+      replace: () => '',
+    },
+    {
+      name: 'respaldo a Overpass con el punto redondeado',
+      anchor: /const query = overpassQuery\(center, radius\);/g,
+      replace: () => 'const query = overpassQuery({ lat: snap(center.lat), lng: snap(center.lng) }, radius + 250);',
+    },
+  ],
 };
 
 function applyPatch(file, src, { name, anchor }) {

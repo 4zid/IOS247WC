@@ -572,6 +572,34 @@ const SCENARIOS = [
       return page;
     } finally { await shot(page, 'T12-geolocation'); await context.close(); }
   }],
+
+  ['T13', 'pre-permission', 'Pantalla previa al permiso: «Continuar», sin «Ahora no» ni instrucciones de qué elegir', async (b, base) => {
+    const { context, page, errors } = await openApp(b, base, { config: { permission: 'prompt' } });
+    try {
+      const next = page.locator('#onb-next');
+      await next.waitFor({ state: 'visible', timeout: 5000 });
+      assert(await page.locator('#onb-skip').isVisible(), 'en el primer paso «Saltar» tiene que verse');
+      await next.click();
+      await next.click();
+      await page.waitForFunction(() => document.getElementById('scan')?.dataset.onb === '2');
+      const label = (await next.innerText()).trim();
+      assert(label === 'Continuar', `botón del último paso: «${label}»`);
+      assert(!(await page.locator('#onb-skip').isVisible()), '«Ahora no» se ve en la pantalla previa al permiso');
+      const sub = await page.locator('#scan-sub').innerText();
+      assert(!/no guardamos nada/i.test(sub), `texto del paso 3: ${sub}`);
+      await shot(page, 'T13-pre-permission');
+      // «Continuar» va derecho al pedido de ubicación nativo.
+      await next.click();
+      await waitCall(page, 'WCNative', 'getCurrentPosition');
+      const hint = await page.evaluate(() => window.WC_NATIVE_TEXT.es.scanLocatingSub);
+      assert(!/elegí|choose/i.test(hint), `el texto mientras ubica le dice qué elegir: ${hint}`);
+      // La atribución del estilo del mapa está en el modal de info.
+      const datos = await page.evaluate(() => document.querySelector('[data-i18n="dataSources"]')?.closest('.row')?.textContent || '');
+      assert(/OpenMapTiles/.test(datos) && /OpenStreetMap/.test(datos), `fila «Datos»: ${datos}`);
+      await healthy(page, errors);
+      return page;
+    } finally { await context.close(); }
+  }],
 ];
 
 async function shot(page, name) {
