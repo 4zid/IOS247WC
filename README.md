@@ -90,7 +90,10 @@ permiso y el acceso directo.
 - **Apple Developer Program activo** (la membresía paga, 99 USD por año) y los
   últimos acuerdos aceptados en [App Store Connect](https://appstoreconnect.apple.com)
   → **Business** (Negocios). Si hay un acuerdo pendiente, Apple rechaza las subidas.
-- Un iPhone para probar (recomendado, no obligatorio).
+- Un iPhone para probar. En el **Camino A** hace falta conectarlo a Xcode al
+  menos una vez antes de archivar (sin un iPhone registrado, Xcode no puede
+  firmar); en el **Camino B** no es obligatorio, pero conviene probar con
+  TestFlight antes de enviar a revisión.
 
 **Camino A: con Mac**
 
