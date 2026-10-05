@@ -10,8 +10,11 @@
      npm run web:update                         clona el repo (git clone --depth 1)
      npm run web:update -- --from ../247wc      usa una copia local ya clonada
      npm run web:update -- --repo <url> --ref <rama|tag>
+     npm run web:update -- --force              pisa web/ aunque tenga cambios sin commitear
 
-   Corrido dos veces contra el mismo commit deja web/ idéntico, byte a byte. */
+   Corrido dos veces contra el mismo commit deja web/ idéntico, byte a byte.
+   Si web/ tiene cambios sin commitear (según git), no toca nada: el script lo
+   pisa entero y se perderían. Sin git (o fuera de un repo) no se chequea. */
 
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -52,7 +55,7 @@ const KNOWN_SKIPPED = new Map([
 class UpdateError extends Error {}
 
 function parseArgs(argv) {
-  const args = { from: null, repo: DEFAULT_REPO, ref: null };
+  const args = { from: null, repo: DEFAULT_REPO, ref: null, force: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const value = () => {
@@ -63,6 +66,7 @@ function parseArgs(argv) {
     if (a === '--from') args.from = path.resolve(value());
     else if (a === '--repo') args.repo = value();
     else if (a === '--ref') args.ref = value();
+    else if (a === '--force') args.force = true;
     else if (a === '-h' || a === '--help') args.help = true;
     else throw new UpdateError(`Opción desconocida: ${a}`);
   }
@@ -70,6 +74,20 @@ function parseArgs(argv) {
 }
 
 const git = (cwd, ...args) => execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8' }).trim();
+
+// Cambios sin commitear en web/ («M web/app.js», «?? web/nuevo.js»…), o null
+// si no se puede saber (git no instalado, o el proyecto bajado como ZIP).
+function uncommittedWeb() {
+  try {
+    const out = execFileSync('git', ['-C', ROOT, 'status', '--porcelain', '--', 'web'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    return out.split('\n').filter((line) => line.trim());
+  } catch {
+    return null;
+  }
+}
 
 // Lista final [origen absoluto, destino relativo a web/], expandiendo los «*».
 async function plan(src) {
@@ -142,8 +160,24 @@ async function newLocalRefs(src, copied) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
-    console.log('Uso: node scripts/update-web.mjs [--from <checkout local>] [--repo <url>] [--ref <rama|tag>]');
+    console.log('Uso: node scripts/update-web.mjs [--from <checkout local>] [--repo <url>] [--ref <rama|tag>] [--force]');
     return;
+  }
+
+  // Antes de clonar o copiar nada: web/ se reemplaza entero.
+  const dirty = uncommittedWeb();
+  if (dirty?.length) {
+    const list = dirty.map((line) => `    ${line}`).join('\n');
+    if (!args.force) {
+      throw new UpdateError(
+        `web/ tiene cambios sin commitear y este script lo pisa entero:\n${list}\n\n` +
+          '  web/ no se edita a mano: lo que cambia en la app va en native/ o en los parches de scripts/build-web.mjs.\n' +
+          '  - Para guardarlos aparte: git stash -u   (los recuperás con git stash pop)\n' +
+          '  - Para descartarlos:      git checkout -- web   (los archivos nuevos, «??», se borran a mano)\n' +
+          '  - Para pisarlos igual:    npm run web:update -- --force',
+      );
+    }
+    console.warn(`⚠ --force: se pisan los cambios sin commitear de web/:\n${list}`);
   }
 
   let src = args.from;

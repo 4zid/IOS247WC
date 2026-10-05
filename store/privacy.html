@@ -8,7 +8,14 @@
 
   Página autocontenida: no carga fuentes, imágenes ni scripts de afuera (sería
   raro que una política de privacidad le pase tu IP a terceros). Se publica tal
-  cual, por ejemplo en la raíz del repo de la web → https://247-wc.vercel.app/privacy.html
+  cual, junto con support.html, por ejemplo en la raíz del repo de la web →
+  https://247-wc.vercel.app/privacy.html. Es la URL a la que apunta el link
+  «Política de privacidad» de la app (PRIVACY_URL en native/text.js): si la
+  publicás en otra, cambiá esa constante y subí un build nuevo.
+
+  Lo que dice tiene que coincidir con ios/App/App/PrivacyInfo.xcprivacy y con
+  store/app-privacy.md (ubicación precisa y aproximada, no vinculadas, sin
+  rastreo, solo para que la app funcione).
 -->
 <html lang="es">
 <head>
@@ -86,6 +93,9 @@
   .meta { font-size: 14px; color: var(--muted); }
   a { color: var(--accent); text-underline-offset: 2px; }
   strong { font-weight: 700; }
+  code { font: 0.9em/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+  h3 + p { margin-top: 0; }
+  section.policy > h3 { margin-top: 24px; }
 
   .summary {
     background: var(--accent-soft); border-radius: 20px; padding: 20px 20px 8px; margin: 24px 0 8px;
@@ -145,10 +155,11 @@
     <h2>En corto</h2>
     <ul>
       <li><strong>No hay cuentas ni registro.</strong> No te pedimos nombre, email ni teléfono.</li>
-      <li><strong>Tu ubicación se usa en el teléfono</strong>, solo mientras usás la app, para buscar baños y guiarte.</li>
-      <li><strong>Para buscar, a nuestro servidor llega una zona aproximada</strong> (un punto redondeado a unos 250&nbsp;m), no tu posición exacta. Nada queda asociado a vos: solo se guarda en caché, hasta un día, la lista de baños de esa zona.</li>
+      <li><strong>Tu ubicación se usa solo mientras usás la app</strong>: al abrirla (si ya diste el permiso, busca sola), al tocar «Escanear» y durante la guía. Nunca en segundo plano.</li>
+      <li><strong>Tu posición exacta solo va al servicio de ruta a pie</strong> (Valhalla, de FOSSGIS e.V.; si no responde, OSRM), para calcular el camino hasta el baño.</li>
+      <li><strong>Para buscar baños sale solo un punto redondeado a unos 250&nbsp;m</strong>: a nuestro servidor y, si falla, a servidores públicos de OpenStreetMap. No guardamos tu ubicación en nuestros servidores.</li>
       <li><strong>Sin analytics, sin publicidad, sin rastreo y sin venta de datos.</strong></li>
-      <li><strong>Tus preferencias y tus últimos resultados quedan solo en tu teléfono</strong> y se borran al eliminar la app.</li>
+      <li><strong>En tu teléfono quedan tus preferencias, tus últimos resultados y las zonas donde buscaste</strong>. Se borran al eliminar la app.</li>
     </ul>
   </div>
 
@@ -158,47 +169,53 @@
   <h2>2. Tu ubicación</h2>
   <ul>
     <li>La app pide permiso <strong>«Al usar la app»</strong>. Nunca usa la ubicación en segundo plano ni con la app cerrada.</li>
-    <li>Con tu posición, el teléfono ordena los baños por cercanía, dibuja la ruta y mueve la flecha de la guía. Esos cálculos se hacen en el teléfono.</li>
+    <li><strong>Cuándo se usa:</strong> una vez que diste el permiso, cada vez que abrís la app busca sola los baños cercanos (no hace falta tocar nada). También cuando tocás «Escanear», cuando usás el acceso rápido «Baño más cercano» y mientras te guía hasta un baño.</li>
+    <li>Con tu posición, el teléfono ordena los baños por cercanía, mide las distancias y mueve la flecha de la guía. Esos cálculos se hacen en el teléfono.</li>
     <li>Si en tu iPhone está activada la ubicación aproximada, la app puede pedirte la ubicación exacta por esa vez, para encontrar el baño que de verdad tenés más cerca.</li>
     <li>La brújula (hacia dónde apunta el teléfono) se lee en el teléfono y no sale de él.</li>
     <li>Podés cambiar o quitar el permiso cuando quieras en <strong>Ajustes → 247WC → Ubicación</strong>. Sin ubicación, la app igual funciona: mové el mapa y tocá «Buscar en esta zona».</li>
   </ul>
 
   <h2>3. Qué se envía por internet, y a quién</h2>
-  <p>Para funcionar, la app se conecta con estos servicios. Ninguno recibe tu nombre, tu email ni un identificador tuyo.</p>
+  <p>Para funcionar, la app se conecta con estos servicios. Ninguno recibe tu nombre, tu email ni un identificador tuyo. <strong>Tu posición exacta solo la reciben los servicios de ruta a pie</strong>; los demás reciben, como mucho, un punto redondeado a unos 250&nbsp;m.</p>
   <div class="services">
+    <div class="service">
+      <h3>Ruta a pie: Valhalla u OSRM</h3>
+      <dl>
+        <dt>Quién</dt><dd>Valhalla (<code>valhalla1.openstreetmap.de</code>), operado por FOSSGIS e.V. (Alemania). Si no responde, el servidor de demostración de OSRM (<code>router.project-osrm.org</code>).</dd>
+        <dt>Cuándo</dt><dd>Cuando la app calcula la ruta a pie hasta un baño: en la tarjeta del más cercano, al abrir un baño de la lista y durante la guía.</dd>
+        <dt>Qué reciben</dt><dd>El punto de partida (<strong>tu posición exacta</strong>), el destino (el baño elegido) y tu dirección IP. Son los únicos que reciben tu posición exacta: sin ella, la ruta empezaría en otra cuadra.</dd>
+      </dl>
+    </div>
     <div class="service">
       <h3>Búsqueda de baños de 247WC</h3>
       <dl>
         <dt>Qué es</dt><dd>Una función propia de 247WC, alojada en Vercel.</dd>
         <dt>Qué recibe</dt><dd>Un punto redondeado a una grilla de unos 250&nbsp;m (no tu posición exacta) y el radio de búsqueda.</dd>
-        <dt>Para qué</dt><dd>Desde el servidor consulta OpenStreetMap (Overpass) y Refuge Restrooms y le devuelve a la app la lista de baños de esa zona.</dd>
-        <dt>Qué se guarda</dt><dd>La respuesta (la lista de baños de esa zona) queda en caché hasta un día, para que la misma zona responda al instante. No llevamos registros propios de quién buscó.</dd>
+        <dt>Para qué</dt><dd>Desde el servidor, con ese mismo punto redondeado, consulta servidores públicos de OpenStreetMap (Overpass, entre ellos <code>maps.mail.ru</code>, operado por VK, Rusia) y Refuge Restrooms, y le devuelve a la app la lista de baños de esa zona. Esos servicios ven la dirección IP de nuestro servidor, no la tuya.</dd>
+        <dt>Qué se guarda</dt><dd>La respuesta (la lista de baños de esa zona, sin nada tuyo) queda en caché unos días: hasta un día como respuesta fresca y, mientras se renueva, hasta 7 días más (unos 8 en total), para que la misma zona responda al instante. No guardamos registros propios de quién buscó.</dd>
       </dl>
     </div>
     <div class="service">
       <h3>Servidores públicos de OpenStreetMap (Overpass)</h3>
       <dl>
+        <dt>Quién</dt><dd><code>overpass-api.de</code> (FOSSGIS e.V., Alemania), <code>overpass.kumi.systems</code> (Kumi Systems, Austria) y <code>overpass.private.coffee</code> (private.coffee, Austria). Se prueban en ese orden hasta que uno responde.</dd>
         <dt>Cuándo</dt><dd>Solo si nuestra búsqueda no responde o no pudo consultar OpenStreetMap.</dd>
-        <dt>Qué reciben</dt><dd>El teléfono les pide los baños directamente, con el punto de búsqueda (tu posición o el centro del mapa) y el radio.</dd>
-      </dl>
-    </div>
-    <div class="service">
-      <h3>Ruta a pie: Valhalla (FOSSGIS e.V.) u OSRM</h3>
-      <dl>
-        <dt>Cuándo</dt><dd>Cuando la app calcula la ruta a pie hasta un baño: en la tarjeta del más cercano, al abrir un baño de la lista y durante la guía.</dd>
-        <dt>Qué reciben</dt><dd>El punto de partida (tu posición) y el destino (el baño elegido). Primero se usa Valhalla; si no responde, OSRM.</dd>
+        <dt>Qué reciben</dt><dd>El teléfono les pide los baños directamente, con el mismo punto redondeado a unos 250&nbsp;m (no tu posición exacta) y el radio. Como el pedido sale del teléfono, ven tu dirección IP.</dd>
       </dl>
     </div>
     <div class="service">
       <h3>Mapa: OpenFreeMap</h3>
       <dl>
         <dt>Cuándo</dt><dd>Mientras ves el mapa.</dd>
-        <dt>Qué recibe</dt><dd>Los pedidos de las partes del mapa de la zona que estás mirando. Si OpenFreeMap no carga, se usan las de OpenStreetMap.</dd>
+        <dt>Qué recibe</dt><dd>Los pedidos de las partes del mapa de la zona que estás mirando. Si OpenFreeMap no carga, se usan las de OpenStreetMap (<code>tile.openstreetmap.org</code>).</dd>
       </dl>
     </div>
   </div>
-  <p>Como en cualquier conexión a internet, cada uno de estos servidores ve la dirección IP desde la que se conecta tu teléfono y datos técnicos del pedido (por ejemplo, la hora), y puede guardarlos en sus registros según su propia política. Nosotros no usamos tu IP para identificarte ni la combinamos con otros datos. Algunos de estos servicios están en otros países.</p>
+  <p>Como en cualquier conexión a internet, cada servidor al que se conecta tu teléfono ve tu dirección IP y datos técnicos del pedido (por ejemplo, la hora), y puede guardarlos en sus registros según su propia política. Nosotros no usamos tu IP para identificarte ni la combinamos con otros datos. Varios de estos servicios están en otros países (entre ellos Alemania, Austria y Estados Unidos; uno de los que consulta nuestro servidor, en Rusia).</p>
+
+  <h3>Por qué la ficha del App Store dice «Ubicación precisa» y «Ubicación aproximada»</h3>
+  <p>Apple pide declarar los datos que salen del teléfono hacia servicios que pueden guardarlos más tiempo que el que dura el pedido. La <strong>ubicación precisa</strong> es tu posición exacta, que va a los servicios de ruta a pie (terceros que pueden guardar registros). La <strong>ubicación aproximada</strong> es el punto redondeado que va a nuestra búsqueda (que guarda en caché la respuesta de esa zona) y, si hace falta, a los servidores de Overpass. En los dos casos se usa solo para que la app funcione, no queda vinculada a tu identidad y no se usa para rastrearte.</p>
 
   <h2>4. Links que te llevan afuera</h2>
   <ul>
@@ -208,7 +225,13 @@
   <p>Esas páginas se abren en Safari dentro de la app y se rigen por sus propias políticas de privacidad.</p>
 
   <h2>5. Lo que se guarda en tu teléfono</h2>
-  <p>En el almacenamiento interno de la app (no en un servidor) quedan el idioma, el tema claro u oscuro, los filtros, si ya viste la introducción y los últimos resultados de búsqueda (la lista de baños y el punto donde buscaste), para mostrártelos rápido o si te quedás sin señal. Nada de esto se envía a ningún lado y se borra por completo al eliminar la app.</p>
+  <p>En el almacenamiento interno de la app (no en un servidor) quedan:</p>
+  <ul>
+    <li>El idioma, el tema claro u oscuro, los filtros y si ya viste la introducción.</li>
+    <li>Tus últimos resultados: la lista de baños y <strong>el punto exacto donde buscaste por última vez</strong>, para mostrártelos rápido o si te quedás sin señal.</li>
+    <li>Una copia de los resultados de cada zona donde buscaste (zonas de alrededor de 1&nbsp;km, con la fecha de la búsqueda), para no volver a pedirlos.</li>
+  </ul>
+  <p>Nosotros no recibimos nada de esto. Queda guardado hasta que eliminás la app, y como el resto de los datos de las apps, se incluye en las copias de seguridad de tu iPhone (iCloud o tu computadora). <strong>Eliminar la app lo borra todo</strong> del teléfono.</p>
 
   <h2>6. Lo que no hacemos</h2>
   <ul>
@@ -220,7 +243,7 @@
   </ul>
 
   <h2>7. Tus derechos</h2>
-  <p>Usamos tu ubicación porque vos lo pedís al tocar «Escanear», y solo para darte ese servicio. Como no guardamos datos personales asociados a vos, no tenemos un perfil tuyo que consultar, corregir o borrar. Igual, si tenés una pregunta o un pedido sobre tus datos, escribinos a <a class="placeholder" href="mailto:[TU EMAIL DE CONTACTO]">[TU EMAIL DE CONTACTO]</a> y te respondemos. Si vivís en un lugar con leyes de protección de datos (por ejemplo, la Argentina, la Unión Europea o el Reino Unido), también podés presentar un reclamo ante la autoridad de tu país.</p>
+  <p>Usamos tu ubicación solo para darte el servicio que pedís al darle permiso a la app: buscar baños cuando la abrís o tocás «Escanear», y guiarte. Como no guardamos datos personales asociados a vos, no tenemos un perfil tuyo que consultar, corregir o borrar; lo que queda en tu teléfono lo borrás eliminando la app. Igual, si tenés una pregunta o un pedido sobre tus datos, escribinos a <a class="placeholder" href="mailto:[TU EMAIL DE CONTACTO]">[TU EMAIL DE CONTACTO]</a> y te respondemos. Si vivís en un lugar con leyes de protección de datos (por ejemplo, la Argentina, la Unión Europea o el Reino Unido), también podés presentar un reclamo ante la autoridad de tu país.</p>
 
   <h2>8. Niñas y niños</h2>
   <p>247WC es apta para todo público y no le pide datos personales a nadie, tampoco a menores. No recopilamos a sabiendas información de niñas ni niños.</p>
@@ -243,10 +266,11 @@
     <h2>In short</h2>
     <ul>
       <li><strong>No accounts, no sign-up.</strong> We don't ask for your name, email or phone number.</li>
-      <li><strong>Your location is used on your phone</strong>, only while you use the app, to find toilets and guide you.</li>
-      <li><strong>To search, our server receives an approximate area</strong> (a point rounded to about 250&nbsp;m), not your exact position. Nothing is linked to you: only the list of toilets for that area is cached, for up to a day.</li>
+      <li><strong>Your location is used only while you use the app</strong>: when you open it (once you've allowed location, it searches by itself), when you tap “Scan” and during guidance. Never in the background.</li>
+      <li><strong>Your exact position only goes to the walking-route service</strong> (Valhalla, run by FOSSGIS e.V.; if it doesn't respond, OSRM), to calculate the way to the toilet.</li>
+      <li><strong>To search for toilets, only a point rounded to about 250&nbsp;m is sent</strong>: to our server and, if it fails, to public OpenStreetMap servers. We don't store your location on our servers.</li>
       <li><strong>No analytics, no ads, no tracking, and we don't sell data.</strong></li>
-      <li><strong>Your preferences and latest results stay on your phone</strong> and are erased when you delete the app.</li>
+      <li><strong>Your preferences, latest results and the areas where you searched stay on your phone</strong>. They are erased when you delete the app.</li>
     </ul>
   </div>
 
@@ -256,47 +280,53 @@
   <h2>2. Your location</h2>
   <ul>
     <li>The app asks for permission <strong>“While Using the App”</strong>. It never uses your location in the background or when the app is closed.</li>
-    <li>With your position, the phone sorts toilets by distance, draws the route and turns the guidance arrow. Those calculations happen on the phone.</li>
+    <li><strong>When it's used:</strong> once you've allowed location, every time you open the app it searches for nearby toilets by itself (no tap needed). Also when you tap “Scan”, when you use the “Nearest toilet” quick action and while it guides you to a toilet.</li>
+    <li>With your position, the phone sorts toilets by distance, measures distances and turns the guidance arrow. Those calculations happen on the phone.</li>
     <li>If your iPhone is set to approximate location, the app may ask for your precise location just once, to find the toilet that is really closest to you.</li>
     <li>The compass (which way your phone is pointing) is read on the phone and never leaves it.</li>
     <li>You can change or remove the permission at any time in <strong>Settings → 247WC → Location</strong>. Without location the app still works: move the map and tap “Search this area”.</li>
   </ul>
 
   <h2>3. What is sent over the internet, and to whom</h2>
-  <p>To work, the app connects to these services. None of them receives your name, your email or an identifier of yours.</p>
+  <p>To work, the app connects to these services. None of them receives your name, your email or an identifier of yours. <strong>Only the walking-route services receive your exact position</strong>; the others receive, at most, a point rounded to about 250&nbsp;m.</p>
   <div class="services">
+    <div class="service">
+      <h3>Walking route: Valhalla or OSRM</h3>
+      <dl>
+        <dt>Who</dt><dd>Valhalla (<code>valhalla1.openstreetmap.de</code>), run by FOSSGIS e.V. (Germany). If it doesn't respond, the OSRM demo server (<code>router.project-osrm.org</code>).</dd>
+        <dt>When</dt><dd>When the app calculates the walking route to a toilet: on the closest-toilet card, when you open a toilet from the list, and during guidance.</dd>
+        <dt>What they receive</dt><dd>The starting point (<strong>your exact position</strong>), the destination (the chosen toilet) and your IP address. They are the only ones that receive your exact position: without it, the route would start on a different block.</dd>
+      </dl>
+    </div>
     <div class="service">
       <h3>247WC toilet search</h3>
       <dl>
         <dt>What it is</dt><dd>247WC's own function, hosted on Vercel.</dd>
         <dt>What it receives</dt><dd>A point rounded to a grid of about 250&nbsp;m (not your exact position) and the search radius.</dd>
-        <dt>What for</dt><dd>From the server it queries OpenStreetMap (Overpass) and Refuge Restrooms and returns the list of toilets in that area to the app.</dd>
-        <dt>What is kept</dt><dd>The response (the list of toilets in that area) is cached for up to one day so the same area loads instantly. We keep no logs of our own about who searched.</dd>
+        <dt>What for</dt><dd>From the server, with that same rounded point, it queries public OpenStreetMap servers (Overpass, including <code>maps.mail.ru</code>, run by VK, Russia) and Refuge Restrooms, and returns the list of toilets in that area to the app. Those services see our server's IP address, not yours.</dd>
+        <dt>What is kept</dt><dd>The response (the list of toilets in that area, nothing about you) is cached for a few days: up to one day as a fresh response and, while it is refreshed, up to 7 more days (about 8 in total), so the same area loads instantly. We keep no logs of our own about who searched.</dd>
       </dl>
     </div>
     <div class="service">
       <h3>Public OpenStreetMap servers (Overpass)</h3>
       <dl>
+        <dt>Who</dt><dd><code>overpass-api.de</code> (FOSSGIS e.V., Germany), <code>overpass.kumi.systems</code> (Kumi Systems, Austria) and <code>overpass.private.coffee</code> (private.coffee, Austria). They are tried in that order until one responds.</dd>
         <dt>When</dt><dd>Only if our search doesn't respond or couldn't reach OpenStreetMap.</dd>
-        <dt>What they receive</dt><dd>The phone asks them for toilets directly, with the search point (your position or the center of the map) and the radius.</dd>
-      </dl>
-    </div>
-    <div class="service">
-      <h3>Walking route: Valhalla (FOSSGIS e.V.) or OSRM</h3>
-      <dl>
-        <dt>When</dt><dd>When the app calculates the walking route to a toilet: on the closest-toilet card, when you open a toilet from the list, and during guidance.</dd>
-        <dt>What they receive</dt><dd>The starting point (your position) and the destination (the chosen toilet). Valhalla is used first; if it doesn't respond, OSRM.</dd>
+        <dt>What they receive</dt><dd>The phone asks them for toilets directly, with the same point rounded to about 250&nbsp;m (not your exact position) and the radius. Since the request comes from your phone, they see your IP address.</dd>
       </dl>
     </div>
     <div class="service">
       <h3>Map: OpenFreeMap</h3>
       <dl>
         <dt>When</dt><dd>While you look at the map.</dd>
-        <dt>What it receives</dt><dd>Requests for the map pieces of the area you are viewing. If OpenFreeMap doesn't load, OpenStreetMap's are used.</dd>
+        <dt>What it receives</dt><dd>Requests for the map pieces of the area you are viewing. If OpenFreeMap doesn't load, OpenStreetMap's are used (<code>tile.openstreetmap.org</code>).</dd>
       </dl>
     </div>
   </div>
-  <p>As with any internet connection, each of these servers sees the IP address your phone connects from and technical details of the request (such as the time), and may keep them in its logs under its own policy. We don't use your IP address to identify you or combine it with other data. Some of these services are located in other countries.</p>
+  <p>As with any internet connection, every server your phone connects to sees your IP address and technical details of the request (such as the time), and may keep them in its logs under its own policy. We don't use your IP address to identify you or combine it with other data. Several of these services are located in other countries (including Germany, Austria and the United States; one of the servers our search queries is in Russia).</p>
+
+  <h3>Why the App Store label says “Precise Location” and “Coarse Location”</h3>
+  <p>Apple asks apps to declare data that leaves the phone for services that may keep it longer than the request takes. <strong>Precise location</strong> is your exact position, which goes to the walking-route services (third parties that may keep logs). <strong>Coarse location</strong> is the rounded point that goes to our search (which caches the response for that area) and, if needed, to the Overpass servers. In both cases it is used only to make the app work, it is not linked to your identity and it is not used to track you.</p>
 
   <h2>4. Links that take you elsewhere</h2>
   <ul>
@@ -306,7 +336,13 @@
   <p>Those pages open in Safari inside the app and are governed by their own privacy policies.</p>
 
   <h2>5. What is stored on your phone</h2>
-  <p>The app's internal storage (not a server) keeps your language, light or dark theme, filters, whether you've seen the intro, and your latest search results (the list of toilets and the point where you searched), so they show up quickly or when you have no signal. None of this is sent anywhere, and it is completely erased when you delete the app.</p>
+  <p>The app's internal storage (not a server) keeps:</p>
+  <ul>
+    <li>Your language, light or dark theme, filters, and whether you've seen the intro.</li>
+    <li>Your latest results: the list of toilets and <strong>the exact point where you last searched</strong>, so they show up quickly or when you have no signal.</li>
+    <li>A copy of the results for each area where you searched (areas of about 1&nbsp;km, with the date of the search), so they don't have to be requested again.</li>
+  </ul>
+  <p>We don't receive any of this. It stays there until you delete the app and, like other app data, it is included in your iPhone backups (iCloud or your computer). <strong>Deleting the app erases all of it</strong> from the phone.</p>
 
   <h2>6. What we don't do</h2>
   <ul>
@@ -318,7 +354,7 @@
   </ul>
 
   <h2>7. Your rights</h2>
-  <p>We use your location because you ask for it when you tap “Scan”, and only to provide that service. Since we don't keep personal data linked to you, we have no profile of you to access, correct or delete. Still, if you have a question or a request about your data, write to <a class="placeholder" href="mailto:[TU EMAIL DE CONTACTO]">[TU EMAIL DE CONTACTO]</a> and we'll answer. If you live somewhere with data protection laws (for example, the European Union, the United Kingdom or Argentina), you can also file a complaint with your local authority.</p>
+  <p>We use your location only to provide the service you ask for when you allow it: finding toilets when you open the app or tap “Scan”, and guiding you. Since we don't keep personal data linked to you, we have no profile of you to access, correct or delete; what stays on your phone is erased by deleting the app. Still, if you have a question or a request about your data, write to <a class="placeholder" href="mailto:[TU EMAIL DE CONTACTO]">[TU EMAIL DE CONTACTO]</a> and we'll answer. If you live somewhere with data protection laws (for example, the European Union, the United Kingdom or Argentina), you can also file a complaint with your local authority.</p>
 
   <h2>8. Children</h2>
   <p>247WC is suitable for all ages and doesn't ask anyone for personal data, including children. We don't knowingly collect information from children.</p>
@@ -335,7 +371,7 @@
 <footer>
   <div class="wrap">
     <p>247WC · Última actualización: 5 de octubre de 2026 · Last updated: October 5, 2026</p>
-    <p>Datos del mapa / Map data © colaboradores de OpenStreetMap / OpenStreetMap contributors.</p>
+    <p>Datos del mapa / Map data © colaboradores de OpenStreetMap / OpenStreetMap contributors · OpenFreeMap © OpenMapTiles.</p>
   </div>
 </footer>
 

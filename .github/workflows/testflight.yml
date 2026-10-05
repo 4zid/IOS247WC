@@ -18,6 +18,19 @@
 #    y sube el build. La app no usa entitlements (push, App Groups…), que es
 #    lo único que se pierde al archivar sin firmar; un paso lo verifica.
 #
+# Plan B, firma manual: si están los tres secretos DIST_CERT_P12 (.p12 de
+# «Apple Distribution» en base64), DIST_CERT_PASSWORD y DIST_PROFILE (perfil
+# «App Store Connect» en base64), el archive va FIRMADO con ese certificado y
+# ese perfil (en un llavero temporal que se borra al final) y la exportación
+# usa los mismos; la clave de API queda solo para subir. Sirve si la firma en
+# la nube falla (clave sin rol Admin, certificados al tope…). Con uno o dos de
+# los tres, la corrida corta al principio y dice cuál falta. Detalle en
+# .github/ci/manual-signing.sh.
+#
+# Número de build: número de corrida + 100. El 100 se cambia con la variable
+# del repo BUILD_NUMBER_OFFSET (Settings → Secrets and variables → Actions →
+# Variables), por si choca con builds subidos de otra forma.
+#
 # Minutos: ~10 de macOS (≈100 de los incluidos en un repo privado) más la
 # espera del procesamiento de Apple, que corre en Linux.
 
@@ -70,6 +83,9 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          DIST_CERT_P12: ${{ secrets.DIST_CERT_P12 }}
+          DIST_CERT_PASSWORD: ${{ secrets.DIST_CERT_PASSWORD }}
+          DIST_PROFILE: ${{ secrets.DIST_PROFILE }}
         run: |
           # Corta la corrida con un error claro, en la página de la corrida y en el resumen.
           report() {
@@ -115,12 +131,57 @@ jobs:
           fi
 
           for value in "$team" "$key_id" "$issuer"; do echo "::add-mask::$value"; done
+
+          # Firma: en la nube (lo normal) o manual, si están los tres DIST_*.
+          # Uno o dos sueltos es casi seguro un olvido: mejor cortar que firmar
+          # en la nube sin que nadie se entere.
+          have=()
+          lack=()
+          for name in DIST_CERT_P12 DIST_CERT_PASSWORD DIST_PROFILE; do
+            value=${!name}
+            if [[ -n ${value//[[:space:]]/} ]]; then have+=("$name"); else lack+=("$name"); fi
+          done
+          if [[ ${#have[@]} -eq 0 ]]; then
+            mode=cloud
+          elif [[ ${#lack[@]} -eq 0 ]]; then
+            mode=manual
+          else
+            list=$(printf '%s, ' "${lack[@]}")
+            report "Firma manual incompleta" \
+              "Para firmar con tu propio certificado hacen falta los tres secretos DIST_CERT_P12, DIST_CERT_PASSWORD y DIST_PROFILE. Faltan: ${list%, }." \
+              "Cargá los que faltan, o borrá los otros para volver a la firma en la nube (la de siempre)."
+          fi
+
+          # Que el base64 se pueda leer, antes de gastar minutos. El .p12 y el
+          # perfil empiezan con 0x30 (DER); el perfil además lleva el plist adentro.
+          if [[ $mode == manual ]]; then
+            tmp=$(mktemp -d "$RUNNER_TEMP/dist.XXXXXX")
+            decode() { printf '%s' "${!1}" | tr -d '[:space:]' | base64 --decode > "$2" 2>/dev/null; }
+            first_byte() { head -c 1 "$1" | od -An -tx1 | tr -d '[:space:]'; }
+            bad=()
+            if ! decode DIST_CERT_P12 "$tmp/p12" || [[ $(first_byte "$tmp/p12") != 30 ]]; then
+              bad+=("DIST_CERT_P12 tiene que ser el certificado .p12 en base64 (en una Mac: base64 -i certificado.p12 | pbcopy, y pegás el resultado).")
+            fi
+            if ! decode DIST_PROFILE "$tmp/profile" || [[ $(first_byte "$tmp/profile") != 30 ]] || ! LC_ALL=C grep -aq '<plist' "$tmp/profile"; then
+              bad+=("DIST_PROFILE tiene que ser el perfil .mobileprovision en base64 (en una Mac: base64 -i perfil.mobileprovision | pbcopy, y pegás el resultado).")
+            fi
+            rm -rf "$tmp"
+            if [[ ${#bad[@]} -gt 0 ]]; then
+              report "Secretos con formato inválido" "${bad[@]}"
+            fi
+          fi
+
           {
             echo "TEAM_ID=$team"
             echo "KEY_ID=$key_id"
             echo "ISSUER_ID=$issuer"
+            echo "SIGNING_MODE=$mode"
           } >> "$GITHUB_ENV"
-          echo "Los cuatro secretos están cargados."
+          if [[ $mode == manual ]]; then
+            echo "Los cuatro secretos están cargados, más los tres de firma manual: se firma con tu certificado y tu perfil."
+          else
+            echo "Los cuatro secretos están cargados. Firma en la nube."
+          fi
 
       - name: Bajar el código
         id: checkout
@@ -158,10 +219,20 @@ jobs:
         env:
           VERSION_INPUT: ${{ inputs.version }}
           RUN_NUMBER: ${{ github.run_number }}
+          OFFSET_VAR: ${{ vars.BUILD_NUMBER_OFFSET }}
         run: |
           # Número de corrida + 100: siempre crece y nunca choca con los builds
-          # que se suban desde Xcode (1, 2, 3…).
-          build_number=$((RUN_NUMBER + 100))
+          # que se suban desde Xcode (1, 2, 3…). Si choca igual (otro repo, el
+          # workflow renombrado, que reinicia la numeración…), se sube el 100
+          # con la variable BUILD_NUMBER_OFFSET.
+          offset=$(printf '%s' "$OFFSET_VAR" | tr -d '[:space:]')
+          offset=${offset:-100}
+          if [[ ! $offset =~ ^[0-9]{1,9}$ ]]; then
+            shown=${offset//[!0-9A-Za-z._-]/?}  # sin «::» ni nada que GitHub tome como comando
+            echo "::error title=BUILD_NUMBER_OFFSET inválido::La variable BUILD_NUMBER_OFFSET vale «$shown» y tiene que ser un número entero, 0 o más (por ejemplo 100 o 1000). Se cambia en Settings → Secrets and variables → Actions → Variables; vacía o borrada = 100."
+            exit 1
+          fi
+          build_number=$((RUN_NUMBER + 10#$offset))  # 10#: «0100» es cien, no octal
           echo "BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
 
           version=$(printf '%s' "$VERSION_INPUT" | tr -d '[:space:]')
@@ -174,15 +245,16 @@ jobs:
             echo "VERSION_OVERRIDE=$version" >> "$GITHUB_ENV"
           fi
 
-          # El archive va sin firmar: si algún día el proyecto suma
-          # entitlements (push, App Groups, dominios asociados…), se perderían
-          # en silencio. Mejor frenar acá.
-          if grep -q 'CODE_SIGN_ENTITLEMENTS' ios/App/App.xcodeproj/project.pbxproj; then
-            echo "::error title=Entitlements::El proyecto ahora tiene entitlements (CODE_SIGN_ENTITLEMENTS) y este workflow archiva sin firmar, así que no llegarían al build. Hay que adaptar .github/workflows/testflight.yml antes de subir."
+          # Con firma en la nube el archive va sin firmar: si algún día el
+          # proyecto suma entitlements (push, App Groups, dominios asociados…),
+          # se perderían en silencio. Mejor frenar acá. (La firma manual archiva
+          # firmado y los conserva; el perfil tiene que incluirlos.)
+          if [[ $SIGNING_MODE == cloud ]] && grep -q 'CODE_SIGN_ENTITLEMENTS' ios/App/App.xcodeproj/project.pbxproj; then
+            echo "::error title=Entitlements::El proyecto ahora tiene entitlements (CODE_SIGN_ENTITLEMENTS) y la firma en la nube archiva sin firmar, así que no llegarían al build. Usá la firma manual (secretos DIST_CERT_P12, DIST_CERT_PASSWORD y DIST_PROFILE) o adaptá .github/workflows/testflight.yml."
             exit 1
           fi
 
-          echo "Build $build_number, versión ${version:-la del proyecto}"
+          echo "Build $build_number (corrida $RUN_NUMBER + $((10#$offset))), versión ${version:-la del proyecto}"
 
       - name: Restaurar paquetes de Swift
         id: spm
@@ -195,11 +267,28 @@ jobs:
           restore-keys: |
             spm-${{ runner.os }}-${{ runner.arch }}-
 
-      # Sin -allowProvisioningUpdates ni clave: ver arriba, «Cómo firma».
-      - name: Archivar (sin firmar)
+      # Solo con firma manual: valida el certificado y el perfil, los instala
+      # (llavero temporal) y apunta el target App a ese perfil.
+      - name: Instalar certificado y perfil (firma manual)
+        if: env.SIGNING_MODE == 'manual'
+        env:
+          DIST_CERT_P12: ${{ secrets.DIST_CERT_P12 }}
+          DIST_CERT_PASSWORD: ${{ secrets.DIST_CERT_PASSWORD }}
+          DIST_PROFILE: ${{ secrets.DIST_PROFILE }}
+        run: bash .github/ci/manual-signing.sh install
+
+      # Sin -allowProvisioningUpdates ni clave: ver arriba, «Cómo firma». Con
+      # firma manual, el perfil ya está puesto en el target App (por línea de
+      # comandos le llegaría también a los paquetes de Swift y fallaría).
+      - name: Archivar (${{ env.SIGNING_MODE == 'manual' && 'firmado, firma manual' || 'sin firmar' }})
         run: |
           version_args=()
           [[ -z ${VERSION_OVERRIDE:-} ]] || version_args=("MARKETING_VERSION=$VERSION_OVERRIDE")
+          if [[ $SIGNING_MODE == manual ]]; then
+            sign_args=(CODE_SIGN_STYLE=Manual "CODE_SIGN_IDENTITY=$SIGN_IDENTITY")
+          else
+            sign_args=(CODE_SIGN_STYLE=Automatic CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO)
+          fi
           bash .github/ci/xcodebuild.sh "$RUNNER_TEMP/logs/archive.log" \
             -project ios/App/App.xcodeproj \
             -scheme App \
@@ -208,9 +297,7 @@ jobs:
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -derivedDataPath build/DerivedData \
             DEVELOPMENT_TEAM="$TEAM_ID" \
-            CODE_SIGN_STYLE=Automatic \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
+            "${sign_args[@]}" \
             COMPILER_INDEX_STORE_ENABLE=NO \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             ${version_args[@]+"${version_args[@]}"} \
@@ -242,6 +329,10 @@ jobs:
           build=$(read_key CFBundleVersion)
           bundle=$(read_key CFBundleIdentifier)
           echo "Archive: $bundle $version ($build)"
+          if [[ $SIGNING_MODE == manual && $bundle != "$PROFILE_BUNDLE_ID" ]]; then
+            echo "::error title=Bundle ID::El archive salió con el bundle ID $bundle y el perfil de DIST_PROFILE es para $PROFILE_BUNDLE_ID. Tienen que coincidir."
+            exit 1
+          fi
           {
             echo "version=$version"
             echo "build_number=$build"
@@ -254,18 +345,32 @@ jobs:
       # el certificado en la nube, símbolos para los reportes de cuelgues y
       # manageAppVersionAndBuildNumber = false (el número de build lo pone este
       # workflow y tiene que quedar tal cual: con él se encuentra el build).
-      # teamID va vacío en el repo y se completa con el secreto.
+      # teamID va vacío en el repo y se completa con el secreto. Con firma
+      # manual pasa a signingStyle manual, con el certificado y el perfil
+      # instalados (provisioningProfiles: bundle ID → UUID del perfil).
       - name: Preparar la exportación
         env:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
         run: |
           node .github/ci/asc-key.mjs write "$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
-          cp .github/ci/ExportOptions.plist "$RUNNER_TEMP/ExportOptions.plist"
-          plutil -replace teamID -string "$TEAM_ID" "$RUNNER_TEMP/ExportOptions.plist"
-          plutil -lint "$RUNNER_TEMP/ExportOptions.plist"
-          plutil -p "$RUNNER_TEMP/ExportOptions.plist"
+          plist="$RUNNER_TEMP/ExportOptions.plist"
+          cp .github/ci/ExportOptions.plist "$plist"
+          plutil -replace teamID -string "$TEAM_ID" "$plist"
+          if [[ $SIGNING_MODE == manual ]]; then
+            plutil -replace signingStyle -string manual "$plist"
+            plutil -replace signingCertificate -string "$SIGN_IDENTITY" "$plist"
+            # PlistBuddy y no plutil: plutil parte las claves en los puntos del bundle ID.
+            /usr/libexec/PlistBuddy \
+              -c 'Add :provisioningProfiles dict' \
+              -c "Add :provisioningProfiles:$PROFILE_BUNDLE_ID string $PROFILE_UUID" \
+              "$plist"
+          fi
+          plutil -lint "$plist"
+          plutil -p "$plist"
 
       # Firma para el App Store y sube a App Store Connect (destination: upload).
+      # La clave de API autentica la subida en los dos modos; con firma manual
+      # -allowProvisioningUpdates no toca nada (los perfiles van fijos).
       - name: Firmar y subir a App Store Connect
         env:
           XCBEAUTIFY: 'false'
@@ -284,12 +389,23 @@ jobs:
         if: always()
         run: rm -f "$RUNNER_TEMP"/AuthKey_*.p8
 
+      # Pase lo que pase (también si se cancela): el llavero y el perfil no
+      # quedan en el Mac.
+      - name: Borrar certificado y perfil (firma manual)
+        if: always() && env.SIGNING_MODE == 'manual' && steps.checkout.outcome == 'success'
+        run: bash .github/ci/manual-signing.sh cleanup
+
       - name: Resumen
         env:
           NOTES: ${{ inputs.notes }}
           VERSION: ${{ steps.app.outputs.version }}
           BUILD: ${{ steps.app.outputs.build_number }}
         run: |
+          if [[ $SIGNING_MODE == manual ]]; then
+            signing_line="- Firma: **manual**, con tu certificado y tu perfil (secretos DIST_CERT_P12, DIST_CERT_PASSWORD y DIST_PROFILE)."
+          else
+            signing_line="- Firma: **en la nube**, con la clave de API y el certificado de distribución que administra Apple."
+          fi
           wait_line="- El trabajo **Esperar a Apple** de esta misma corrida avisa cuando el build queda listo para probar"
           if [[ -n $NOTES ]]; then wait_line+=" y carga las notas en «Qué probar»"; fi
           {
@@ -300,6 +416,7 @@ jobs:
             echo "$wait_line."
             echo "- Para instalarla en tu iPhone: en TestFlight → Internal Testing sumate como tester y abrí la app **TestFlight** en el teléfono."
             if [[ -n $NOTES ]]; then echo "- Qué probar: $NOTES"; fi
+            echo "$signing_line"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Explicar el error

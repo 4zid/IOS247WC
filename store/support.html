@@ -1,0 +1,240 @@
+<!doctype html>
+<!--
+  247WC · Ayuda y soporte (ES) / Help and support (EN)
+
+  Es la «Support URL» de la ficha del App Store: Apple pide una página con una
+  forma de contactarte. Va publicada al lado de privacy.html (el link a la
+  política es relativo), por ejemplo en la raíz del repo de la web →
+  https://247-wc.vercel.app/support.html
+
+  Antes de publicar: reemplazá TODAS las apariciones de [TU EMAIL DE CONTACTO]
+  por tu email (en las dos versiones, en el texto y en los links mailto:).
+
+  Habla solo de la app de iPhone: nada de instalar la web, otras plataformas
+  ni descargas por fuera del App Store (App Review lo mira).
+
+  Autocontenida, como privacy.html: sin fuentes, imágenes ni scripts de afuera.
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<meta name="description" content="Ayuda y soporte de la app 247WC para iPhone. Help and support for the 247WC iPhone app." />
+<title>247WC · Ayuda / Support</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='23.5' fill='%230a6cff'/%3E%3Cg transform='translate(0 -2)'%3E%3Crect x='20' y='15' width='20' height='26' rx='5' fill='%23fff'/%3E%3Cpath d='M23 48H79' stroke='%23fff' stroke-width='10' stroke-linecap='round'/%3E%3Cpath d='M28 56H76Q76 70 61 73H41Q28 70 28 56Z' fill='%23fff'/%3E%3Cpath d='M51 70V78Q51 84 57 84H66' fill='none' stroke='%23fff' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='79' cy='84' r='5.5' fill='%239fd0ff'/%3E%3C/g%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f4f6fa;
+    --text: #0a0e17;
+    --muted: #5b6475;
+    --line: #e3e7ef;
+    --accent: #0a6cff;
+    --accent-soft: #e8f1ff;
+    --mark-bg: #fff3c4;
+    --mark-text: #6b4e00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0f19;
+      --surface: #141a27;
+      --text: #f2f4f8;
+      --muted: #9aa3b5;
+      --line: #252d3d;
+      --accent: #4d94ff;
+      --accent-soft: #13264a;
+      --mark-bg: #3d3100;
+      --mark-text: #ffe28a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+
+  header.top {
+    position: sticky; top: 0; z-index: 1;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  header.top .wrap { display: flex; align-items: center; gap: 12px; min-height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: -0.02em; font-size: 18px; color: var(--text); text-decoration: none; }
+  .brand svg { width: 32px; height: 32px; flex: none; }
+  .lang { margin-left: auto; display: flex; gap: 6px; }
+  .lang a {
+    color: var(--accent); text-decoration: none; font-weight: 600; font-size: 14px;
+    padding: 6px 12px; border-radius: 999px; background: var(--accent-soft);
+  }
+
+  section.policy { padding: 40px 0 8px; scroll-margin-top: 64px; }
+  section.policy + section.policy { border-top: 1px solid var(--line); margin-top: 32px; }
+  .eyebrow { color: var(--accent); font-weight: 700; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; margin: 0 0 8px; }
+  h1 { font-size: clamp(30px, 7vw, 42px); line-height: 1.1; letter-spacing: -0.035em; margin: 0 0 16px; }
+  h2 { font-size: 21px; line-height: 1.25; letter-spacing: -0.02em; margin: 36px 0 10px; }
+  h3 { font-size: 16px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  p, ul { margin: 0 0 14px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  li::marker { color: var(--accent); }
+  .lead { font-size: 18px; color: var(--muted); }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  strong { font-weight: 700; }
+  h3 + p { margin-top: 0; }
+
+  .placeholder {
+    background: var(--mark-bg); color: var(--mark-text); border-radius: 6px; padding: 1px 6px;
+    font-weight: 700; white-space: nowrap;
+  }
+  a.placeholder { text-decoration: none; }
+
+  .contact {
+    background: var(--accent-soft); border-radius: 20px; padding: 20px 20px 6px; margin: 24px 0 8px;
+  }
+  .contact h2 { margin-top: 0; font-size: 18px; }
+
+  .faq { display: grid; gap: 12px; margin: 16px 0; }
+  .faq .q { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 16px 4px; }
+  .faq h3 { font-size: 17px; margin-bottom: 8px; }
+
+  footer { padding: 32px 0 48px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#es" aria-label="247WC">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23.5" fill="#0a6cff"/><g transform="translate(0 -2)"><rect x="20" y="15" width="20" height="26" rx="5" fill="#fff"/><path d="M23 48H79" stroke="#fff" stroke-width="10" stroke-linecap="round"/><path d="M28 56H76Q76 70 61 73H41Q28 70 28 56Z" fill="#fff"/><path d="M51 70V78Q51 84 57 84H66" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="79" cy="84" r="5.5" fill="#9fd0ff"/></g></svg>
+      247WC
+    </a>
+    <nav class="lang" aria-label="Idioma / Language">
+      <a href="#es" hreflang="es" lang="es">Español</a>
+      <a href="#en" hreflang="en" lang="en">English</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============================================================ ESPAÑOL -->
+<section class="policy" id="es" lang="es">
+  <p class="eyebrow">247WC para iPhone</p>
+  <h1>Ayuda y soporte</h1>
+  <p class="lead">247WC te muestra el baño público más cercano y te guía caminando hasta la puerta. Gratis, sin cuenta y sin publicidad.</p>
+
+  <div class="contact">
+    <h2>¿Necesitás ayuda?</h2>
+    <p>Escribinos a <a class="placeholder" href="mailto:[TU EMAIL DE CONTACTO]">[TU EMAIL DE CONTACTO]</a>. Contanos qué pasó, en qué ciudad y qué modelo de iPhone tenés. Respondemos en español o en inglés.</p>
+  </div>
+
+  <h2>Qué hace la app</h2>
+  <ul>
+    <li><strong>Escanea:</strong> busca los baños públicos a menos de 3&nbsp;km y los ordena por cercanía.</li>
+    <li><strong>Te muestra el más cercano</strong> con un minimapa de la ruta, el horario y si es gratis o accesible. Con los filtros (Gratis, 24&nbsp;h, Accesible, Cambiador) elegís otro de la lista.</li>
+    <li><strong>Te guía:</strong> «Guiarme» abre una flecha que gira con la brújula del iPhone y cuenta los metros que faltan. La pantalla queda encendida y el teléfono vibra al llegar.</li>
+    <li>Los baños salen de <strong>OpenStreetMap</strong> y <strong>Refuge Restrooms</strong>, datos abiertos que carga la comunidad.</li>
+  </ul>
+
+  <h2>Preguntas frecuentes</h2>
+  <div class="faq">
+    <div class="q">
+      <h3>No me aparece ningún baño, o falta uno que conozco</h3>
+      <p>La cobertura depende de lo que la comunidad cargó en OpenStreetMap, así que cambia según la ciudad. Si no aparece ninguno, tocá «Buscar también en bares y negocios», o mové el mapa a otra zona y tocá «Buscar en esta zona».</p>
+      <p><strong>Para sumar un baño que falta:</strong> al final de la lista, tocá «¿Falta un baño?». Se abre OpenStreetMap en tu zona; con una cuenta gratis de OpenStreetMap agregás un punto «Baño» (Toilets) con los datos que sepas (si es gratis, el horario, si es accesible). Queda disponible para todo el mundo. Puede tardar unos días en verse en la app, porque guardamos por un tiempo los resultados de cada zona.</p>
+    </div>
+    <div class="q">
+      <h3>La app no encuentra mi ubicación (o le dije que no al permiso)</h3>
+      <p>Andá a <strong>Ajustes → 247WC → Ubicación</strong>, elegí <strong>Al usar la app</strong> y dejá prendida <strong>Ubicación exacta</strong>. Dentro de la app, el botón <strong>Abrir Ajustes</strong> te lleva directo ahí.</p>
+      <p>Si en Ajustes → 247WC no aparece Ubicación, revisá que <strong>Localización</strong> esté activada en <strong>Ajustes → Privacidad y seguridad</strong>. Sin ubicación, la app igual funciona: mové el mapa y tocá «Buscar en esta zona».</p>
+    </div>
+    <div class="q">
+      <h3>La flecha de la guía apunta mal o no se mueve</h3>
+      <p>La brújula del iPhone se descalibra cerca de imanes, metales o autos. Alejate un poco, sostené el iPhone frente a vos y movelo dibujando un «8» en el aire unas veces. Las fundas o accesorios con imán (por ejemplo, MagSafe) también pueden desviarla.</p>
+      <p>Revisá que esté activada <strong>Ajustes → Privacidad y seguridad → Localización → Servicios del sistema → Calibración de la brújula</strong>. Mientras la brújula no da una lectura confiable, la flecha se queda quieta en vez de apuntar para cualquier lado.</p>
+    </div>
+    <div class="q">
+      <h3>¿Qué es el acceso rápido «Baño más cercano»?</h3>
+      <p>Mantené apretado el ícono de 247WC en la pantalla de inicio y elegí <strong>Baño más cercano</strong>. La app busca enseguida y, si ya le diste permiso de ubicación, arranca la guía hasta el más cercano. Funciona con la app cerrada o abierta.</p>
+    </div>
+    <div class="q">
+      <h3>Datos y privacidad</h3>
+      <p>No hay cuentas ni publicidad, y no te rastreamos. La app usa tu ubicación solo mientras la usás; no la guardamos en nuestros servidores. Qué se envía, a quién y qué queda en tu teléfono está explicado en la <a href="privacy.html">Política de privacidad</a>.</p>
+    </div>
+  </div>
+
+  <h2>Contacto</h2>
+  <p><a class="placeholder" href="mailto:[TU EMAIL DE CONTACTO]">[TU EMAIL DE CONTACTO]</a></p>
+</section>
+
+<!-- ============================================================ ENGLISH -->
+<section class="policy" id="en" lang="en">
+  <p class="eyebrow">247WC for iPhone</p>
+  <h1>Help and support</h1>
+  <p class="lead">247WC shows you the closest public toilet and walks you to the door. Free, no account, no ads.</p>
+
+  <div class="contact">
+    <h2>Need help?</h2>
+    <p>Write to <a class="placeholder" href="mailto:[TU EMAIL DE CONTACTO]">[TU EMAIL DE CONTACTO]</a>. Tell us what happened, in which city and which iPhone model you have. We answer in English or Spanish.</p>
+  </div>
+
+  <h2>What the app does</h2>
+  <ul>
+    <li><strong>Scans:</strong> finds the public toilets within 3&nbsp;km and sorts them by distance.</li>
+    <li><strong>Shows you the closest one</strong> with a mini-map of the route, opening hours and whether it's free or accessible. With the filters (Free, 24&nbsp;h, Accessible, Changing table) you can pick another one from the list.</li>
+    <li><strong>Guides you:</strong> “Guide me” opens an arrow that turns with your iPhone's compass and counts down the meters. The screen stays on and your phone vibrates when you arrive.</li>
+    <li>Toilets come from <strong>OpenStreetMap</strong> and <strong>Refuge Restrooms</strong>, open data added by the community.</li>
+  </ul>
+
+  <h2>Frequently asked questions</h2>
+  <div class="faq">
+    <div class="q">
+      <h3>No toilets show up, or one I know is missing</h3>
+      <p>Coverage depends on what the community has added to OpenStreetMap, so it varies by city. If none show up, tap “Also search bars and shops”, or move the map to another area and tap “Search this area”.</p>
+      <p><strong>To add a missing toilet:</strong> at the bottom of the list, tap “Missing a toilet?”. OpenStreetMap opens on your area; with a free OpenStreetMap account you add a “Toilets” point with whatever you know (whether it's free, opening hours, accessibility). Everyone gets it. It may take a few days to show up in the app, because we keep each area's results for a while.</p>
+    </div>
+    <div class="q">
+      <h3>The app can't find my location (or I said no to the permission)</h3>
+      <p>Go to <strong>Settings → 247WC → Location</strong>, choose <strong>While Using the App</strong> and keep <strong>Precise Location</strong> on. Inside the app, the <strong>Open Settings</strong> button takes you straight there.</p>
+      <p>If Location isn't listed in Settings → 247WC, check that <strong>Location Services</strong> is on in <strong>Settings → Privacy &amp; Security</strong>. Without location the app still works: move the map and tap “Search this area”.</p>
+    </div>
+    <div class="q">
+      <h3>The guidance arrow points the wrong way or doesn't move</h3>
+      <p>The iPhone compass gets thrown off near magnets, metal or cars. Step away a little, hold your iPhone in front of you and move it in a figure-eight a few times. Cases or accessories with magnets (such as MagSafe) can also affect it.</p>
+      <p>Check that <strong>Settings → Privacy &amp; Security → Location Services → System Services → Compass Calibration</strong> is on. While the compass can't give a reliable reading, the arrow stays still instead of pointing anywhere.</p>
+    </div>
+    <div class="q">
+      <h3>What is the “Nearest toilet” quick action?</h3>
+      <p>Touch and hold the 247WC icon on your Home Screen and choose <strong>Nearest toilet</strong>. The app searches right away and, if you've already allowed location, starts guiding you to the closest one. It works whether the app is closed or open.</p>
+    </div>
+    <div class="q">
+      <h3>Data and privacy</h3>
+      <p>No accounts, no ads, and we don't track you. The app uses your location only while you use it; we don't store it on our servers. What is sent, to whom and what stays on your phone is explained in the <a href="privacy.html#en">Privacy Policy</a>.</p>
+    </div>
+  </div>
+
+  <h2>Contact</h2>
+  <p><a class="placeholder" href="mailto:[TU EMAIL DE CONTACTO]">[TU EMAIL DE CONTACTO]</a></p>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>247WC · Ayuda y soporte / Help and support · <a href="privacy.html">Política de privacidad / Privacy Policy</a></p>
+    <p>Datos del mapa / Map data © colaboradores de OpenStreetMap / OpenStreetMap contributors · OpenFreeMap © OpenMapTiles.</p>
+  </div>
+</footer>
+
+</body>
+</html>

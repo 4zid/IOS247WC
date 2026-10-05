@@ -8,9 +8,9 @@ nunca abrió Xcode. Hay dos caminos para subir la app: **con una Mac** (Camino A
 o **sin Mac**, dejando que una Mac de GitHub haga el trabajo (Camino B). Elegí
 uno; todo lo demás es igual para los dos.
 
-Los textos para el App Store, la política de privacidad y las notas para la
-revisión ya están escritos en [`store/`](store/). Antes de enviar a revisión,
-recorré [`store/CHECKLIST.md`](store/CHECKLIST.md).
+Los textos para el App Store, la política de privacidad, la página de soporte
+y las notas para la revisión ya están escritos en [`store/`](store/). Antes de
+enviar a revisión, recorré [`store/CHECKLIST.md`](store/CHECKLIST.md).
 
 ## Índice
 
@@ -44,7 +44,7 @@ encendida y los links.
 web/      la web, copiada tal cual de 4zid/247wc (no se edita a mano)
 native/   la capa nativa del lado web: bridge.js, text.js, native.css
    │
-   │  npm run build   copia web/ + native/ a www/ y aplica 4 parches chiquitos
+   │  npm run build   copia web/ + native/ a www/ y aplica 10 parches chiquitos
    ▼
 www/      la web lista para la app (se genera, no está en git)
    │
@@ -67,12 +67,12 @@ repo no hace falta leerlo; sirve si algún día alguien tiene que tocar el códi
 
 | En la web | En la app |
 |---|---|
-| El navegador pide la ubicación con un cartel que dice «localhost» o el dominio | **Ubicación nativa** (Core Location): el cartel es el de iOS, dice «247WC» y explica para qué la usa. Pide «Al usar la app», nunca en segundo plano. Si el iPhone tiene la ubicación en «aproximada», pide la exacta solo para esa vez. |
+| El navegador pide la ubicación con un cartel que dice «localhost» o el dominio | **Ubicación nativa** (Core Location): el cartel es el de iOS, dice «247WC» y explica para qué la usa. Pide «Al usar la app», nunca en segundo plano. Si el iPhone tiene la ubicación en «aproximada», pide la exacta solo para esa vez. Si un «Permitir una vez» vence en plena guía, lo vuelve a pedir, y si sacás el permiso y lo volvés a dar, la guía sigue sola. |
 | Si negaste el permiso, la ayuda habla de Safari, del botón «aA» y de copiar el link | Textos propios de la app con un botón **Abrir Ajustes** que va directo a Ajustes → 247WC. |
 | Brújula del navegador (con su propio permiso) | **Brújula con Core Location**: la flecha gira sin pedir otro permiso. Se apaga sola cuando salís de la app, para no gastar batería. |
 | `navigator.vibrate` (en iPhone no existe) | **Vibración háptica**: toquecitos en algunas acciones (por ejemplo, cuando termina el escaneo) y una vibración de «éxito» al llegar al baño. |
 | La pantalla se puede apagar mientras caminás | La pantalla **queda encendida durante la guía** y vuelve a lo normal al salir. |
-| «Abrir en Google Maps» abre la web de Google | **«Abrir en Mapas»**: abre Google Maps si está instalada y, si no, **Mapas de Apple**, en modo a pie. |
+| «Abrir en Google Maps» abre la web de Google | **«Abrir en Mapas»** (con un ícono neutro de indicaciones, un rombo azul, en vez del pin de Google): abre Google Maps si está instalada y, si no, **Mapas de Apple**, en modo a pie. |
 | Los links (OpenStreetMap, «¿Falta un baño?», créditos) abren otra pestaña | Se abren en **Safari dentro de la app** (con el botón «Listo» para volver). |
 | Acceso directo «Urgente» de la PWA | **Mantené apretado el ícono → «Baño más cercano»** (en inglés, «Nearest toilet»): escanea y, si ya diste el permiso, arranca la guía directo. |
 | Instalar como PWA, service worker, fuente de Google Fonts | No hay nada de eso: **todo viene adentro de la app** (HTML, código, el motor del mapa y la tipografía Inter). Solo necesita internet para buscar baños, para las calles del mapa y para la ruta a pie. |
@@ -108,23 +108,21 @@ permiso y el acceso directo.
 
 ## Paso 0: registrar el Bundle ID y crear la app en App Store Connect
 
-Se hace **una sola vez**, antes de la primera subida (por cualquiera de los dos
-caminos).
+Se hace **una sola vez**, antes de la primera subida, sea cual sea el camino, y
+**en este orden**: primero el Bundle ID y después la app, porque App Store
+Connect solo deja elegir Bundle IDs que ya están registrados.
 
 ### 1. Registrar el Bundle ID `com.wc247.app`
 
 El Bundle ID es el «documento» de la app: único en todo el App Store y no se
-puede cambiar después de publicar.
+puede cambiar después de publicar. Lo registrás a mano, también si vas por el
+Camino A (después Xcode usa este mismo):
 
-- **Si vas por el Camino A**, Xcode lo registra solo la primera vez que elegís tu
-  Team ([paso 2 del Camino A](#2-firmar-con-tu-cuenta-signing--capabilities)).
-  Podés saltear esto.
-- **Si vas por el Camino B** (o preferís hacerlo a mano):
-  1. Entrá a [developer.apple.com/account](https://developer.apple.com/account) →
-     **Certificates, Identifiers & Profiles** → **Identifiers** → botón **+**.
-  2. Elegí **App IDs** → Continue → **App** → Continue.
-  3. Description: `247WC`. Bundle ID: **Explicit** → `com.wc247.app`.
-  4. No marques ninguna «Capability» (la app no usa ninguna) → Continue → Register.
+1. Entrá a [developer.apple.com/account](https://developer.apple.com/account) →
+   **Certificates, Identifiers & Profiles** → **Identifiers** → botón **+**.
+2. Elegí **App IDs** → Continue → **App** → Continue.
+3. Description: `247WC`. Bundle ID: **Explicit** → `com.wc247.app`.
+4. No marques ninguna «Capability» (la app no usa ninguna) → Continue → Register.
 
 Si Apple dice que `com.wc247.app` **no está disponible**, es que otra cuenta ya
 lo usa: elegí otro (por ejemplo `com.tunombre.wc247`) y seguí
@@ -141,8 +139,8 @@ lo usa: elegí otro (por ejemplo `com.tunombre.wc247`) y seguí
      [`store/listing-es.md`](store/listing-es.md).
    - **Primary Language:** **Spanish (Mexico)** (es el español que Apple usa
      para Latinoamérica, Argentina incluida).
-   - **Bundle ID:** `com.wc247.app` (si no aparece en la lista, falta el paso 1;
-     si lo registró Xcode, puede figurar como «XC com wc247 app»).
+   - **Bundle ID:** `247WC - com.wc247.app`. Si no aparece en la lista, falta
+     el paso 1 (o lo acabás de registrar: esperá unos minutos y recargá la página).
    - **SKU:** un código interno tuyo que nadie ve, por ejemplo `247WC-IOS`.
    - **User Access:** Full Access.
 3. Ya adentro de la app, en **App Information** (Información de la app):
@@ -153,6 +151,10 @@ lo usa: elegí otro (por ejemplo `com.tunombre.wc247`) y seguí
      content?» → **Yes**, y confirmá que tenés los derechos: los datos son de
      OpenStreetMap (licencia ODbL) y la app muestra la atribución.
 4. En **Pricing and Availability**: precio **Free** (gratis) y todos los países.
+   Más abajo, en la misma página, **desmarcá** la disponibilidad en **Mac con
+   Apple silicon** («iPhone and iPad Apps on Apple Silicon Macs») y en **Apple
+   Vision Pro**: la guía depende de la brújula y el GPS del iPhone, que ahí no
+   existen, y Apple podría probarla (y rechazarla) en una Mac.
 5. Una vez por cuenta: en **Business** (Negocios), declará tu **estatus de
    comerciante (trader) para la Unión Europea** (Digital Services Act). Sin eso
    la app no se publica en los países de la UE. Si declarás que sos
@@ -220,7 +222,9 @@ según el norte del mapa (la app lo avisa). Para probarlas, usá tu iPhone.
    iPhone se reinicia y te pide confirmar. (La opción aparece recién después de
    conectar el iPhone a Xcode una vez.)
 3. En Xcode, arriba al centro, elegí **tu iPhone** y dale **▶**. Xcode lo
-   registra en tu cuenta y firma la app solo.
+   registra en tu cuenta y firma la app solo. **Hacelo al menos una vez antes
+   del paso 5:** con la firma automática, Xcode no puede archivar si tu cuenta
+   no tiene ningún iPhone registrado.
 4. Si al abrirla el iPhone dice que el desarrollador no es de confianza:
    **Ajustes → General → VPN y gestión de dispositivos** → tu cuenta → **Confiar**.
 
@@ -229,6 +233,11 @@ llegar, «Abrir en Mapas», y el acceso directo (mantené apretado el ícono →
 **Baño más cercano**).
 
 ### 5. Subir a App Store Connect
+
+> **Antes de archivar:** tu cuenta tiene que tener al menos un iPhone
+> registrado. Si hiciste el [paso 4](#4-probar-en-tu-iphone), ya está. Si no
+> tenés un iPhone para conectar, subí la app por el
+> [Camino B](#camino-b-subir-sin-mac), que no lo necesita.
 
 1. Revisá la versión: **TARGETS → App → General → Identity**. **Version**
    es la que ve la gente (`1.0.0`) y **Build** es un número que tiene que
@@ -301,7 +310,12 @@ te dice en castellano qué secreto revisar.
 2. Dos campos opcionales:
    - **Qué probar**: un texto para TestFlight (sin emojis).
    - **Versión**: por ejemplo `1.0.1`. Vacío = la del proyecto (`1.0.0`). El
-     número de build se pone solo (número de corrida + 100), así que nunca choca.
+     número de build se pone solo (número de corrida + 100), así que no choca
+     con los que subas desde Xcode (1, 2, 3…). Si alguna vez choca igual (por
+     ejemplo, subiste builds desde otro repo), creá la **variable**
+     `BUILD_NUMBER_OFFSET` en **Settings → Secrets and variables → Actions →
+     pestaña Variables → New repository variable**, con un número más alto que
+     el último build subido (por ejemplo `1000`). Sin esa variable vale 100.
 3. **Run workflow**. El trabajo **Archivar, firmar y subir** tarda unos 10
    minutos; después **Esperar a Apple** espera a que Apple termine de procesar
    el build (unos 15 minutos más) y carga el texto de «Qué probar».
@@ -317,7 +331,116 @@ de build repetido…) y abajo, en **Artifacts**, los logs completos
 **Cómo firma (por si te lo preguntan):** la Mac de GitHub arma la app sin
 firmar y la firma recién al exportarla, con un certificado de distribución que
 Apple administra en la nube y la clave de API. Así no hace falta tener una Mac,
-ni certificados `.p12`, ni iPhones registrados.
+ni certificados `.p12`, ni iPhones registrados. Si esa firma en la nube falla
+y no hay forma de destrabarla, está el plan B de abajo.
+
+### Plan B: firma manual con tu propio certificado (opcional)
+
+Solo si la firma en la nube no anda (por ejemplo, la clave no puede ser Admin,
+o el Summary dice que la firma falló una y otra vez). Si en el repo existen
+**los tres** secretos `DIST_CERT_P12`, `DIST_CERT_PASSWORD` y `DIST_PROFILE`,
+el workflow firma con ellos; si no hay ninguno, firma en la nube como siempre.
+Con uno o dos sueltos, la corrida frena al principio y te dice cuál falta. En
+el **Summary** de cada corrida dice qué firma usó.
+
+Se arma una vez, **sin Mac**, en unos 15 minutos. Necesitás una terminal con
+OpenSSL:
+
+- **Mac o Linux:** la app **Terminal**.
+- **Windows:** **Git Bash**, que viene con [Git for Windows](https://git-scm.com/download/win)
+  (Inicio → «Git Bash»). Trae `openssl` y `base64`.
+
+**1. Crear la clave privada y el pedido de certificado (CSR).** En la terminal,
+de a una línea (cambiá el email y el nombre por los tuyos):
+
+```bash
+mkdir -p ~/247wc-firma && cd ~/247wc-firma
+openssl genrsa -out distribucion.key 2048
+MSYS_NO_PATHCONV=1 openssl req -new -key distribucion.key -out distribucion.csr -subj "/emailAddress=tu@email.com/CN=Tu Nombre/C=AR"
+```
+
+(`MSYS_NO_PATHCONV=1` es para Git Bash, que si no confunde `/emailAddress…`
+con una carpeta; en Mac y Linux no molesta.) La carpeta queda en tu usuario:
+en Windows, `C:\Users\<tu usuario>\247wc-firma`. **`distribucion.key` es la
+clave privada: no la compartas ni la subas al repo.**
+
+**2. Pedirle el certificado a Apple.**
+[developer.apple.com/account](https://developer.apple.com/account) →
+**Certificates, Identifiers & Profiles** → **Certificates** → botón **+** →
+**Apple Distribution** → Continue → **Choose File** → `distribucion.csr` →
+Continue → **Download**. Se baja `distribution.cer`: movelo a la carpeta
+`247wc-firma`. (Si Apple dice que llegaste al máximo de certificados,
+revocá uno viejo que no uses.)
+
+**3. Armar el `.p12`** (certificado + clave, protegidos con una contraseña):
+
+```bash
+openssl x509 -inform DER -in distribution.cer -out distribution.pem
+openssl pkcs12 -export -legacy -inkey distribucion.key -in distribution.pem -name "247WC Apple Distribution" -out distribucion.p12
+```
+
+Te pide una contraseña (**Export Password**) dos veces: inventá una y anotala,
+es el secreto `DIST_CERT_PASSWORD`. El `-legacy` es para que el llavero de
+macOS (el de la Mac de GitHub) pueda abrir el archivo: OpenSSL 3 cifra por
+defecto de una forma que macOS a veces rechaza. Si la terminal contesta que
+no conoce `-legacy` (OpenSSL viejo, que ya usa el formato compatible), corré
+la misma línea sin `-legacy`. Si dice que no puede cargar el «legacy provider»,
+usá esta otra, que da el mismo formato compatible:
+
+```bash
+openssl pkcs12 -export -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1 -inkey distribucion.key -in distribution.pem -name "247WC Apple Distribution" -out distribucion.p12
+```
+
+**4. Crear el perfil de aprovisionamiento.** En developer.apple.com →
+**Profiles** → botón **+** → en **Distribution**, **App Store Connect** →
+Continue → **App ID**: `247WC (com.wc247.app)` → Continue → elegí el
+certificado del paso 2 (el de la fecha de hoy) → Continue → nombre
+`247WC App Store` → **Generate** → **Download**. Se baja un
+`.mobileprovision`: movelo a `247wc-firma`.
+
+**5. Pasar los dos archivos a texto (base64).** Los secretos de GitHub son
+texto, así que el `.p12` y el perfil van codificados:
+
+- **Mac, Linux o Git Bash:**
+  ```bash
+  base64 -i distribucion.p12 > p12.txt
+  base64 -i 247WC_App_Store.mobileprovision > perfil.txt
+  ```
+  (usá el nombre real del `.mobileprovision` que bajaste). Abrí cada `.txt`
+  con un editor de texto y copiá todo.
+- **Windows, en PowerShell** (Inicio → «PowerShell»), cada línea copia el
+  resultado al portapapeles:
+  ```powershell
+  cd ~\247wc-firma
+  [Convert]::ToBase64String([IO.File]::ReadAllBytes("$PWD\distribucion.p12")) | Set-Clipboard
+  [Convert]::ToBase64String([IO.File]::ReadAllBytes("$PWD\247WC_App_Store.mobileprovision")) | Set-Clipboard
+  ```
+  Corré la primera, pegá en el secreto `DIST_CERT_P12`; después la segunda y
+  pegá en `DIST_PROFILE`.
+
+Los saltos de línea que se cuelen al pegar no importan: el workflow los limpia.
+
+**6. Cargar los 3 secretos** (en **Settings → Secrets and variables → Actions
+→ New repository secret**, igual que los otros cuatro):
+
+| Nombre | Qué va |
+|---|---|
+| `DIST_CERT_P12` | El `.p12` en base64 (paso 5) |
+| `DIST_CERT_PASSWORD` | La contraseña que pusiste al armar el `.p12` (paso 3) |
+| `DIST_PROFILE` | El perfil `.mobileprovision` en base64 (paso 5) |
+
+Listo: corré el workflow **TestFlight** como siempre. Antes de compilar
+revisa que el certificado sea de distribución, que el perfil sea «App Store
+Connect» de `com.wc247.app` y que los dos sean del equipo de `APPLE_TEAM_ID`;
+si algo no coincide, te lo dice en castellano. Los cuatro secretos de antes
+siguen haciendo falta (la clave de API se usa para subir; con firma manual
+alcanza con rol **App Manager**).
+
+- **Para volver a la firma en la nube:** borrá los tres secretos `DIST_*`.
+- **Cada año:** el certificado vence a los 12 meses y el perfil con él.
+  Repetí los pasos 2 a 6 (la clave del paso 1 sirve de nuevo).
+- Guardá `distribucion.key`, `distribucion.p12` y la contraseña en un lugar
+  seguro (tu gestor de contraseñas) y **nunca** los subas al repo.
 
 ### El otro workflow: «iOS build»
 
@@ -336,47 +459,64 @@ el menú de la izquierda de la app en App Store Connect.
 
 Copiá y pegá de [`store/listing-es.md`](store/listing-es.md) (Spanish (Mexico))
 y [`store/listing-en.md`](store/listing-en.md) (English (U.S.)): nombre,
-subtítulo, texto promocional, descripción, palabras clave, URL de soporte y de
-marketing, y derechos de autor. Cada campo tiene contados los caracteres.
+subtítulo, texto promocional, descripción, palabras clave, URL de soporte (y,
+opcional, de marketing) y derechos de autor. Cada campo tiene contados los
+caracteres.
 
-### Privacidad
+### Privacidad y soporte
 
-Apple pide dos cosas: **la URL de una política de privacidad** y **el
-cuestionario «App Privacy»** (la «etiqueta nutricional» de la ficha).
+Apple pide tres cosas: **la URL de una política de privacidad**, **la URL de
+una página de soporte** (con una forma de contactarte) y **el cuestionario
+«App Privacy»** (la «etiqueta nutricional» de la ficha).
 
-**1. Publicar la política.** Ya está escrita, en español y en inglés:
-[`store/privacy.html`](store/privacy.html). Antes de publicarla, buscá
-`[TU EMAIL DE CONTACTO]` y reemplazalo por tu email. Después, una de estas:
+**1. Publicar la política y la página de soporte.** Ya están escritas, en
+español y en inglés: [`store/privacy.html`](store/privacy.html) y
+[`store/support.html`](store/support.html). **Primero**, en los dos archivos,
+buscá `[TU EMAIL DE CONTACTO]` y reemplazalo por tu email (con «Buscar y
+reemplazar todo»: aparece en el texto y en los links `mailto:`). Después, una
+de estas:
 
 - **En la web de 247WC (recomendado):** en GitHub, entrá al repo de la web
   ([4zid/247wc](https://github.com/4zid/247wc)) → **Add file → Upload files** →
-  arrastrá `privacy.html` → **Commit changes**. Vercel la publica sola en unos
-  segundos en **https://247-wc.vercel.app/privacy.html**. Abrí esa URL para
-  confirmar que carga.
-- **En Framer (o Webflow):** creá una página (por ejemplo `/privacidad`) y pegá
-  el texto. Tiene que ser pública y no pedir login.
+  arrastrá `privacy.html` y `support.html` (a la raíz del repo, al lado de
+  `index.html`) → **Commit changes**. Vercel las publica solas en unos
+  segundos en **https://247-wc.vercel.app/privacy.html** y
+  **https://247-wc.vercel.app/support.html**. Abrí las dos URLs desde el
+  celular para confirmar que cargan.
+- **En Framer (o Webflow):** creá dos páginas (por ejemplo `/privacidad` y
+  `/soporte`) y pegá los textos. Tienen que ser públicas y no pedir login.
+  **Ojo:** la app ya trae un link a `https://247-wc.vercel.app/privacy.html`
+  (ver el punto 3); si la política queda en otra URL, cambiá ese link.
 
-La URL va en **App Privacy → Privacy Policy URL**.
+La URL de la política va en **App Privacy → Privacy Policy URL**; la de
+soporte, en la página de la versión → **Support URL** (y está en
+`store/listing-es.md` y `store/listing-en.md`).
 
 **2. El cuestionario «App Privacy».** Las respuestas exactas, paso a paso,
 están en [`store/app-privacy.md`](store/app-privacy.md). En corto: **sí** se
-recopilan datos, solo **Ubicación precisa** y **Ubicación aproximada**, solo
-para **funcionalidad de la app**, **no** vinculadas a tu identidad y **no**
-usadas para rastreo. Es lo mismo que declara el archivo
+recopilan datos, solo **Ubicación precisa** (la posición exacta va a los
+servicios de ruta a pie) y **Ubicación aproximada** (a nuestra búsqueda llega
+un punto redondeado), solo para **funcionalidad de la app**, **no**
+vinculadas a tu identidad y **no** usadas para rastreo. Es lo mismo que declara el archivo
 `ios/App/App/PrivacyInfo.xcprivacy` que va adentro de la app, y las dos cosas
 tienen que coincidir.
 
 **3. Link a la política dentro de la app.** Apple también pide (pauta 5.1.1)
-que la política se pueda abrir desde la app. Hoy el modal de Info no tiene ese
-link. Se agrega pisando el texto `infoP` en `native/text.js`, en `es` y en `en`,
-por ejemplo:
+que la política se pueda abrir desde la app. **Ya está:** en el modal de Info,
+el link **«Política de privacidad»** («Privacy Policy» en inglés) abre
+`https://247-wc.vercel.app/privacy.html` en Safari dentro de la app. Por eso
+conviene publicarla justo en esa URL (la opción recomendada de arriba).
+
+Si la publicás en otra URL (por ejemplo en Framer o Webflow), cambiá la
+constante `PRIVACY_URL`, al principio de `native/text.js`:
 
 ```js
-infoP: 'El baño público más cercano, sin vueltas. <strong>Tu ubicación no se guarda</strong>: se usa en el teléfono para ordenar por cercanía, y a nuestra búsqueda solo llega una zona aproximada. <a href="https://247-wc.vercel.app/privacy.html">Política de privacidad</a>',
+const PRIVACY_URL = 'https://247-wc.vercel.app/privacy.html';
 ```
 
-(`bridge.js` ya abre los links `https://` en Safari dentro de la app.) Después:
-`npm test`, `npm run sync` y subir de nuevo.
+Después: `npm test`, `npm run sync` y subí un build nuevo (Camino A o B). Sin
+eso, el link de la app abre una página que no existe (un 404), y Apple lo toma
+como que falta la política.
 
 ### Clasificación por edad
 
@@ -410,9 +550,20 @@ Compliance».
   no las pide.
 - Si no cargás capturas en inglés, la ficha en inglés usa las del idioma principal.
 
-Dos formas de hacerlas:
+Tres formas de hacerlas:
 
-1. **Desde el simulador (Camino A):** elegí el simulador **iPhone 17 Pro Max**
+1. **Automáticas, sin Mac ni iPhone:**
+   ```bash
+   npx playwright install chromium   # solo la primera vez
+   npm run screenshots
+   ```
+   Arma la app y le saca fotos a la app real (la misma web con la capa nativa,
+   con baños y una ruta de ejemplo en Buenos Aires): capturas de **6,9"**
+   (**1320 × 2868 px**, sin transparencia) en `store/screenshots/es/` y
+   `store/screenshots/en/`, más una hoja para verlas todas juntas
+   (`store/screenshots/contact-sheet.png`). Se pueden subir tal cual o
+   llevarlas a Figma para sumarles un título (ver la opción 3).
+2. **Desde el simulador (Camino A):** elegí el simulador **iPhone 17 Pro Max**
    (su pantalla mide justo 1320 × 2868), simulá una ubicación con muchos baños
    (**Features → Location → Custom Location…**, por ejemplo el Obelisco) y en
    cada pantalla apretá **`Cmd + S`**: la captura queda en el Escritorio, ya en
@@ -422,10 +573,11 @@ Dos formas de hacerlas:
    ```bash
    xcrun simctl status_bar booted override --time 9:41 --batteryState charged --batteryLevel 100
    ```
-2. **En Figma (o Framer):** frames de **1320 × 2868** (o 1290 × 2796), con las
+3. **En Figma (o Framer):** frames de **1320 × 2868** (o 1290 × 2796), con las
    capturas adentro y un título arriba si querés. Exportá a 1x en **JPG**, que
-   nunca lleva transparencia (lo más seguro). Sin Mac, sacá las capturas en tu
-   iPhone, con la app instalada desde TestFlight, y llevalas a esos frames.
+   nunca lleva transparencia (lo más seguro). Las capturas pueden ser las de
+   `npm run screenshots` o las que saques en tu iPhone, con la app instalada
+   desde TestFlight.
 
 Las capturas tienen que mostrar la app de verdad, en uso. Las pantallas que
 mejor la venden: el escaneo, la tarjeta del más cercano con el minimapa, la
@@ -470,7 +622,10 @@ llevar los cambios de la web a la app:
    ```
    Baja la última versión de [4zid/247wc](https://github.com/4zid/247wc), la
    copia a `web/`, anota de qué commit vino (`web/UPSTREAM.json`) y prueba que
-   la app se siga armando.
+   la app se siga armando. Como reemplaza `web/` entero, **no hace nada si
+   `web/` tiene cambios sin guardar en git** (te los lista y te dice cómo
+   guardarlos o descartarlos). Si igual querés pisarlos:
+   `npm run web:update -- --force`.
 2. **Probar:** `npm test` (ver [Pruebas](#pruebas)).
 3. **Guardar el cambio en git:** `git add -A && git commit -m "Web al día" && git push`
    (o, en GitHub Desktop, **Commit to main** y **Push origin**).
@@ -511,7 +666,7 @@ Qué hacer:
 | **Nombre en el App Store** | App Store Connect → App Information → Name (por idioma). No toca la app. |
 | **Nombre debajo del ícono** (`247WC`) | `CFBundleDisplayName` en `ios/App/App/Info.plist` y en los dos `InfoPlist.strings` (`ios/App/App/en.lproj/` y `ios/App/App/es.lproj/`). Cortito: con más de 12 caracteres, más o menos, iOS lo corta con «…». |
 | **Ícono y pantalla de arranque** | Editá los SVG de `brand-src/` (`icon.svg`, `icon-dark.svg`, `symbol-white.svg`, `logo-stacked*.svg`) y corré `npm run assets`. Genera los PNG en `ios/App/App/Assets.xcassets/` y una hoja para revisarlos en `tests/.output/assets-contact.png`. Necesita ImageMagick (`brew install imagemagick`) y Chromium (`npx playwright install chromium`). Si cambiaste los colores de la marca, el script frena: actualizá los colores al principio de `scripts/make-assets.mjs`. Sin Mac ni script: reemplazá los PNG de `ios/App/App/Assets.xcassets/AppIcon.appiconset/` por otros de 1024 × 1024, **sin transparencia**, con los mismos nombres. |
-| **Bundle ID** | Xcode → TARGETS → App → General → **Bundle Identifier**, y el mismo valor en `appId` de `capacitor.config.json`. Registralo en developer.apple.com (Paso 0). Ojo: una vez publicada, cambiar el Bundle ID es crear **otra app**. |
+| **Bundle ID** | Registrá el nuevo en developer.apple.com (Paso 0) y después cambialo en dos lugares. **Con Mac:** Xcode → TARGETS → App → General → **Bundle Identifier**. **Sin Mac:** en GitHub, editá `ios/App/App.xcodeproj/project.pbxproj` (el lápiz de «Edit this file») y reemplazá las **2** líneas `PRODUCT_BUNDLE_IDENTIFIER = com.wc247.app;` por el nuevo (por ejemplo `PRODUCT_BUNDLE_IDENTIFIER = com.tunombre.wc247;`). **En los dos casos**, poné el mismo valor en `appId` de `capacitor.config.json`: `npm run sync` no lo copia al proyecto de Xcode, ni al revés. Ojo: una vez publicada, cambiar el Bundle ID es crear **otra app**. |
 | **Versión y build** | Xcode → TARGETS → App → General → Identity (**Version** y **Build**). En el Camino B, el campo **Versión** del workflow TestFlight (el build es automático). |
 | **Textos del permiso de ubicación** | `NSLocationWhenInUseUsageDescription` y `NSLocationTemporaryUsageDescriptionDictionary` en `ios/App/App/Info.plist` (inglés) y en los dos `InfoPlist.strings` (inglés y español). |
 | **Título del acceso directo** | `UIApplicationShortcutItemTitle` en `Info.plist` (`Nearest toilet`) y la línea `"Nearest toilet" = …` de cada `InfoPlist.strings`. |
@@ -533,11 +688,14 @@ const API_BASE = 'https://247-wc.vercel.app';
 
 - **Confirmá que ese es el dominio real** donde está publicada la web (abrí
   `https://247-wc.vercel.app/landing` en el navegador). Si la web se muda a un
-  dominio propio, cambiá esa línea, corré `npm test` (la prueba T2 también
-  busca ese dominio, en `tests/bridge.e2e.mjs`), `npm run sync` y publicá una
-  versión nueva.
+  dominio propio, cambiá esa línea y también `PRIVACY_URL` en
+  `native/text.js` (el link a la política), corré `npm test` (la prueba T2
+  también busca ese dominio, en `tests/bridge.e2e.mjs`), `npm run sync` y
+  publicá una versión nueva. Acordate de actualizar también las URLs de
+  privacidad y de soporte en App Store Connect.
 - **Si la API no responde, la app sigue funcionando:** consulta OpenStreetMap
-  (Overpass) directo desde el teléfono, como hace la web.
+  (Overpass) directo desde el teléfono, como hace la web, con el mismo punto
+  redondeado (~250 m) que le manda a la API, nunca la posición exacta.
 - **Cuidado al cambiar la API en la web:** las apps ya instaladas la usan en
   vivo. Si cambiás el formato de la respuesta de `/api/toilets`, que siga
   siendo compatible con lo que espera `app.js` (una lista `elements` con la
@@ -602,6 +760,14 @@ iOS los guarda en caché. Borrá la app, en Xcode **Product → Clean Build Fold
 (`Shift + Cmd + K`) y volvé a instalar. En el simulador también sirve
 **Device → Erase All Content and Settings**.
 
+**Al archivar: «Your team has no devices from which to generate a provisioning profile»**
+Con la firma automática, Xcode necesita al menos un iPhone registrado en tu
+cuenta para archivar. Conectá tu iPhone y dale ▶ una vez
+([Camino A, paso 4](#4-probar-en-tu-iphone)); después volvé a **Product →
+Archive**. También se puede registrar a mano en developer.apple.com →
+**Devices** → **+** (con el UDID del iPhone). Sin iPhone, subí por el
+[Camino B](#camino-b-subir-sin-mac), que no lo necesita.
+
 **«Developer Mode disabled» o el iPhone no aparece en Xcode**
 Activá el modo de desarrollador ([Camino A, paso 4](#4-probar-en-tu-iphone)),
 desbloqueá el iPhone y tocá **Confiar** al conectarlo.
@@ -617,7 +783,13 @@ Esa **Version** ya se publicó o está en revisión: usá una más alta (`1.0.1`
 Leé el **Summary** de la corrida: explica en castellano los errores conocidos
 y deja los logs en **Artifacts**. Lo más común: falta crear la app en App Store
 Connect, un acuerdo sin aceptar en **Business**, o la clave de API sin rol
-**Admin**.
+**Admin**. Si la firma en la nube no hay forma de que ande, usá la
+[firma manual](#plan-b-firma-manual-con-tu-propio-certificado-opcional).
+
+**`npm run web:update` dice que `web/` tiene cambios sin commitear**
+Alguien editó `web/` a mano (no se edita: se pisa en cada actualización). El
+mensaje explica cómo guardar esos cambios aparte (`git stash -u`) o
+descartarlos. Si sabés que no sirven: `npm run web:update -- --force`.
 
 **`npm test` dice que falta Chromium («Executable doesn't exist»)**
 Corré una vez `npx playwright install chromium`.
@@ -636,11 +808,11 @@ npm test
 
 `npm test` arma `www/` y corre `tests/bridge.e2e.mjs`: abre la app en Chromium
 simulando un iPhone, con la parte nativa de Capacitor imitada
-(`tests/fixtures/capacitor-mock.js`), y revisa 12 escenarios (T1 a T12):
+(`tests/fixtures/capacitor-mock.js`), y revisa 13 escenarios (T1 a T13):
 ubicación, permiso negado con el botón Abrir Ajustes, la guía con brújula y
 pantalla encendida, vibración, links y mapas, tema claro y oscuro, pantalla de
-arranque, acceso directo, el modal de Info, la API con su plan B y los detalles
-de la ubicación. Si algo falla, sale con error. Deja capturas en `tests/.output/`.
+arranque, acceso directo, el modal de Info, la API con su plan B, los detalles
+de la ubicación y la pantalla previa al permiso («Continuar», sin «Ahora no»). Si algo falla, sale con error. Deja capturas en `tests/.output/`.
 
 Para correr solo algunas: `node tests/bridge.e2e.mjs T2 T4`.
 
@@ -651,7 +823,7 @@ workflow **iOS build** (Camino B).
 
 ```
 README.md                  esta guía
-package.json               scripts: build, sync, ios, test, assets, web:update
+package.json               scripts: build, sync, ios, test, assets, web:update, screenshots
 capacitor.config.json      id de la app (com.wc247.app), nombre y ajustes de Capacitor
 
 web/                       copia de la web 4zid/247wc. NO se edita a mano
@@ -682,6 +854,7 @@ scripts/
   build-web.mjs            arma www/ (npm run build)
   update-web.mjs           trae la web nueva (npm run web:update)
   make-assets.mjs          genera ícono y arranque (npm run assets)
+  store-screenshots.mjs    capturas para el App Store (npm run screenshots)
   dev/configure-xcode.rb   deja el proyecto de Xcode configurado (para desarrolladores)
 tests/
   bridge.e2e.mjs           pruebas de la capa nativa (npm test)
@@ -689,13 +862,15 @@ tests/
 .github/
   workflows/ios.yml        compila en cada push que toque la app
   workflows/testflight.yml sube a TestFlight sin Mac
-  ci/                      ayudantes de esos workflows
+  ci/                      ayudantes de esos workflows (incluida la firma manual)
 docs/NATIVE-API.md         contrato entre la web y la capa nativa
 store/                     todo para el App Store
   listing-es.md            ficha en español (con los caracteres contados)
   listing-en.md            ficha en inglés
   privacy.html             política de privacidad lista para publicar
+  support.html             página de soporte lista para publicar
   app-privacy.md           respuestas del cuestionario App Privacy
   review-notes.md          notas para la revisión de Apple (inglés + traducción)
   CHECKLIST.md             lista para revisar antes de enviar
+  screenshots/             capturas de 6,9" en es/ y en/ (npm run screenshots)
 ```

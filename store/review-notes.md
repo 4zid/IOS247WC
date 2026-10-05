@@ -5,7 +5,7 @@ Van en la página de la versión → **App Review Information**:
 - **Sign-in required:** desmarcado. La app no tiene login ni cuentas.
 - **Contact Information:** tu nombre, apellido, teléfono (con código de país,
   por ejemplo +54 9 11 …) y email. Apple los usa solo si necesita hablar con vos.
-- **Notes:** el bloque en inglés de abajo, tal cual. Tiene 2977 caracteres; el
+- **Notes:** el bloque en inglés de abajo, tal cual. Tiene 3322 caracteres; el
   límite de Apple es 4000.
 - **Attachment:** no hace falta. Si te rechazan por «no pudimos probar la
   función principal», un video corto grabado en el iPhone (escanear → Guiarme)
@@ -21,14 +21,14 @@ ningún baño, cambiá la última sección por una ciudad donde sí aparezcan.
 247WC finds the nearest public toilet and guides you there on foot. There is no login, no account, no in-app purchase and no advertising.
 
 WHY THE APP ASKS FOR LOCATION
-Location ("While Using the App") is the core of the app: it is used to find the toilets within 3 km and to point the guidance arrow at the chosen one. Location is never used in the background. To search, only an approximate point (rounded to a ~250 m grid) is sent to our own search service; nothing that identifies the user is stored.
+Location ("While Using the App") is the core of the app: it is used to find the toilets within 3 km and to point the guidance arrow at the chosen one. Once permission is granted, the app scans automatically each time it opens. Location is never used in the background and is not stored on our servers: to search, only an approximate point (rounded to a ~250 m grid) is sent to our own search service; the exact position only goes to the walking-route service (Valhalla by FOSSGIS e.V., or OSRM) to calculate the route. No account or identifier is involved.
 
 HOW TO TEST (about one minute)
-1. Open the app. A 3-step intro appears: tap "Next" twice, then "Turn on location".
+1. Open the app. A 3-step intro appears: tap "Next" twice, then "Continue".
 2. In the iOS dialog, choose "Allow While Using App".
 3. The app scans the area and shows a card with the closest public toilet: name, distance, a mini-map and the walking route.
 4. Tap "Guide me". A large arrow points to the toilet using the iPhone compass, with live distance and walking time. The screen stays on during guidance and the phone vibrates on arrival. Tap the X to exit.
-5. Optional: the list icon shows all toilets, with filters (Free, 24 h, Accessible, Changing table) and "Include bars and shops". The pin icon ("Open in Maps") opens the walking route in Google Maps if installed, otherwise in Apple Maps.
+5. Optional: the list icon shows all toilets, with filters (Free, 24 h, Accessible, Changing table) and "Include bars and shops". The blue directions icon (a diamond with a turn arrow, "Open in Maps") opens the walking route in Google Maps if installed, otherwise in Apple Maps.
 6. Home Screen quick action: touch and hold the app icon and choose "Nearest toilet". The app scans and starts guidance right away.
 
 WITHOUT LOCATION
@@ -39,7 +39,7 @@ Toilets come from OpenStreetMap and Refuge Restrooms (community data), so covera
 
 NATIVE FUNCTIONALITY (Guideline 4.2)
 The interface is bundled inside the app (it does not load our website) and works together with native iOS features:
-- Core Location for the user's position, with the "While Using the App" permission and a temporary Precise Location request with its own purpose string.
+- Core Location for the user's position, with the "While Using the App" permission and a temporary Precise Location request with its own purpose string. If an "Allow Once" grant expires during guidance, the app asks again and guidance resumes.
 - Core Location heading (magnetometer) for the compass arrow.
 - Haptic feedback on taps and on arrival.
 - Keeps the screen awake only during guidance.
@@ -62,13 +62,16 @@ The app is designed for iPhone. On iPad it runs in iPhone compatibility mode.
 > **POR QUÉ LA APP PIDE LA UBICACIÓN**
 > La ubicación («Al usar la app») es el centro de la app: se usa para encontrar
 > los baños a menos de 3 km y para que la flecha de la guía apunte al elegido.
-> Nunca se usa en segundo plano. Para buscar, a nuestro propio servicio de
-> búsqueda solo llega un punto aproximado (redondeado a una grilla de ~250 m);
-> no se guarda nada que identifique a la persona.
+> Una vez dado el permiso, la app escanea sola cada vez que se abre. Nunca se
+> usa en segundo plano y no se guarda en nuestros servidores: para buscar, a
+> nuestro propio servicio de búsqueda solo llega un punto aproximado
+> (redondeado a una grilla de ~250 m); la posición exacta solo va al servicio
+> de ruta a pie (Valhalla, de FOSSGIS e.V., u OSRM) para calcular la ruta. No
+> hay cuentas ni identificadores de por medio.
 >
 > **CÓMO PROBARLA (más o menos un minuto)**
 > 1. Abrí la app. Aparece una introducción de 3 pasos: tocá «Siguiente» dos
->    veces y después «Activar ubicación».
+>    veces y después «Continuar».
 > 2. En el cartel de iOS, elegí «Permitir al usar la app».
 > 3. La app escanea la zona y muestra una tarjeta con el baño público más
 >    cercano: nombre, distancia, un minimapa y la ruta a pie.
@@ -76,9 +79,9 @@ The app is designed for iPhone. On iPad it runs in iPhone compatibility mode.
 >    iPhone, con la distancia y el tiempo caminando en vivo. La pantalla queda
 >    encendida durante la guía y el teléfono vibra al llegar. Tocá la X para salir.
 > 5. Opcional: el ícono de lista muestra todos los baños, con filtros (Gratis,
->    24 h, Accesible, Cambiador) e «Incluir bares y negocios». El ícono del pin
->    («Abrir en Mapas») abre la ruta a pie en Google Maps si está instalada y,
->    si no, en Mapas de Apple.
+>    24 h, Accesible, Cambiador) e «Incluir bares y negocios». El ícono azul de
+>    indicaciones (un rombo con una flecha de giro, «Abrir en Mapas») abre la
+>    ruta a pie en Google Maps si está instalada y, si no, en Mapas de Apple.
 > 6. Acceso rápido desde la pantalla de inicio: mantené apretado el ícono de la
 >    app y elegí «Baño más cercano». La app escanea y arranca la guía enseguida.
 >
@@ -99,7 +102,9 @@ The app is designed for iPhone. On iPad it runs in iPhone compatibility mode.
 > La interfaz viene adentro de la app (no carga nuestra web) y trabaja junto
 > con funciones nativas de iOS:
 > - Core Location para la posición, con el permiso «Al usar la app» y un pedido
->   temporal de ubicación exacta con su propio texto explicativo.
+>   temporal de ubicación exacta con su propio texto explicativo. Si un
+>   «Permitir una vez» vence durante la guía, la app lo vuelve a pedir y la
+>   guía sigue.
 > - La orientación de Core Location (magnetómetro) para la flecha de la brújula.
 > - Respuesta háptica al tocar y al llegar.
 > - Mantiene la pantalla encendida solo durante la guía.

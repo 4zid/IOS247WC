@@ -21,7 +21,8 @@
     "sync": "npm run build && cap sync ios",
     "ios": "npm run sync && cap open ios",
     "assets": "node scripts/make-assets.mjs",
-    "test": "npm run build && node tests/bridge.e2e.mjs"
+    "test": "npm run build && node tests/bridge.e2e.mjs",
+    "screenshots": "npm run build && node scripts/store-screenshots.mjs"
   },
   "engines": {
     "node": ">=20"

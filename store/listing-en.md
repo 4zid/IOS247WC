@@ -19,7 +19,7 @@ cuenta 1).
 | Name | 28/30 | App Information |
 | Subtitle | 25/30 | App Information |
 | Promotional Text | 144/170 | Página de la versión |
-| Description | 1889/4000 | Página de la versión |
+| Description | 1975/4000 | Página de la versión |
 | Keywords | 97/100 (97 bytes) | Página de la versión |
 | What's New in This Version (1.0) | 174/4000 | Página de la versión (ver nota) |
 
@@ -46,7 +46,7 @@ resto del mundo. Con el nombre y el subtítulo quedan las dos.
 Tap scan and in seconds you see the closest public toilet, whether it's free or open 24 h, and a compass arrow that walks you right to the door.
 ```
 
-## Description · 1889/4000
+## Description · 1975/4000
 
 ```text
 Need a toilet right now? 247WC shows you the closest public toilet and walks you to the door. Free, no account, no ads.
@@ -70,7 +70,7 @@ MADE FOR URGENT MOMENTS
 • In English and Spanish, following your iPhone's language.
 
 YOUR LOCATION IS YOURS
-247WC uses your location only while you use the app, to search and to guide you. No accounts, no analytics, no ads, no tracking. To search, our server only receives an approximate area (rounded to about 250 m), and we don't store your location.
+247WC uses your location only while you use the app, to search and to guide you. No accounts, no analytics, no ads, no tracking. To search, our server only receives an approximate area (rounded to about 250 m), and we don't store your location on our servers. For the walking route, your position goes to a public routing service.
 
 OPEN COMMUNITY DATA
 Toilets come from OpenStreetMap and Refuge Restrooms, added by people like you. Coverage varies by city, and a toilet may be closed or may have changed. Know one that's missing? Tap “Missing a toilet?” at the bottom of the list and add it on OpenStreetMap: everyone gets it.
@@ -106,17 +106,16 @@ campo. Queda para la 1.0.1 o para TestFlight.
 ## Support URL
 
 ```text
-https://247-wc.vercel.app/landing
+https://247-wc.vercel.app/support.html
 ```
+
+La misma página que en español: `store/support.html` tiene las dos versiones
+(el inglés está más abajo, y el botón «English» de arriba lleva directo).
 
 ## Marketing URL
 
-```text
-https://247-wc.vercel.app/landing
-```
-
-La landing está solo en español. No es un problema para la revisión, pero si
-algún día tiene versión en inglés, poné esa URL acá.
+Vacía (es opcional). Por qué no la landing: está en `store/listing-es.md`, «URL
+de marketing».
 
 ## Categorías, derechos de autor y precio
 

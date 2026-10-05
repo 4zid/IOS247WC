@@ -8,7 +8,11 @@
 
    Lee los *.log de la carpeta (también los de exportación, *.xcdistributionlogs)
    menos los «verbose», que repiten todo y confunden. Nunca falla: si algo sale
-   mal acá, la corrida ya está en rojo por el error de verdad. */
+   mal acá, la corrida ya está en rojo por el error de verdad.
+
+   SIGNING_MODE (cloud | manual, lo deja el workflow) cambia las pistas de
+   firma: con firma en la nube sugiere el plan B (firma manual); con firma
+   manual apunta a los secretos DIST_*. */
 
 import { existsSync, readdirSync, readFileSync, appendFileSync, statSync } from 'node:fs';
 import path from 'node:path';
@@ -26,8 +30,13 @@ function bundleId() {
 
 const BUNDLE = bundleId();
 const README = 'README, sección «Subir sin Mac»';
+const MODE = process.env.SIGNING_MODE === 'manual' ? 'manual' : process.env.SIGNING_MODE === 'cloud' ? 'cloud' : null;
+const MANUAL = MODE === 'manual';
+const DIST = 'DIST_CERT_P12, DIST_CERT_PASSWORD y DIST_PROFILE';
+const RENEW_PROFILE = 'bajalo de nuevo y volvé a cargarlo en DIST_PROFILE (en base64)';
 
-// En orden de prioridad: lo más específico primero.
+// En orden de prioridad: lo más específico primero. signing: es un problema
+// de firma (con firma en la nube, se suma la sugerencia del plan B).
 const HINTS = [
   {
     re: /No suitable application records|Cannot determine the Apple ID from Bundle ID/i,
@@ -39,7 +48,7 @@ const HINTS = [
   },
   {
     re: /Redundant Binary Upload|bundle version must be higher|already uploaded a build with build number/i,
-    text: 'Ya hay un build subido con ese número. Lanzá el workflow de nuevo con «Run workflow» (no con «Re-run»: repite el mismo número); cada corrida nueva usa un número más alto.',
+    text: 'Ya hay un build subido con ese número. Lanzá el workflow de nuevo con «Run workflow» (no con «Re-run»: repite el mismo número); cada corrida nueva usa un número más alto. Si choca con builds subidos de otra forma (desde Xcode, otro repo, o el workflow renombrado, que reinicia la cuenta), creá la variable BUILD_NUMBER_OFFSET (Settings → Secrets and variables → Actions → pestaña Variables) con un número más alto que el último build subido, por ejemplo 1000: el build es número de corrida + BUILD_NUMBER_OFFSET (100 si no está).',
   },
   {
     re: /Invalid Pre-Release Train|train version .* is closed|higher version than that of the previously approved/i,
@@ -59,15 +68,53 @@ const HINTS = [
   },
   {
     re: /Cloud signing permission|FORBIDDEN|forbidden for security reasons|does not have (the )?(required )?permission|insufficient (permission|privilege)|not allowed to (perform|create)/i,
-    text: 'La clave de API no tiene permisos suficientes. Tiene que ser una clave de equipo (Team Key) con acceso Admin: los certificados administrados en la nube solo los puede usar ese rol.',
+    text: MANUAL
+      ? 'La clave de API no tiene permisos para subir builds. Tiene que ser una clave de equipo (Team Key) con rol App Manager o Admin.'
+      : 'La clave de API no tiene permisos suficientes. Tiene que ser una clave de equipo (Team Key) con acceso Admin: los certificados administrados en la nube solo los puede usar ese rol.',
+    signing: true,
   },
   {
     re: /maximum number of (certificates|.*certificates)|already have a current .*certificate|certificate limit/i,
     text: 'La cuenta llegó al máximo de certificados. En developer.apple.com → Certificates, revocá los «Apple Development» o «Apple Distribution» viejos que digan «Created via API» y volvé a lanzar el workflow.',
+    signing: true,
+  },
+  // Las cuatro siguientes, sobre todo con firma manual: el perfil y el
+  // certificado los elige uno.
+  {
+    re: /doesn.t include (the )?signing certificate|does not include (the )?signing certificate|isn.t included in the provisioning profile/i,
+    text: MANUAL
+      ? `El perfil de DIST_PROFILE no incluye el certificado de DIST_CERT_P12. En developer.apple.com → Profiles, editá el perfil, tildá ese certificado «Apple Distribution», guardá, ${RENEW_PROFILE}.`
+      : 'El perfil que armó Xcode no incluye el certificado de distribución. Volvé a lanzar el workflow; si se repite, revocá los «Apple Distribution» viejos en developer.apple.com → Certificates.',
+    signing: true,
   },
   {
-    re: /No profiles for|No signing certificate|No Accounts|requires a provisioning profile|provisioning profile .*(doesn't|does not|failed)|Signing for .* requires a development team/i,
-    text: `Xcode no pudo firmar para el App Store. Revisá que exista el identificador ${BUNDLE} en developer.apple.com → Identifiers, que la clave sea Admin y que APPLE_TEAM_ID sea el del mismo equipo que la clave.`,
+    re: /has app ID .* which does not match|does not match the bundle identifier|doesn.t match (the )?bundle identifier|app ID .* doesn.t match/i,
+    text: MANUAL
+      ? `El perfil de DIST_PROFILE es de otra app: tiene que ser un perfil «App Store Connect» del bundle ID ${BUNDLE}.`
+      : `El perfil no coincide con el bundle ID ${BUNDLE}. Revisá el identificador en developer.apple.com → Identifiers.`,
+    signing: true,
+  },
+  {
+    re: /doesn.t (support|include) the .* (capability|entitlement)|entitlements? .*(doesn.t match|not match|missing|was modified)|Entitlements file .* (was modified|doesn.t match)/i,
+    text: MANUAL
+      ? `El perfil no incluye las capacidades (entitlements) que pide la app. En developer.apple.com → Identifiers → ${BUNDLE} activá las mismas, después en Profiles regenerá el perfil (Edit → Save), ${RENEW_PROFILE}.`
+      : `Las capacidades (entitlements) de la app no coinciden con las del identificador ${BUNDLE} en developer.apple.com → Identifiers.`,
+    signing: true,
+  },
+  {
+    re: /profile .* (has )?expired|certificate .* (has )?expired|CSSMERR_TP_CERT_EXPIRED|CSSMERR_TP_CERT_REVOKED|has been revoked/i,
+    text: MANUAL
+      ? `Venció (o se revocó) el certificado o el perfil. Si es el certificado: creá uno «Apple Distribution» nuevo, exportalo como .p12 y cargalo en DIST_CERT_P12 y DIST_CERT_PASSWORD; el perfil hay que regenerarlo con ese certificado, ${RENEW_PROFILE}.`
+      : 'Venció o se revocó un certificado de la cuenta. Volvé a lanzar el workflow: Xcode crea uno nuevo en la nube.',
+    signing: true,
+  },
+  {
+    re: /No profiles for|No signing certificate|No certificate for team|No Accounts|requires a provisioning profile|provisioning profile .*(doesn't|does not|failed)|Signing for .* requires a development team/i,
+    text: MANUAL
+      ? `Xcode no encontró el certificado o el perfil de la firma manual. Revisá que DIST_PROFILE sea un perfil «App Store Connect» del bundle ID ${BUNDLE}, hecho con el mismo certificado «Apple Distribution» de DIST_CERT_P12, y que los dos sean del equipo de APPLE_TEAM_ID.`
+      : `Xcode no pudo firmar para el App Store. Revisá que exista el identificador ${BUNDLE} en developer.apple.com → Identifiers, que la clave sea Admin y que APPLE_TEAM_ID sea el del mismo equipo que la clave.`,
+    signing: true,
+    generic: true,   // solo si ninguna pista de firma más precisa encontró algo
   },
   {
     re: /Missing required icon|CFBundleIconName|alpha channel|Invalid (large )?app icon/i,
@@ -130,9 +177,21 @@ function main(dir) {
     });
   }
 
-  const hints = HINTS.filter((hint) => context.some((line) => hint.re.test(line))).map((hint) => hint.text);
+  let matched = HINTS.filter((hint) => context.some((line) => hint.re.test(line)));
+  if (matched.some((hint) => hint.signing && !hint.generic)) matched = matched.filter((hint) => !hint.generic);
+  const hints = matched.map((hint) => hint.text);
+  if (matched.some((hint) => hint.signing)) {
+    hints.push(
+      MANUAL
+        ? `Para volver a la firma en la nube (la de siempre), borrá los tres secretos ${DIST}.`
+        : `Si la firma en la nube sigue fallando, hay un plan B: firmar con tu propio certificado y perfil cargando los secretos ${DIST} (${README}).`,
+    );
+  }
 
   summary.push('## Falló la subida a TestFlight', '');
+  if (MODE) {
+    summary.push(MANUAL ? `Firma: manual (secretos ${DIST}).` : 'Firma: en la nube (clave de API).', '');
+  }
   if (!files.length) {
     summary.push('Falló antes de llegar a xcodebuild: mirá el paso marcado en rojo en esta corrida.');
   } else if (hints.length) {

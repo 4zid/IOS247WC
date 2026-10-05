@@ -17,7 +17,7 @@ ficha de **Spanish (Spain)**, conviene pasarla a «tú».
 | Nombre | 27/30 | App Information |
 | Subtítulo | 26/30 | App Information |
 | Texto promocional | 140/170 | Página de la versión |
-| Descripción | 1964/4000 | Página de la versión |
+| Descripción | 2054/4000 | Página de la versión |
 | Palabras clave | 95/100 (97 bytes) | Página de la versión |
 | Novedades de la versión 1.0 | 175/4000 | Página de la versión (ver nota) |
 
@@ -46,7 +46,7 @@ Tocá escanear y en segundos ves el baño público más cercano, si es gratis o 
 De todos los textos de la página de la versión, es el único que se puede
 cambiar **sin mandar una versión nueva** a revisión. Sirve para novedades o temporadas («¿Viajás en verano?…»).
 
-## Descripción · 1964/4000
+## Descripción · 2054/4000
 
 ```text
 ¿Necesitás un baño ya? 247WC te muestra el baño público más cercano y te lleva caminando hasta la puerta. Gratis, sin cuenta y sin publicidad.
@@ -70,7 +70,7 @@ PENSADA PARA LA URGENCIA
 • En español y en inglés, según el idioma de tu iPhone.
 
 TU UBICACIÓN ES TUYA
-247WC usa tu ubicación solo mientras usás la app, para buscar y para guiarte. No hay cuentas, ni analytics, ni publicidad, ni rastreo. Para buscar, a nuestro servidor llega solo una zona aproximada (redondeada a unos 250 m), y no guardamos tu ubicación.
+247WC usa tu ubicación solo mientras usás la app, para buscar y para guiarte. No hay cuentas, ni analytics, ni publicidad, ni rastreo. Para buscar, a nuestro servidor llega solo una zona aproximada (redondeada a unos 250 m), y no guardamos tu ubicación en nuestros servidores. Para la ruta a pie, tu posición va a un servicio público de rutas.
 
 DATOS ABIERTOS DE LA COMUNIDAD
 Los baños salen de OpenStreetMap y de Refuge Restrooms, cargados por personas como vos. Por eso la cobertura cambia según la ciudad y puede que algún baño esté cerrado o haya cambiado. ¿Conocés uno que falta? Tocá «¿Falta un baño?» al final de la lista y sumalo en OpenStreetMap: queda disponible para todo el mundo.
@@ -107,18 +107,25 @@ para TestFlight («Qué probar») o adaptalo para la primera actualización.
 ## URL de soporte
 
 ```text
-https://247-wc.vercel.app/landing
+https://247-wc.vercel.app/support.html
 ```
 
-Apple pide que la página de soporte tenga una forma de contactarte. Hoy la
-landing tiene «Reportar un problema» (va a GitHub); conviene sumarle un email de
-contacto (en el repo de la web, `landing.html`).
+Es [`store/support.html`](support.html) publicada al lado de la política (ver
+README → «Privacidad y soporte»): ayuda en español y en inglés y un email de
+contacto, que es lo que Apple pide. Antes de publicarla, reemplazá
+`[TU EMAIL DE CONTACTO]`. Si la publicás en otra URL (Framer, Webflow), poné
+esa acá.
 
 ## URL de marketing
 
-```text
-https://247-wc.vercel.app/landing
-```
+Dejala **vacía**: es opcional.
+
+No uses la landing (`https://247-wc.vercel.app/landing`): promociona la
+versión web y explica cómo instalarla en Android, y App Review puede
+rechazar una ficha que manda a la gente a usar la app por fuera del App Store
+o a otra plataforma (pautas 2.3.10 y 4.2). Si algún día hacés una página solo
+de la app de iPhone (por ejemplo en Framer, con el botón del App Store), esa
+sí puede ir acá.
 
 ## Categorías
 

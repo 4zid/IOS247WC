@@ -27,7 +27,9 @@ Nada en «Data Used to Track You» ni en «Data Linked to You».
 **Privacy Policy → Edit** (Política de privacidad → Editar):
 
 - **Privacy Policy URL:** `https://247-wc.vercel.app/privacy.html` (o la URL
-  donde la publicaste; ver «Privacidad» en el README). Tiene que abrir sin login.
+  donde la publicaste; ver «Privacidad y soporte» en el README). Tiene que
+  abrir sin login, y tiene que ser la misma a la que apunta el link
+  «Política de privacidad» de la app (`PRIVACY_URL` en `native/text.js`).
 - **User Privacy Choices URL:** dejalo vacío (es opcional y la app no tiene
   opciones de privacidad que configurar en una web).
 
@@ -41,10 +43,13 @@ Nada en «Data Used to Track You» ni en «Data Linked to You».
 
 **Yes, we collect data from this app.** → **Next**.
 
-¿Por qué «sí», si no guardamos nada? Para Apple, «recopilar» es mandar datos
-fuera del teléfono de forma que vos o un tercero puedan tenerlos más tiempo que
-el necesario para responder el pedido. Pasa con la ubicación (ver abajo), así
-que lo correcto, y lo que ya declara `PrivacyInfo.xcprivacy`, es «sí». Declarar
+¿Por qué «sí», si no guardamos tu ubicación en nuestros servidores? Para
+Apple, «recopilar» es mandar datos fuera del teléfono de forma que vos o un
+tercero puedan tenerlos más tiempo que el necesario para responder el pedido.
+Pasa con la ubicación: la posición exacta va a los servicios de ruta a pie
+(terceros que pueden guardar registros) y un punto redondeado va a nuestra
+búsqueda, que guarda la respuesta en caché unos días (ver abajo). Así que lo
+correcto, y lo que ya declara `PrivacyInfo.xcprivacy`, es «sí». Declarar
 de menos es motivo de rechazo; «no vinculados con tu identidad» es la etiqueta
 más liviana que existe.
 
@@ -93,17 +98,23 @@ se puede enviar a revisión.
 
 | Dato | Adónde va | Por qué se declara así |
 |---|---|---|
-| **Coarse Location** | A la búsqueda propia de 247WC (función en Vercel): un punto redondeado a una grilla de ~250 m (`snap()` en `web/app.js`). | La respuesta queda en caché hasta un día, asociada a ese punto. Es menos precisa que tres decimales de latitud/longitud, que es como Apple define «aproximada». |
-| **Precise Location** | A los servicios públicos de ruta a pie (Valhalla de FOSSGIS, OSRM): tu posición como punto de partida. Y, solo si nuestra búsqueda no responde o no pudo consultar OpenStreetMap, a los servidores públicos de Overpass. | Son terceros que pueden guardar registros de los pedidos. |
-| Uso: **App Functionality** | — | Se usa solo para buscar baños y guiarte. Nada de publicidad, analytics ni personalización. |
+| **Precise Location** | **Solo** a los servicios públicos de ruta a pie: Valhalla (`valhalla1.openstreetmap.de`, de FOSSGIS e.V., Alemania) y, si no responde, el servidor de demostración de OSRM (`router.project-osrm.org`). Tu posición exacta es el punto de partida de la ruta, y la reciben junto con tu IP. | Son terceros que pueden guardar registros de los pedidos. Es la razón por la que se declara la precisa: sin ella, la ruta empezaría en otra cuadra. |
+| **Coarse Location** | Un punto redondeado a una grilla de ~250 m (`snap()` en `web/app.js`): <br>• a la búsqueda propia de 247WC (función en Vercel), que con ese mismo punto consulta espejos de Overpass (entre ellos `maps.mail.ru`, de VK, Rusia) y Refuge Restrooms; esos ven la IP de Vercel, no la tuya; <br>• solo si nuestra búsqueda falla o contesta «parcial», directo desde el teléfono (con tu IP) a `overpass-api.de` (FOSSGIS e.V., Alemania), `overpass.kumi.systems` (Kumi Systems, Austria) y `overpass.private.coffee` (private.coffee, Austria). El build de la app saca de ese respaldo el espejo de Mail.ru y le pone el punto redondeado en vez de la posición exacta (parches de `app.js` en `scripts/build-web.mjs`). | La respuesta de nuestra búsqueda queda en caché del edge de Vercel, asociada a ese punto: un día fresca y hasta 7 días más mientras se renueva (unos 8 en total). Los espejos de Overpass pueden guardar registros. Un punto de ~250 m es menos preciso que tres decimales de latitud/longitud, que es como Apple define «aproximada». |
+| Uso: **App Functionality** | — | Se usa solo para buscar baños (sola al abrir la app, una vez que diste el permiso, o al tocar «Escanear») y para guiarte. Nada de publicidad, analytics ni personalización. |
 | Vinculada a la identidad: **No** | — | No hay cuentas, ni identificadores, ni nada que una el pedido con una persona. |
 | Rastreo: **No** | — | No se combina con datos de otras empresas ni se comparte con data brokers. La app no usa el identificador de publicidad (por eso tampoco muestra el cartel de «App Tracking Transparency»). |
 
 **Lo que no se declara, y por qué:**
 
 - **Brújula y orientación:** se leen en el teléfono y no salen de él.
-- **Preferencias, filtros y últimos resultados:** quedan en el almacenamiento
-  interno de la app; nunca se mandan a ningún lado.
+- **Lo que queda en el teléfono:** idioma, tema, filtros, si viste la
+  introducción, los últimos resultados con **el punto exacto donde buscaste
+  por última vez** (`247wc:last`) y una copia de los resultados de cada zona
+  de ~1 km donde buscaste, con la fecha (`247wc:cache2:<lat>:<lng>:3000`).
+  Queda en el almacenamiento interno de la app (y en las copias de seguridad
+  del iPhone) hasta que se borra la app; nunca se manda a ningún lado. Para
+  Apple, lo que no sale del teléfono no es «recopilar», pero la política
+  (`store/privacy.html`, sección 5) lo cuenta igual.
 - **Identifiers, Usage Data, Diagnostics:** la app no tiene SDK de analytics,
   de publicidad ni de reportes de errores, y no crea ningún identificador.
 - **Search History:** no hay búsqueda por texto; la app solo pide los baños
