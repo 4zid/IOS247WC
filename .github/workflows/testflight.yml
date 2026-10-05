@@ -5,6 +5,8 @@
 # Se lanza a mano: Actions → TestFlight → Run workflow.
 # Antes, una sola vez: registrar el bundle ID, crear la app en App Store
 # Connect, la clave de API y los cuatro secretos (README, «Subir sin Mac»).
+# Los secretos se leen del environment «APPLE» (Settings → Environments →
+# APPLE); si están como secretos del repo, también sirven.
 #
 # Cómo firma, y por qué así:
 # 1. El archive va SIN firmar. Con firma automática, `xcodebuild archive`
@@ -68,6 +70,9 @@ jobs:
   upload:
     name: Archivar, firmar y subir
     runs-on: macos-26
+    # Los secretos están en el environment «APPLE»: sin esta línea, el job no
+    # los ve. Los secretos del repo (si los hubiera) también se leen.
+    environment: APPLE
     timeout-minutes: 45
     outputs:
       version: ${{ steps.app.outputs.version }}
@@ -110,8 +115,8 @@ jobs:
           if [[ ${#missing[@]} -gt 0 ]]; then
             list=$(printf '%s, ' "${missing[@]}")
             report "Faltan secretos" \
-              "Faltan estos secretos del repositorio: ${list%, }." \
-              "Cargalos en GitHub → Settings → Secrets and variables → Actions → New repository secret."
+              "Faltan estos secretos: ${list%, }." \
+              "Cargalos en GitHub → Settings → Environments → APPLE → Add environment secret (o como secretos del repo: Settings → Secrets and variables → Actions → New repository secret)."
           fi
 
           # Sin espacios ni saltos de línea de más, que se cuelan al pegar.
@@ -452,6 +457,7 @@ jobs:
     name: Esperar a Apple
     needs: upload
     runs-on: ubuntu-latest
+    environment: APPLE
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7

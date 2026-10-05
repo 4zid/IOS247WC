@@ -291,8 +291,11 @@ details** → **Team ID** (10 letras y números).
 
 ### 3. Cargar los 4 secretos en GitHub
 
-En el repo de GitHub: **Settings → Secrets and variables → Actions → New
-repository secret**. Creá estos cuatro, con estos nombres exactos:
+En el repo de GitHub: **Settings → Environments → APPLE → Add environment
+secret** (si el environment `APPLE` no existe, crealo con **New environment**).
+El workflow lee los secretos de ahí; si preferís cargarlos como secretos del
+repo (**Settings → Secrets and variables → Actions → New repository secret**),
+también funciona. Creá estos cuatro, con estos nombres exactos:
 
 | Nombre | Qué va |
 |---|---|
@@ -423,8 +426,8 @@ texto, así que el `.p12` y el perfil van codificados:
 
 Los saltos de línea que se cuelen al pegar no importan: el workflow los limpia.
 
-**6. Cargar los 3 secretos** (en **Settings → Secrets and variables → Actions
-→ New repository secret**, igual que los otros cuatro):
+**6. Cargar los 3 secretos** (en el environment `APPLE`, igual que los otros
+cuatro: **Settings → Environments → APPLE → Add environment secret**):
 
 | Nombre | Qué va |
 |---|---|
