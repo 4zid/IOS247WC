@@ -26,7 +26,7 @@ Nada en «Data Used to Track You» ni en «Data Linked to You».
 
 **Privacy Policy → Edit** (Política de privacidad → Editar):
 
-- **Privacy Policy URL:** `https://ios247wc.vercel.app/privacy.html` (o la URL
+- **Privacy Policy URL:** `https://ios247.vercel.app/privacy.html` (o la URL
   donde la publicaste; ver «Privacidad y soporte» en el README). Tiene que
   abrir sin login, y tiene que ser la misma a la que apunta el link
   «Política de privacidad» de la app (`PRIVACY_URL` en `native/text.js`).

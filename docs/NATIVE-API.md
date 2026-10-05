@@ -225,7 +225,7 @@ También:
 `window.WC_NATIVE_TEXT[es|en]` pisa claves de `lang.js` (parche 8). Además de
 los textos de permiso negado (con el botón `data-native-action="settings"`),
 el modal de info (`infoP`) trae el link **«Política de privacidad»** a
-`PRIVACY_URL` (`https://ios247wc.vercel.app/privacy.html`, una constante al
+`PRIVACY_URL` (`https://ios247.vercel.app/privacy.html`, una constante al
 principio del archivo; App Review 5.1.1), que se abre en Safari dentro de la
 app como cualquier link `https://`. En el último paso de la introducción el
 botón dice «Continuar» y `native.css` oculta «Ahora no» (5.1.1: nada de

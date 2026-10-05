@@ -480,16 +480,16 @@ Vercel propio de este repo**, independiente del de la web:
 
 1. En [vercel.com/new](https://vercel.com/new), importá el repo
    **4zid/IOS247WC**.
-2. Dejá el nombre que propone Vercel (`ios247wc`) y no cambies nada más: el
+2. Nombre del proyecto: `ios247` (es el que está creado). No cambies nada más: el
    archivo [`vercel.json`](vercel.json) ya le dice que publique solo la
    carpeta `site/`, sin instalar ni compilar nada. Tocá **Deploy**.
-3. Quedan en **https://ios247wc.vercel.app/privacy.html** y **https://ios247wc.vercel.app/support.html** (la raíz,
-   https://ios247wc.vercel.app, lleva a soporte). Abrilas desde el celular, en una pestaña
+3. Quedan en **https://ios247.vercel.app/privacy.html** y **https://ios247.vercel.app/support.html** (la raíz,
+   https://ios247.vercel.app, lleva a soporte). Abrilas desde el celular, en una pestaña
    privada, para confirmar que cargan sin pedir login de Vercel.
 
 Vercel vuelve a publicar con cada push a `prod`; las páginas solo cambian si
-tocás `site/`. Si Vercel te da otro dominio (por ejemplo, porque `ios247wc`
-ya estaba usado), cambiá `PRIVACY_URL` (punto 3) y las URLs de
+tocás `site/`. Si algún día cambia el dominio (por ejemplo, si le ponés uno
+propio), cambiá `PRIVACY_URL` (punto 3) y las URLs de
 `store/listing-es.md`, `store/listing-en.md`, `store/app-privacy.md` y
 `store/CHECKLIST.md`.
 
@@ -513,14 +513,14 @@ tienen que coincidir.
 **3. Link a la política dentro de la app.** Apple también pide (pauta 5.1.1)
 que la política se pueda abrir desde la app. **Ya está:** en el modal de Info,
 el link **«Política de privacidad»** («Privacy Policy» en inglés) abre
-`https://ios247wc.vercel.app/privacy.html` en Safari dentro de la app. Por eso conviene publicarla
+`https://ios247.vercel.app/privacy.html` en Safari dentro de la app. Por eso conviene publicarla
 justo en esa URL (con el proyecto de Vercel del punto 1).
 
 Si la publicás en otra URL (por ejemplo en Framer o Webflow), cambiá la
 constante `PRIVACY_URL`, al principio de `native/text.js`:
 
 ```js
-const PRIVACY_URL = 'https://ios247wc.vercel.app/privacy.html';
+const PRIVACY_URL = 'https://ios247.vercel.app/privacy.html';
 ```
 
 Después: `npm test`, `npm run sync` y subí un build nuevo (Camino A o B). Sin

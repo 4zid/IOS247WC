@@ -106,7 +106,7 @@ campo. Queda para la 1.0.1 o para TestFlight.
 ## Support URL
 
 ```text
-https://ios247wc.vercel.app/support.html
+https://ios247.vercel.app/support.html
 ```
 
 La misma página que en español: `site/support.html` tiene las dos versiones
