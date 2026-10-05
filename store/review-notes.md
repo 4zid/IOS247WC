@@ -5,7 +5,7 @@ Van en la página de la versión → **App Review Information**:
 - **Sign-in required:** desmarcado. La app no tiene login ni cuentas.
 - **Contact Information:** tu nombre, apellido, teléfono (con código de país,
   por ejemplo +54 9 11 …) y email. Apple los usa solo si necesita hablar con vos.
-- **Notes:** el bloque en inglés de abajo, tal cual. Tiene 3322 caracteres; el
+- **Notes:** el bloque en inglés de abajo, tal cual. Tiene 3444 caracteres; el
   límite de Apple es 4000.
 - **Attachment:** no hace falta. Si te rechazan por «no pudimos probar la
   función principal», un video corto grabado en el iPhone (escanear → Guiarme)
@@ -13,7 +13,8 @@ Van en la página de la versión → **App Review Information**:
 
 Antes de enviar, probá vos mismo lo que dice el paso 3 con el simulador en la
 ubicación **Apple** (Features → Location → Apple): si en esa zona no aparece
-ningún baño, cambiá la última sección por una ciudad donde sí aparezcan.
+ningún baño, cambiá la sección «ABOUT THE DATA» por una ciudad donde sí
+aparezcan.
 
 ## Para pegar (inglés)
 
@@ -32,16 +33,16 @@ HOW TO TEST (about one minute)
 6. Home Screen quick action: touch and hold the app icon and choose "Nearest toilet". The app scans and starts guidance right away.
 
 WITHOUT LOCATION
-If location is denied, the app explains how to enable it, with an "Open Settings" button, and offers "Search without location": move the map to any area and tap "Search this area". "See the map without scanning", on the first screen, works the same way.
+If location is denied, the app explains how to enable it, with an "Open Settings" button, and offers "Search without location", which searches the area shown on the map. On a fresh install that area is central Buenos Aires, Argentina (the app's home city), so please allow location to test the main flow.
 
 ABOUT THE DATA
-Toilets come from OpenStreetMap and Refuge Restrooms (community data), so coverage varies by city. The Cupertino / Apple Park area has mapped public toilets. If an area shows none, tap "Also search bars and shops", or move the map to a city center (for example, San Francisco) and tap "Search this area".
+Toilets come from OpenStreetMap and Refuge Restrooms (community data), so coverage varies by city. The Cupertino / Apple Park area has mapped public toilets. If an area shows none, tap "Also search bars and shops".
 
 NATIVE FUNCTIONALITY (Guideline 4.2)
 The interface is bundled inside the app (it does not load our website) and works together with native iOS features:
 - Core Location for the user's position, with the "While Using the App" permission and a temporary Precise Location request with its own purpose string. If an "Allow Once" grant expires during guidance, the app asks again and guidance resumes.
 - Core Location heading (magnetometer) for the compass arrow.
-- Haptic feedback on taps and on arrival.
+- Haptic feedback when results appear, when the app suggests a new action, and on arrival.
 - Keeps the screen awake only during guidance.
 - Home Screen quick action "Nearest toilet".
 - Hands off walking directions to Apple Maps or Google Maps.
@@ -89,16 +90,16 @@ The app is designed for iPhone. On iPad it runs in iPhone compatibility mode.
 >
 > **SIN UBICACIÓN**
 > Si se niega la ubicación, la app explica cómo activarla, con un botón «Abrir
-> Ajustes», y ofrece «Buscar sin ubicación»: mové el mapa a cualquier zona y
-> tocá «Buscar en esta zona». «Ver el mapa sin escanear», en la primera
-> pantalla, funciona igual.
+> Ajustes», y ofrece «Buscar sin ubicación», que busca en la zona que muestra
+> el mapa. En una instalación nueva esa zona es el centro de Buenos Aires
+> (la ciudad de la app), así que conviene permitir la ubicación para probar lo
+> principal.
 >
 > **SOBRE LOS DATOS**
 > Los baños salen de OpenStreetMap y Refuge Restrooms (datos de la comunidad),
 > así que la cobertura cambia según la ciudad. La zona de Cupertino / Apple
 > Park tiene baños públicos mapeados. Si en una zona no aparece ninguno, tocá
-> «Buscar también en bares y negocios», o mové el mapa al centro de una ciudad
-> (por ejemplo, San Francisco) y tocá «Buscar en esta zona».
+> «Buscar también en bares y negocios».
 >
 > **FUNCIONES NATIVAS (pauta 4.2)**
 > La interfaz viene adentro de la app (no carga nuestra web) y trabaja junto
@@ -108,7 +109,8 @@ The app is designed for iPhone. On iPad it runs in iPhone compatibility mode.
 >   «Permitir una vez» vence durante la guía, la app lo vuelve a pedir y la
 >   guía sigue.
 > - La orientación de Core Location (magnetómetro) para la flecha de la brújula.
-> - Respuesta háptica al tocar y al llegar.
+> - Respuesta háptica cuando aparecen los resultados, cuando la app propone
+>   algo nuevo y al llegar.
 > - Mantiene la pantalla encendida solo durante la guía.
 > - Acceso rápido «Baño más cercano» desde la pantalla de inicio.
 > - Pasa la ruta a pie a Mapas de Apple o a Google Maps.

@@ -21,10 +21,10 @@ Marcá cada casilla (en GitHub podés editar este archivo y cambiar `[ ]` por
 
 ## 3. El build
 
-- [ ] `npm test` pasa (13 de 13).
+- [ ] `npm test` pasa (17 de 17).
 - [ ] En `native/bridge.js`, `API_BASE` es el dominio real de la web (`https://247-wc.vercel.app`).
 - [ ] **Camino A:** `npm run sync` corrió sin errores antes de archivar, y tu cuenta tiene al menos un iPhone registrado (lo conectaste y le diste ▶ una vez). **Camino B:** el workflow **iOS build** está en verde.
-- [ ] **Version** `1.0.0` y un **Build** que no se haya usado antes.
+- [ ] **Version** `1.0.0` y un **Build** que no se haya usado antes. En App Store Connect, el campo **Version** de la página de la versión tiene que decir exactamente `1.0.0` (Apple la crea como `1.0`): si no coinciden, el build no aparece para elegirlo.
 - [ ] El build terminó de procesarse y aparece en **TestFlight**, sin «Missing Compliance».
 
 ## 4. Probar en un iPhone de verdad (TestFlight o Xcode)
@@ -57,17 +57,17 @@ Marcá cada casilla (en GitHub podés editar este archivo y cambiar `[ ]` por
 
 **Pricing and Availability**
 
-- [ ] Precio **gratis**, disponible en todos los países.
+- [ ] Precio **gratis**, disponible en todos los países **menos China continental** (pide un número de registro ICP, y los servicios de mapas y rutas pueden no andar ahí).
 - [ ] **Desmarcada** la disponibilidad en Mac con Apple silicon y en Apple Vision Pro (la guía necesita la brújula y el GPS del iPhone).
 
 **App Privacy**
 
-- [ ] **Privacy Policy URL** cargada.
+- [ ] **Privacy Policy URL** cargada, en español y también en **English (U.S.)** (se carga por idioma).
 - [ ] Cuestionario completo según `store/app-privacy.md` (Precise + Coarse Location, App Functionality, no vinculada, sin rastreo) y **publicado**.
 
 **Versión 1.0**
 
-- [ ] **Capturas** de iPhone 6,9" (1320 × 2868 o 1290 × 2796 px), al menos 1 (mejor entre 4 y 6), sin transparencia. `npm run screenshots` las genera en `store/screenshots/es/` y `store/screenshots/en/`.
+- [ ] **Capturas** de iPhone 6,9" (1320 × 2868 o 1290 × 2796 px), al menos 1 (mejor entre 4 y 6), sin transparencia. `npm run screenshots` las genera en `store/screenshots/es/` y `store/screenshots/en/`. Subí primero las de la app en uso y dejá afuera la portada (dice «Gratis», y Apple no quiere precios en las capturas): español `03-mas-cercano`, `04-guia`, `02-mapa`, `05-lista-oscuro`; inglés `03-nearest`, `04-guide`, `02-map`, `05-list-dark`.
 - [ ] **Texto promocional, descripción y palabras clave** en los dos idiomas.
 - [ ] **URL de soporte:** `https://ios247.vercel.app/support.html` (o tu URL). **URL de marketing:** vacía (no la landing; ver `store/listing-es.md`).
 - [ ] **Derechos de autor.**

@@ -145,7 +145,7 @@
     <ul>
       <li><strong>No hay cuentas ni registro.</strong> No te pedimos nombre, email ni teléfono.</li>
       <li><strong>Tu ubicación se usa solo mientras usás la app</strong>: al abrirla (si ya diste el permiso, busca sola), al tocar «Escanear» y durante la guía. Nunca en segundo plano.</li>
-      <li><strong>Tu posición exacta solo va al servicio de ruta a pie</strong> (Valhalla, de FOSSGIS e.V.; si no responde, OSRM), para calcular el camino hasta el baño.</li>
+      <li><strong>Tu posición exacta solo va al servicio de ruta a pie</strong> (Valhalla, de FOSSGIS e.V.; si no responde, OSRM), para calcular el camino hasta el baño, y a la web de OpenStreetMap si tocás «¿Falta un baño?» (ver el punto 4).</li>
       <li><strong>Para buscar baños sale solo un punto redondeado a unos 250&nbsp;m</strong>: a nuestro servidor y, si falla, a servidores públicos de OpenStreetMap. No guardamos tu ubicación en nuestros servidores.</li>
       <li><strong>Sin analytics, sin publicidad, sin rastreo y sin venta de datos.</strong></li>
       <li><strong>En tu teléfono quedan tus preferencias, tus últimos resultados y las zonas donde buscaste</strong>. Se borran al eliminar la app.</li>
@@ -162,11 +162,11 @@
     <li>Con tu posición, el teléfono ordena los baños por cercanía, mide las distancias y mueve la flecha de la guía. Esos cálculos se hacen en el teléfono.</li>
     <li>Si en tu iPhone está activada la ubicación aproximada, la app puede pedirte la ubicación exacta por esa vez, para encontrar el baño que de verdad tenés más cerca.</li>
     <li>La brújula (hacia dónde apunta el teléfono) se lee en el teléfono y no sale de él.</li>
-    <li>Podés cambiar o quitar el permiso cuando quieras en <strong>Ajustes → 247WC → Ubicación</strong>. Sin ubicación, la app igual funciona: mové el mapa y tocá «Buscar en esta zona».</li>
+    <li>Podés cambiar o quitar el permiso cuando quieras en <strong>Ajustes → 247WC → Ubicación</strong>. Sin ubicación, la app solo puede buscar en la zona que se ve en el mapa.</li>
   </ul>
 
   <h2>3. Qué se envía por internet, y a quién</h2>
-  <p>Para funcionar, la app se conecta con estos servicios. Ninguno recibe tu nombre, tu email ni un identificador tuyo. <strong>Tu posición exacta solo la reciben los servicios de ruta a pie</strong>; los demás reciben, como mucho, un punto redondeado a unos 250&nbsp;m.</p>
+  <p>Para funcionar, la app se conecta con estos servicios. Ninguno recibe tu nombre, tu email ni un identificador tuyo. <strong>Tu posición exacta solo la reciben los servicios de ruta a pie</strong> (y la web de OpenStreetMap si tocás «¿Falta un baño?»); los demás reciben, como mucho, un punto redondeado a unos 250&nbsp;m o las partes del mapa de la zona que estás mirando.</p>
   <div class="services">
     <div class="service">
       <h3>Ruta a pie: Valhalla u OSRM</h3>
@@ -209,7 +209,7 @@
   <h2>4. Links que te llevan afuera</h2>
   <ul>
     <li><strong>«Abrir en Mapas»</strong> abre Google Maps (si la tenés instalada) o Mapas de Apple con el destino elegido. Desde ahí rige la política de esa app.</li>
-    <li><strong>«¿Falta un baño?»</strong> abre la web de OpenStreetMap centrada en tu zona, para que puedas sumarlo. Los créditos abren OpenStreetMap y Refuge Restrooms.</li>
+    <li><strong>«¿Falta un baño?»</strong> abre la web de OpenStreetMap centrada en tu posición (el link lleva tus coordenadas), para que puedas sumarlo. Los créditos abren OpenStreetMap y Refuge Restrooms.</li>
   </ul>
   <p>Esas páginas se abren en Safari dentro de la app y se rigen por sus propias políticas de privacidad.</p>
 
@@ -256,7 +256,7 @@
     <ul>
       <li><strong>No accounts, no sign-up.</strong> We don't ask for your name, email or phone number.</li>
       <li><strong>Your location is used only while you use the app</strong>: when you open it (once you've allowed location, it searches by itself), when you tap “Scan” and during guidance. Never in the background.</li>
-      <li><strong>Your exact position only goes to the walking-route service</strong> (Valhalla, run by FOSSGIS e.V.; if it doesn't respond, OSRM), to calculate the way to the toilet.</li>
+      <li><strong>Your exact position only goes to the walking-route service</strong> (Valhalla, run by FOSSGIS e.V.; if it doesn't respond, OSRM), to calculate the way to the toilet, and to the OpenStreetMap website if you tap “Missing a toilet?” (see point 4).</li>
       <li><strong>To search for toilets, only a point rounded to about 250&nbsp;m is sent</strong>: to our server and, if it fails, to public OpenStreetMap servers. We don't store your location on our servers.</li>
       <li><strong>No analytics, no ads, no tracking, and we don't sell data.</strong></li>
       <li><strong>Your preferences, latest results and the areas where you searched stay on your phone</strong>. They are erased when you delete the app.</li>
@@ -273,11 +273,11 @@
     <li>With your position, the phone sorts toilets by distance, measures distances and turns the guidance arrow. Those calculations happen on the phone.</li>
     <li>If your iPhone is set to approximate location, the app may ask for your precise location just once, to find the toilet that is really closest to you.</li>
     <li>The compass (which way your phone is pointing) is read on the phone and never leaves it.</li>
-    <li>You can change or remove the permission at any time in <strong>Settings → 247WC → Location</strong>. Without location the app still works: move the map and tap “Search this area”.</li>
+    <li>You can change or remove the permission at any time in <strong>Settings → 247WC → Location</strong>. Without location, the app can only search the area shown on the map.</li>
   </ul>
 
   <h2>3. What is sent over the internet, and to whom</h2>
-  <p>To work, the app connects to these services. None of them receives your name, your email or an identifier of yours. <strong>Only the walking-route services receive your exact position</strong>; the others receive, at most, a point rounded to about 250&nbsp;m.</p>
+  <p>To work, the app connects to these services. None of them receives your name, your email or an identifier of yours. <strong>Only the walking-route services receive your exact position</strong> (and the OpenStreetMap website if you tap “Missing a toilet?”); the others receive, at most, a point rounded to about 250&nbsp;m or the map pieces of the area you are viewing.</p>
   <div class="services">
     <div class="service">
       <h3>Walking route: Valhalla or OSRM</h3>
@@ -320,7 +320,7 @@
   <h2>4. Links that take you elsewhere</h2>
   <ul>
     <li><strong>“Open in Maps”</strong> opens Google Maps (if installed) or Apple Maps with the chosen destination. From there, that app's policy applies.</li>
-    <li><strong>“Missing a toilet?”</strong> opens the OpenStreetMap website centered on your area so you can add it. The credits open OpenStreetMap and Refuge Restrooms.</li>
+    <li><strong>“Missing a toilet?”</strong> opens the OpenStreetMap website centered on your position (the link carries your coordinates) so you can add it. The credits open OpenStreetMap and Refuge Restrooms.</li>
   </ul>
   <p>Those pages open in Safari inside the app and are governed by their own privacy policies.</p>
 

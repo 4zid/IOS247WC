@@ -158,7 +158,8 @@ lo usa: elegí otro (por ejemplo `com.tunombre.wc247`) y seguí
    - **Content Rights:** «Does your app contain, show, or access third-party
      content?» → **Yes**, y confirmá que tenés los derechos: los datos son de
      OpenStreetMap (licencia ODbL) y la app muestra la atribución.
-4. En **Pricing and Availability**: precio **Free** (gratis) y todos los países.
+4. En **Pricing and Availability**: precio **Free** (gratis) y todos los países
+   menos **China continental** (pide un número de registro ICP).
    Más abajo, en la misma página, **desmarcá** la disponibilidad en **Mac con
    Apple silicon** («iPhone and iPad Apps on Apple Silicon Macs») y en **Apple
    Vision Pro**: la guía depende de la brújula y el GPS del iPhone, que ahí no
@@ -615,8 +616,10 @@ En la página de la versión, sección **App Review Information**:
 
 ## Enviar a revisión
 
-1. En la página de la versión, en **Build**, tocá **+** (Add Build) y elegí el
-   build que subiste (tiene que haber terminado de procesarse).
+1. En la página de la versión, primero revisá el campo **Version**: tiene que
+   decir `1.0.0`, igual que el build (Apple la crea como `1.0`); si no,
+   cambialo y tocá **Save**. Después, en **Build**, tocá **+** (Add Build) y
+   elegí el build que subiste (tiene que haber terminado de procesarse).
 2. Revisá que no quede nada en rojo: capturas, textos en los dos idiomas, URL
    de soporte, derechos de autor, App Privacy publicado, clasificación por
    edad, precio.

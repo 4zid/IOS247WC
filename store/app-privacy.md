@@ -30,6 +30,9 @@ Nada en «Data Used to Track You» ni en «Data Linked to You».
   donde la publicaste; ver «Privacidad y soporte» en el README). Tiene que
   abrir sin login, y tiene que ser la misma a la que apunta el link
   «Política de privacidad» de la app (`PRIVACY_URL` en `native/text.js`).
+  Se carga por idioma: si arriba a la derecha hay un selector de idioma,
+  cambialo a **English (U.S.)** y cargá la misma URL (la página tiene las dos
+  versiones).
 - **User Privacy Choices URL:** dejalo vacío (es opcional y la app no tiene
   opciones de privacidad que configurar en una web).
 

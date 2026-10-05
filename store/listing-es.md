@@ -17,7 +17,7 @@ ficha de **Spanish (Spain)**, conviene pasarla a «tú».
 | Nombre | 27/30 | App Information |
 | Subtítulo | 26/30 | App Information |
 | Texto promocional | 140/170 | Página de la versión |
-| Descripción | 2123/4000 | Página de la versión |
+| Descripción | 2046/4000 | Página de la versión |
 | Palabras clave | 95/100 (97 bytes) | Página de la versión |
 | Novedades de la versión 1.0 | 175/4000 | Página de la versión (ver nota) |
 
@@ -46,7 +46,7 @@ Tocá escanear y en segundos ves el baño público más cercano, si es gratis o 
 De todos los textos de la página de la versión, es el único que se puede
 cambiar **sin mandar una versión nueva** a revisión. Sirve para novedades o temporadas («¿Viajás en verano?…»).
 
-## Descripción · 2123/4000
+## Descripción · 2046/4000
 
 ```text
 ¿Necesitás un baño ya? 247WC te muestra el baño público más cercano y te lleva caminando hasta la puerta. Gratis, sin cuenta y sin publicidad.
@@ -65,7 +65,6 @@ LO QUE NECESITÁS SABER ANTES DE CAMINAR
 PENSADA PARA LA URGENCIA
 • Acceso rápido: mantené apretado el ícono y elegí «Baño más cercano». Busca solo y, si ya le diste permiso, arranca la guía.
 • Si te quedás sin señal, te muestra los últimos baños que encontró.
-• Sin ubicación también funciona: mové el mapa a cualquier zona y buscá ahí.
 • Modo oscuro automático, o el que elijas.
 • En español y en inglés, según el idioma de tu iPhone.
 

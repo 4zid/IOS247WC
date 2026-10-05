@@ -19,7 +19,7 @@ cuenta 1).
 | Name | 28/30 | App Information |
 | Subtitle | 25/30 | App Information |
 | Promotional Text | 144/170 | Página de la versión |
-| Description | 2037/4000 | Página de la versión |
+| Description | 1964/4000 | Página de la versión |
 | Keywords | 97/100 (97 bytes) | Página de la versión |
 | What's New in This Version (1.0) | 174/4000 | Página de la versión (ver nota) |
 
@@ -46,7 +46,7 @@ resto del mundo. Con el nombre y el subtítulo quedan las dos.
 Tap scan and in seconds you see the closest public toilet, whether it's free or open 24 h, and a compass arrow that walks you right to the door.
 ```
 
-## Description · 2037/4000
+## Description · 1964/4000
 
 ```text
 Need a toilet right now? 247WC shows you the closest public toilet and walks you to the door. Free, no account, no ads.
@@ -65,7 +65,6 @@ WHAT YOU NEED TO KNOW BEFORE YOU WALK
 MADE FOR URGENT MOMENTS
 • Quick action: touch and hold the icon and choose “Nearest toilet”. It scans right away and, if you've already allowed location, starts guiding you.
 • No signal? It shows the last toilets it found.
-• Works without location too: move the map to any area and search there.
 • Automatic dark mode, or the one you choose.
 • In English and Spanish, following your iPhone's language.
 
