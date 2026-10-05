@@ -11,8 +11,9 @@
    lo atiende bridge.js: abre la página de 247WC en Ajustes. */
 
 // La política de privacidad tiene que poder abrirse desde la app (App Review
-// 5.1.1). Es store/privacy.html publicada junto a la web.
-const PRIVACY_URL = 'https://247-wc.vercel.app/privacy.html';
+// 5.1.1). Es site/privacy.html, que publica el proyecto de Vercel de este repo
+// (independiente del de la web).
+const PRIVACY_URL = 'https://ios247wc.vercel.app/privacy.html';
 
 window.WC_NATIVE_TEXT = {
   es: {

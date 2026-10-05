@@ -8,7 +8,7 @@ que figuran acá en inglés.
 Las respuestas coinciden con lo que declara el manifiesto que va adentro de la
 app, `ios/App/App/PrivacyInfo.xcprivacy`. **Las dos cosas tienen que decir lo
 mismo**: si algún día cambia una, cambiá la otra (y la política,
-`store/privacy.html`).
+`site/privacy.html`).
 
 ## Resultado en la ficha
 
@@ -26,7 +26,7 @@ Nada en «Data Used to Track You» ni en «Data Linked to You».
 
 **Privacy Policy → Edit** (Política de privacidad → Editar):
 
-- **Privacy Policy URL:** `https://247-wc.vercel.app/privacy.html` (o la URL
+- **Privacy Policy URL:** `https://ios247wc.vercel.app/privacy.html` (o la URL
   donde la publicaste; ver «Privacidad y soporte» en el README). Tiene que
   abrir sin login, y tiene que ser la misma a la que apunta el link
   «Política de privacidad» de la app (`PRIVACY_URL` en `native/text.js`).
@@ -114,7 +114,7 @@ se puede enviar a revisión.
   Queda en el almacenamiento interno de la app (y en las copias de seguridad
   del iPhone) hasta que se borra la app; nunca se manda a ningún lado. Para
   Apple, lo que no sale del teléfono no es «recopilar», pero la política
-  (`store/privacy.html`, sección 5) lo cuenta igual.
+  (`site/privacy.html`, sección 5) lo cuenta igual.
 - **Identifiers, Usage Data, Diagnostics:** la app no tiene SDK de analytics,
   de publicidad ni de reportes de errores, y no crea ningún identificador.
 - **Search History:** no hay búsqueda por texto; la app solo pide los baños

@@ -13,8 +13,8 @@ Marcá cada casilla (en GitHub podés editar este archivo y cambiar `[ ]` por
 
 ## 2. Lo que tenés que completar vos
 
-- [x] El email de contacto (lautarolacazeok@gmail.com) ya está en `store/privacy.html` y `store/support.html`.
-- [ ] Las dos páginas están publicadas: **`https://247-wc.vercel.app/privacy.html`** y **`https://247-wc.vercel.app/support.html`** (o tus URLs) abren desde el celular, sin login, en español y en inglés.
+- [x] El email de contacto (lautarolacazeok@gmail.com) ya está en `site/privacy.html` y `site/support.html`.
+- [ ] Importaste el repo en Vercel (README → «Privacidad y soporte») y las dos páginas están publicadas: **`https://ios247wc.vercel.app/privacy.html`** y **`https://ios247wc.vercel.app/support.html`** (o tus URLs) abren desde el celular, sin login, en español y en inglés.
 - [ ] Si publicaste la política en otra URL, cambiaste `PRIVACY_URL` en `native/text.js`, corriste `npm test` y `npm run sync`, y subiste un build nuevo.
 - [ ] En **Derechos de autor** reemplazaste `[TU NOMBRE O EL DE TU EMPRESA]` por el nombre que figura como vendedor en tu cuenta.
 - [ ] Buscaste `[TU` en todo lo que vas a pegar o publicar y no quedó ningún marcador.
@@ -69,7 +69,7 @@ Marcá cada casilla (en GitHub podés editar este archivo y cambiar `[ ]` por
 
 - [ ] **Capturas** de iPhone 6,9" (1320 × 2868 o 1290 × 2796 px), al menos 1 (mejor entre 4 y 6), sin transparencia. `npm run screenshots` las genera en `store/screenshots/es/` y `store/screenshots/en/`.
 - [ ] **Texto promocional, descripción y palabras clave** en los dos idiomas.
-- [ ] **URL de soporte:** `https://247-wc.vercel.app/support.html` (o tu URL). **URL de marketing:** vacía (no la landing; ver `store/listing-es.md`).
+- [ ] **URL de soporte:** `https://ios247wc.vercel.app/support.html` (o tu URL). **URL de marketing:** vacía (no la landing; ver `store/listing-es.md`).
 - [ ] **Derechos de autor.**
 - [ ] **Build** elegido.
 - [ ] **App Review Information:** «Sign-in required» desmarcado, tus datos de contacto y las notas de `store/review-notes.md`.

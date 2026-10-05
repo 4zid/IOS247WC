@@ -473,21 +473,29 @@ una página de soporte** (con una forma de contactarte) y **el cuestionario
 «App Privacy»** (la «etiqueta nutricional» de la ficha).
 
 **1. Publicar la política y la página de soporte.** Ya están escritas, en
-español y en inglés: [`store/privacy.html`](store/privacy.html) y
-[`store/support.html`](store/support.html), con tu email de contacto
-(lautarolacazeok@gmail.com) ya puesto. Para publicarlas, una de estas:
+español y en inglés: [`site/privacy.html`](site/privacy.html) y
+[`site/support.html`](site/support.html), con tu email de contacto
+(lautarolacazeok@gmail.com) ya puesto. Se publican con **un proyecto de
+Vercel propio de este repo**, independiente del de la web:
 
-- **En la web de 247WC (recomendado):** ya están subidas al repo de la web
-  ([4zid/247wc](https://github.com/4zid/247wc)), en la raíz, en la rama
-  `prod`, y publicadas en **https://247-wc.vercel.app/privacy.html** y
-  **https://247-wc.vercel.app/support.html**. Abrí las dos URLs desde el
-  celular para confirmar que cargan. Si algún día las cambiás acá, copialas
-  de nuevo a la raíz de ese repo, en la rama `prod` (en GitHub: **Add file →
-  Upload files**).
-- **En Framer (o Webflow):** creá dos páginas (por ejemplo `/privacidad` y
-  `/soporte`) y pegá los textos. Tienen que ser públicas y no pedir login.
-  **Ojo:** la app ya trae un link a `https://247-wc.vercel.app/privacy.html`
-  (ver el punto 3); si la política queda en otra URL, cambiá ese link.
+1. En [vercel.com/new](https://vercel.com/new), importá el repo
+   **4zid/IOS247WC**.
+2. Dejá el nombre que propone Vercel (`ios247wc`) y no cambies nada más: el
+   archivo [`vercel.json`](vercel.json) ya le dice que publique solo la
+   carpeta `site/`, sin instalar ni compilar nada. Tocá **Deploy**.
+3. Quedan en **https://ios247wc.vercel.app/privacy.html** y **https://ios247wc.vercel.app/support.html** (la raíz,
+   https://ios247wc.vercel.app, lleva a soporte). Abrilas desde el celular, en una pestaña
+   privada, para confirmar que cargan sin pedir login de Vercel.
+
+Vercel vuelve a publicar con cada push a `prod`; las páginas solo cambian si
+tocás `site/`. Si Vercel te da otro dominio (por ejemplo, porque `ios247wc`
+ya estaba usado), cambiá `PRIVACY_URL` (punto 3) y las URLs de
+`store/listing-es.md`, `store/listing-en.md`, `store/app-privacy.md` y
+`store/CHECKLIST.md`.
+
+Otra opción es armarlas **en Framer (o Webflow)**: dos páginas (por ejemplo
+`/privacidad` y `/soporte`) con estos textos, públicas y sin login. En ese
+caso también hay que cambiar `PRIVACY_URL` y esas URLs.
 
 La URL de la política va en **App Privacy → Privacy Policy URL**; la de
 soporte, en la página de la versión → **Support URL** (y está en
@@ -505,14 +513,14 @@ tienen que coincidir.
 **3. Link a la política dentro de la app.** Apple también pide (pauta 5.1.1)
 que la política se pueda abrir desde la app. **Ya está:** en el modal de Info,
 el link **«Política de privacidad»** («Privacy Policy» en inglés) abre
-`https://247-wc.vercel.app/privacy.html` en Safari dentro de la app. Por eso
-conviene publicarla justo en esa URL (la opción recomendada de arriba).
+`https://ios247wc.vercel.app/privacy.html` en Safari dentro de la app. Por eso conviene publicarla
+justo en esa URL (con el proyecto de Vercel del punto 1).
 
 Si la publicás en otra URL (por ejemplo en Framer o Webflow), cambiá la
 constante `PRIVACY_URL`, al principio de `native/text.js`:
 
 ```js
-const PRIVACY_URL = 'https://247-wc.vercel.app/privacy.html';
+const PRIVACY_URL = 'https://ios247wc.vercel.app/privacy.html';
 ```
 
 Después: `npm test`, `npm run sync` y subí un build nuevo (Camino A o B). Sin
@@ -687,13 +695,12 @@ una constante al principio de `native/bridge.js`:
 const API_BASE = 'https://247-wc.vercel.app';
 ```
 
-- **Confirmá que ese es el dominio real** donde está publicada la web (abrí
-  `https://247-wc.vercel.app/landing` en el navegador). Si la web se muda a un
-  dominio propio, cambiá esa línea y también `PRIVACY_URL` en
-  `native/text.js` (el link a la política), corré `npm test` (la prueba T2
-  también busca ese dominio, en `tests/bridge.e2e.mjs`), `npm run sync` y
-  publicá una versión nueva. Acordate de actualizar también las URLs de
-  privacidad y de soporte en App Store Connect.
+- **Es el proyecto de Vercel de la web**, no el de este repo: la app usa la
+  búsqueda de la web, así que ese proyecto tiene que seguir publicado. Si la
+  web se muda a un dominio propio, cambiá esa línea, corré `npm test` (la
+  prueba T2 también busca ese dominio, en `tests/bridge.e2e.mjs`),
+  `npm run sync` y publicá una versión nueva. La política y el soporte no
+  dependen de la web (están en el proyecto de Vercel de este repo).
 - **Si la API no responde, la app sigue funcionando:** consulta OpenStreetMap
   (Overpass) directo desde el teléfono, como hace la web, con el mismo punto
   redondeado (~250 m) que le manda a la API, nunca la posición exacta.
@@ -865,11 +872,13 @@ tests/
   workflows/testflight.yml sube a TestFlight sin Mac
   ci/                      ayudantes de esos workflows (incluida la firma manual)
 docs/NATIVE-API.md         contrato entre la web y la capa nativa
+site/                      lo que publica el proyecto de Vercel de este repo
+  privacy.html             política de privacidad (en español e inglés)
+  support.html             página de soporte (en español e inglés)
+vercel.json                le dice a Vercel que publique solo site/
 store/                     todo para el App Store
   listing-es.md            ficha en español (con los caracteres contados)
   listing-en.md            ficha en inglés
-  privacy.html             política de privacidad lista para publicar
-  support.html             página de soporte lista para publicar
   app-privacy.md           respuestas del cuestionario App Privacy
   review-notes.md          notas para la revisión de Apple (inglés + traducción)
   CHECKLIST.md             lista para revisar antes de enviar

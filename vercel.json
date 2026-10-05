@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo 'Sitio estático (site/): no hay nada que instalar'",
+  "buildCommand": "echo 'Sitio estático (site/): no hay nada que compilar'",
+  "outputDirectory": "site",
+  "redirects": [
+    { "source": "/", "destination": "/support.html", "permanent": false },
+    { "source": "/privacy", "destination": "/privacy.html", "permanent": false },
+    { "source": "/support", "destination": "/support.html", "permanent": false }
+  ]
+}

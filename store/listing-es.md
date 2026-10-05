@@ -107,10 +107,10 @@ para TestFlight («Qué probar») o adaptalo para la primera actualización.
 ## URL de soporte
 
 ```text
-https://247-wc.vercel.app/support.html
+https://ios247wc.vercel.app/support.html
 ```
 
-Es [`store/support.html`](support.html) publicada al lado de la política (ver
+Es [`site/support.html`](../site/support.html) publicada al lado de la política (ver
 README → «Privacidad y soporte»): ayuda en español y en inglés y un email de
 contacto (lautarolacazeok@gmail.com), que es lo que Apple pide. Si la publicás en otra URL
 (Framer, Webflow), poné esa acá.
@@ -147,6 +147,6 @@ la versión y vale para todos los idiomas.
 
 - **Precio:** gratis, en todos los países.
 - **Clasificación por edad:** 4+ (respuestas en el README, «Clasificación por edad»).
-- **URL de la política de privacidad:** `https://247-wc.vercel.app/privacy.html`
-  una vez publicada (ver `store/privacy.html`). Va en **App Privacy**.
+- **URL de la política de privacidad:** `https://ios247wc.vercel.app/privacy.html`
+  una vez publicada (ver `site/privacy.html`). Va en **App Privacy**.
 - **Capturas:** iPhone 6,9", 1320 × 2868 o 1290 × 2796 px (ver el README).

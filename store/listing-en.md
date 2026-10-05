@@ -106,10 +106,10 @@ campo. Queda para la 1.0.1 o para TestFlight.
 ## Support URL
 
 ```text
-https://247-wc.vercel.app/support.html
+https://ios247wc.vercel.app/support.html
 ```
 
-La misma página que en español: `store/support.html` tiene las dos versiones
+La misma página que en español: `site/support.html` tiene las dos versiones
 (el inglés está más abajo, y el botón «English» de arriba lleva directo).
 
 ## Marketing URL
