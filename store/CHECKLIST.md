@@ -13,7 +13,7 @@ Marcá cada casilla (en GitHub podés editar este archivo y cambiar `[ ]` por
 
 ## 2. Lo que tenés que completar vos
 
-- [ ] En `store/privacy.html` **y** en `store/support.html` reemplazaste **todas** las apariciones de `[TU EMAIL DE CONTACTO]`.
+- [x] El email de contacto (lautarolacazeok@gmail.com) ya está en `store/privacy.html` y `store/support.html`.
 - [ ] Las dos páginas están publicadas: **`https://247-wc.vercel.app/privacy.html`** y **`https://247-wc.vercel.app/support.html`** (o tus URLs) abren desde el celular, sin login, en español y en inglés.
 - [ ] Si publicaste la política en otra URL, cambiaste `PRIVACY_URL` en `native/text.js`, corriste `npm test` y `npm run sync`, y subiste un build nuevo.
 - [ ] En **Derechos de autor** reemplazaste `[TU NOMBRE O EL DE TU EMPRESA]` por el nombre que figura como vendedor en tu cuenta.

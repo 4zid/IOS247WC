@@ -474,18 +474,18 @@ una página de soporte** (con una forma de contactarte) y **el cuestionario
 
 **1. Publicar la política y la página de soporte.** Ya están escritas, en
 español y en inglés: [`store/privacy.html`](store/privacy.html) y
-[`store/support.html`](store/support.html). **Primero**, en los dos archivos,
-buscá `[TU EMAIL DE CONTACTO]` y reemplazalo por tu email (con «Buscar y
-reemplazar todo»: aparece en el texto y en los links `mailto:`). Después, una
-de estas:
+[`store/support.html`](store/support.html), con tu email de contacto
+(lautarolacazeok@gmail.com) ya puesto. Para publicarlas, una de estas:
 
-- **En la web de 247WC (recomendado):** en GitHub, entrá al repo de la web
-  ([4zid/247wc](https://github.com/4zid/247wc)) → **Add file → Upload files** →
-  arrastrá `privacy.html` y `support.html` (a la raíz del repo, al lado de
-  `index.html`) → **Commit changes**. Vercel las publica solas en unos
-  segundos en **https://247-wc.vercel.app/privacy.html** y
+- **En la web de 247WC (recomendado):** ya están subidas al repo de la web
+  ([4zid/247wc](https://github.com/4zid/247wc)), en la raíz, en la rama
+  `claude/hopeful-hawking-x3dk6x`. Vercel solo publica en producción la rama
+  `claude/wizardly-turing-5opkyj`: abrí un pull request de una a la otra y
+  mergealo. En unos segundos quedan en
+  **https://247-wc.vercel.app/privacy.html** y
   **https://247-wc.vercel.app/support.html**. Abrí las dos URLs desde el
-  celular para confirmar que cargan.
+  celular para confirmar que cargan. Si algún día las cambiás acá, copialas
+  de nuevo a la raíz de ese repo (en GitHub: **Add file → Upload files**).
 - **En Framer (o Webflow):** creá dos páginas (por ejemplo `/privacidad` y
   `/soporte`) y pegá los textos. Tienen que ser públicas y no pedir login.
   **Ojo:** la app ya trae un link a `https://247-wc.vercel.app/privacy.html`

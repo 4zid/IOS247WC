@@ -112,9 +112,8 @@ https://247-wc.vercel.app/support.html
 
 Es [`store/support.html`](support.html) publicada al lado de la política (ver
 README → «Privacidad y soporte»): ayuda en español y en inglés y un email de
-contacto, que es lo que Apple pide. Antes de publicarla, reemplazá
-`[TU EMAIL DE CONTACTO]`. Si la publicás en otra URL (Framer, Webflow), poné
-esa acá.
+contacto (lautarolacazeok@gmail.com), que es lo que Apple pide. Si la publicás en otra URL
+(Framer, Webflow), poné esa acá.
 
 ## URL de marketing
 
