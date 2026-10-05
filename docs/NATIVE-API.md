@@ -2,11 +2,11 @@
 
 La app iOS es la web app de `web/` empaquetada con Capacitor 8. La web **no se
 modifica a mano**: `scripts/build-web.mjs` la copia a `www/`, le inyecta la capa
-nativa (`native/`) y aplica doce parches chicos y verificados. La capa nativa
-reemplaza las APIs del navegador que en una app no alcanzan o se ven mal
-(diálogos de permiso con «localhost», sin vibración, sin bloqueo de pantalla,
-links que salen a Safari) y suma lo que se espera de una app de iPhone
-(deslizar desde el borde para volver).
+nativa (`native/`) y aplica dieciséis parches chicos y verificados. La capa
+nativa reemplaza las APIs del navegador que en una app no alcanzan o se ven
+mal (diálogos de permiso con «localhost», sin vibración, sin bloqueo de
+pantalla, links que salen a Safari) y suma lo que se espera de una app de
+iPhone (deslizar desde el borde para volver, la guía con el mapa a la vista).
 
 ```
 web/            copia de 4zid/247wc (index.html, app.js, lang.js, styles.css…)
@@ -15,7 +15,8 @@ native/         capa nativa en JS, se inyecta en www/index.html
   text.js       window.WC_NATIVE_TEXT: textos que cambian en la app (es/en)
   bridge.js     shims de APIs del navegador → plugins nativos
   gestures.js   deslizar desde el borde izquierdo para volver
-  native.css    retoques mínimos de estilo para la app
+  guide.js      la guía con el mapa: el recorrido se acorta al caminar y el mapa te sigue
+  native.css    retoques mínimos de estilo para la app (y el panel de la guía)
 ios/App/App/    proyecto Xcode
   WCNativePlugin.swift   plugin propio «WCNative» (ubicación, brújula, mapas…)
   MainViewController.swift  subclase de CAPBridgeViewController que lo registra
@@ -34,6 +35,7 @@ clásicos (sin `type="module"`, sin `defer`), para que corran antes que
 <script src="native/text.js"></script>
 <script src="native/bridge.js"></script>
 <script src="native/gestures.js"></script>
+<script src="native/guide.js"></script>
 ```
 
 En el dispositivo, Capacitor inyecta `native-bridge.js` al inicio del documento
@@ -41,17 +43,18 @@ En el dispositivo, Capacitor inyecta `native-bridge.js` al inicio del documento
 `PluginHeaders`). `capacitor.js` (el bundle de `@capacitor/core`) le agrega
 `registerPlugin`. `bridge.js` usa `Capacitor.registerPlugin(nombre)`.
 
-`gestures.js` va después de `bridge.js` pero no depende de él: solo usa
-`window.Capacitor` y el DOM de la web (sus listeners van en `document`, así
-que no necesita esperar a que app.js arme la página).
+`gestures.js` y `guide.js` van después de `bridge.js` pero no dependen de él:
+solo usan `window.Capacitor` y el DOM de la web, y se enganchan en
+`DOMContentLoaded`. `guide.js` además usa lo que app.js le deja en
+`window.WC.guideKit` al terminar de cargar (parche 13).
 
 Si `Capacitor.isNativePlatform()` es falso (abrir `www/` en un navegador),
-`bridge.js` y `gestures.js` no tocan nada. `native.css` se carga igual, pero
+`bridge.js`, `gestures.js` y `guide.js` no tocan nada. `native.css` se carga igual, pero
 todas sus reglas van con `html.native`, la clase que pone `bridge.js`.
 
 ## Parches del build (todos verificados: si el ancla no aparece exactamente una vez, el build falla)
 
-Son doce, en `PATCHES` de `scripts/build-web.mjs`. Se aplican en memoria: si
+Son dieciséis, en `PATCHES` de `scripts/build-web.mjs`. Se aplican en memoria: si
 uno falla, `www/` queda como estaba.
 
 `index.html` (8):
@@ -84,7 +87,7 @@ uno falla, `www/` queda como estaba.
    pasa a
    `const v = globalThis.WC_NATIVE_TEXT?.[LANG]?.[key] ?? (MOUSE ? dict.mouse?.[key] : undefined) ?? dict[key] ?? DICT.es[key] ?? key;`
 
-`app.js` (3). El 10 y el 12 son para el respaldo directo a Overpass desde el
+`app.js` (7). El 10 y el 12 son para el respaldo directo a Overpass desde el
 teléfono (solo cuando `/api/toilets` falla o contesta `parcial`): así la
 posición exacta solo sale hacia el servicio de rutas (Valhalla u OSRM), como
 dice la política.
@@ -133,12 +136,38 @@ dice la política.
     `const query = overpassQuery({ lat: snap(center.lat), lng: snap(center.lng) }, radius + 250);`:
     el mismo punto redondeado a ~250 m (y el mismo margen de radio) que va a la API.
 
+Del 13 al 16, para la guía con el mapa (ver «Guía con el mapa»):
+
+13. Antes de `window.WC.ready = true;` agrega
+    `window.WC.guideKit = { state, el, map, setRoute, fitPoints, distance, fmtDistance, fmtMinutes, t };`:
+    las piezas internas de app.js (un módulo) que usa `guide.js`.
+14. Al final de `updateGuide()` (después de `maybeRecalculateRoute();`)
+    agrega `window.WCGuide?.tick();`. `updateGuide` corre con cada posición y
+    con cada lectura de la brújula.
+15. En `maybeRecalculateRoute()`, la condición de desvío
+    `.every((c) => distance(state.me, { lat: c[0], lng: c[1] }) > 45);` pasa a
+    exigir además `window.WCGuide?.offRoute?.(state.me, state.route.coords, 45) ?? true`:
+    estar a más de 45 m **de la línea** del recorrido, no solo de sus
+    vértices. En una cuadra larga o una avenida recta los vértices quedan a
+    más de 90 m entre sí: a mitad de cuadra, caminando sobre el recorrido, ya
+    estabas a más de 45 m de los dos, y la web recalculaba cada 20 s sin
+    motivo (y la indicación volvía a «Caminá hacia…»).
+16. Después de `setRoute(map, fresh.coords, false);` (la ruta recalculada)
+    agrega `window.WCGuide?.tick();`, para dibujarla desde tu punto en el
+    acto.
+
+El aviso va a `window.WCGuide` y no a `window.WC` porque `index.html` vuelve a
+crear `window.WC` (`window.WC = { build, … }`) después de los scripts nativos.
+Los nombres de adentro de `guideKit` no son anclas: si el upstream renombra
+alguno, el build pasa y la guía queda como en la web (sin recorrido que se
+acorta). Lo atrapa la prueba T17.
+
 El build además verifica que todo `href`/`src` local de `www/index.html`
 exista en `www/`.
 
 Archivos que se copian a `www/`: `index.html`, `app.js`, `lang.js`,
 `styles.css`, `favicon.svg`, `brand/logo/*.svg`, `vendor/**`, `fonts/inter.woff2`
-y `native/` (`native.css`, `text.js`, `bridge.js`, `gestures.js`, más
+y `native/` (`native.css`, `text.js`, `bridge.js`, `gestures.js`, `guide.js`, más
 `capacitor.js`, que sale de `node_modules/@capacitor/core`). No van `sw.js`,
 `manifest.webmanifest`, la landing ni `api/`.
 
@@ -376,6 +405,101 @@ El gesto depende de estos nombres de la web: `#sheet` y su `data-open`,
 que su `keydown` con Enter alterne la hoja), `<dialog id="info">` e
 `#info-close`. No son anclas del build: si el upstream cambia alguno, el build
 pasa y el gesto deja de andar en silencio. Lo atrapa la prueba T16.
+
+## Guía con el mapa (`native/guide.js` y `native.css`)
+
+En la web, la guía (`#guide`) tapa la pantalla entera: la brújula grande, la
+distancia, la indicación y dos botones («Abrir en Google Maps» y «Ver en el
+mapa»). En la app es un **panel abajo** y arriba queda **el mapa, que te
+sigue mientras caminás**. Solo con `max-width: 759px` (en un iPhone en
+vertical, siempre) y solo en la app.
+
+### El panel (`native.css`)
+
+Los selectores van con `#guide` para ganarles a los de `styles.css` (que
+carga después y gana los empates, como el degradé del tema oscuro).
+
+- `#guide` pasa de `inset: 0` a `inset: auto 0 0 0`: fondo `--surface`, bordes
+  de arriba redondeados (28 px), sombra hacia arriba y `--safe-b` abajo. Es
+  una grilla de 3 columnas (`1fr auto 1fr`) con estas áreas:
+
+  ```
+  "dist dial eta"        distancia · brújula · minutos
+  "step step step"       la próxima indicación
+  "compass compass …"    «Activar brújula» (solo si iOS la pide con un toque)
+  "maps maps maps"       «Abrir en Mapas»
+  "hint hint hint"       «Seguí la flecha…» / «Sin brújula…»
+  ```
+
+  `.guide-modules` y `.guide-stats` van con `display: contents` para que sus
+  hijos sean celdas de esa grilla; `.guide-sep` se oculta.
+- La brújula (`.dial`) baja de `min(60vw, 240px)` a 112 px, con las letras a
+  20 px del aro (en vez de 26) y la cara a 14 px (en vez de 20).
+- Distancia y minutos en 22 px (en vez de 32), con su rótulo en 12 px.
+- La indicación (`.guide-step-row`) en una franja `--surface-2` sin sombra, 14 px.
+- «Ver en el mapa» (`#guide-map`) se oculta: el mapa ya está a la vista.
+  «Abrir en Mapas» (`#guide-maps`) va a lo ancho, `--blue-soft` con texto
+  `--blue`, con el ícono y el texto de su `aria-label` (`::after { content:
+  attr(aria-label) }`; la app ya lo traduce, `openMaps` de `text.js`).
+- `.guide-top` (la X y «Yendo a …») queda arriba, `position: fixed`, como una
+  barra blanca redondeada que flota sobre el mapa.
+- Mientras guía (`html.guiding`, la pone `guide.js`; no `:has()`, que iOS
+  15.0–15.3 no tiene), se ocultan la barra de arriba de la web (`.topbar`),
+  la hoja (`#sheet`), el botón azul y «Mi ubicación» (`visibility: hidden`).
+  Los otros baños quedan a la vista pero tenues (`opacity: .45`) y **no se
+  pueden tocar** (`.mk-pin { pointer-events: none }`): tocar uno cambiaría el
+  destino sin querer. Los avisos (`.toast`) suben arriba del panel
+  (`--guide-h`).
+
+### El recorrido y el mapa (`guide.js`)
+
+`guide.js` se entera de cada vuelta de la guía por `window.WCGuide.tick()`
+(parches 14 y 16) y usa las piezas de `window.WC.guideKit` (parche 13). Abre
+y cierra con un `MutationObserver` sobre el atributo `hidden` de `#guide`.
+
+- **El recorrido se acorta.** Con una ruta a pie (Valhalla u OSRM), busca tu
+  lugar sobre la línea: el punto más cercano de cada tramo, en un plano
+  local en metros. Saltar más de 80 m adelante de donde ibas cuesta medio
+  metro por metro (si el recorrido da una vuelta y pasa cerca de sí mismo, no
+  te adelanta de golpe); volver atrás no cuesta. Dibuja (`setRoute`) desde
+  ese punto hasta el final: lo caminado desaparece. Si estás a 25 m o menos
+  de la línea, la línea sale de tu punto mismo. Con la línea recta punteada
+  (sin ruta a pie), la redibuja de tu punto al baño.
+- **Lo que falta.** Distancia y minutos (`fmtDistance`, `fmtMinutes`) por lo
+  que falta del recorrido, no en línea recta como la web.
+- **La próxima indicación.** La primera maniobra que está más de 5 m adelante
+  de tu lugar en el recorrido; si está a más de 30 m, con `untilStep`
+  («Seguí hasta 120 m: …»). En los primeros 15 m, la de salida («Caminá hacia
+  el norte por …»). La web mostraba la maniobra más cercana en línea recta,
+  aunque ya la hubieras pasado. Al llegar manda el «¡Llegaste!» de app.js.
+- app.js reescribe la distancia, los minutos y la indicación en cada vuelta
+  (también con cada lectura de la brújula): `guide.js` los vuelve a poner
+  enseguida, en el mismo instante, así que no parpadean. Los cálculos solo se
+  rehacen cuando cambia tu posición o la ruta.
+- **El mapa te sigue.** Con cada posición (y cuando cambia el alto del panel)
+  encuadra tu punto y lo que falta del recorrido con `fitPoints` (animación
+  de 600 ms, `maxZoom` 17.5): entre la barra de arriba (+60 px, porque el pin
+  del baño se dibuja hacia arriba de su punta) y el panel (+24 px), con 44 px a
+  los costados. A medida que te acercás, se acerca.
+- **Si movés el mapa con el dedo** (`dragstart`, `zoomstart`, `rotatestart` o
+  `pitchstart` con `originalEvent`), deja de seguirte y aparece
+  `#guide-recenter` (el mismo ícono que «Mi ubicación», arriba del panel a la
+  derecha). Al tocarlo vuelve a seguirte.
+- **Si te desviás**, app.js recalcula la ruta como siempre (como mucho cada
+  20 s), pero con el desvío medido contra la línea (parche 15,
+  `WCGuide.offRoute`). La ruta nueva se dibuja desde tu punto apenas llega.
+- Al cerrar con la X, el recorrido queda dibujado desde donde estabas.
+
+### Si cambia la web
+
+Depende de: `#guide` y su `hidden`, `.guide-top`, `.dial`, `.guide-modules`,
+`.guide-stats` (con sus tres hijos), `.guide-step-row`, `#guide-compass`,
+`.gmod-row`, `#guide-maps` y su `aria-label`, `#guide-map`, `#guide-hint`,
+`#guide-dist`, `#guide-eta`, `#guide-step`, `.topbar`, `#sheet`, `.mk-pin`,
+`.wc-pin[data-selected]`, la fuente `route` del mapa y los nombres de
+`guideKit` (`state.guiding`, `state.me`, `state.selected`, `state.route` con
+`coords`, `steps[].loc`/`text` y `fallback`, `state.routeFor`,
+`state.arrived`). Lo atrapan T4 y T17.
 
 ## Retoques de `native.css`
 

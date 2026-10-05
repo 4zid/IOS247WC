@@ -72,3 +72,128 @@ html.native #scan[data-onb="2"] #onb-skip {
   html.native .map-controls { bottom: calc(var(--sheet-peek) + 13px); }
   html.native .toast { bottom: calc(var(--sheet-peek) + 76px); }
 }
+
+/* Guía con el mapa (native/guide.js). En la web la guía tapa la pantalla
+   entera con la brújula grande; en la app es un panel abajo y arriba se ve el
+   mapa, que te sigue mientras caminás. En el panel: la brújula más chica al
+   centro, la distancia y los minutos a los costados, la próxima indicación y
+   un solo botón, «Abrir en Mapas» (sin «Ver en el mapa»: el mapa ya está a la
+   vista). Arriba, una barra con la X y a dónde vas.
+   Los selectores van con #guide para ganarles a los de la web (styles.css
+   carga después y pisa los empates, como el degradé del tema oscuro). */
+@media (max-width: 759px) {
+  /* Mientras guía, lo demás de la pantalla se va: queda el mapa. html.guiding
+     lo pone guide.js (no :has(), que iOS 15.0–15.3 no tiene). */
+  html.native.guiding .topbar,
+  html.native.guiding #sheet,
+  html.native.guiding .scan-fab,
+  html.native.guiding .map-controls { visibility: hidden; pointer-events: none; }
+  /* Los otros baños se ven, más tenues, pero no se tocan: tocar uno cambiaría
+     el destino sin querer. */
+  html.native.guiding .mk-pin { pointer-events: none; }
+  html.native.guiding .wc-pin[data-selected="0"] { opacity: .45; }
+  html.native.guiding .toast { bottom: calc(var(--guide-h, 320px) + 12px); }
+
+  html.native #guide {
+    inset: auto 0 0 0;
+    max-height: 72vh;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: none;
+    grid-template-areas:
+      "dist dial eta"
+      "step step step"
+      "compass compass compass"
+      "maps maps maps"
+      "hint hint hint";
+    align-items: center;
+    gap: 12px 8px;
+    padding: 16px 16px calc(10px + var(--safe-b));
+    overflow: visible;
+    background: var(--surface);
+    border-radius: 28px 28px 0 0;
+    box-shadow: 0 -8px 30px rgba(12, 26, 56, .14);
+  }
+
+  /* Barra de arriba, flotando sobre el mapa. */
+  html.native #guide .guide-top {
+    position: fixed;
+    top: calc(10px + var(--safe-t));
+    left: 12px; right: 12px;
+    padding: 4px 18px 4px 4px;
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  html.native #guide .guide-top .icon-btn { background: var(--surface-2); box-shadow: none; }
+
+  /* Brújula chica: 112 px, con las letras más pegadas al aro. */
+  html.native #guide .dial { grid-area: dial; width: 112px; height: 112px; margin: 20px 0 18px; }
+  html.native #guide .dial-face { inset: 14px; box-shadow: 0 6px 18px rgba(10, 60, 140, .14); }
+  html.native #guide .dial-ring::before {
+    -webkit-mask: radial-gradient(circle, transparent 0 calc(50% - 7px), #000 calc(50% - 7px));
+    mask: radial-gradient(circle, transparent 0 calc(50% - 7px), #000 calc(50% - 7px));
+  }
+  html.native #guide .dial-ring span { width: 18px; height: 18px; font-size: 11px; }
+  html.native #guide .dial-ring .n { top: -20px; }
+  html.native #guide .dial-ring .s { bottom: -20px; }
+  html.native #guide .dial-ring .e { right: -20px; }
+  html.native #guide .dial-ring .w { left: -20px; }
+
+  /* Distancia y minutos, chicos, a los costados de la brújula. */
+  html.native #guide .guide-modules,
+  html.native #guide .guide-stats { display: contents; }
+  html.native #guide .guide-stats > .guide-sep { display: none; }
+  html.native #guide .guide-stats > div:not(.guide-sep) { display: grid; gap: 2px; text-align: center; animation: none; }
+  html.native #guide .guide-stats > div:first-child { grid-area: dist; }
+  html.native #guide .guide-stats > div:last-child { grid-area: eta; }
+  html.native #guide .guide-stats strong { font-size: 22px; letter-spacing: -.035em; }
+  html.native #guide .guide-stats small { font-size: 12px; }
+
+  /* La indicación, en una franja suave del ancho del panel. */
+  html.native #guide .guide-step-row {
+    grid-area: step;
+    gap: 10px;
+    padding: 9px 14px 9px 9px;
+    border-radius: 18px;
+    background: var(--surface-2);
+    box-shadow: none;
+    animation: none;
+  }
+  html.native #guide .step-ico { width: 32px; height: 32px; }
+  html.native #guide .step-ico svg { width: 18px; height: 18px; }
+  html.native #guide .guide-step { font-size: 14px; line-height: 1.3; }
+
+  html.native #guide #guide-compass { grid-area: compass; box-shadow: none; animation: none; }
+
+  /* Un solo botón: «Abrir en Mapas», a lo ancho, con el ícono y el texto
+     (el mismo del aria-label, que la app ya traduce). */
+  html.native #guide .gmod-row { grid-area: maps; }
+  html.native #guide #guide-map { display: none; }
+  html.native #guide #guide-maps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 10px;
+    padding: 14px 20px;
+    background: var(--blue-soft);
+    color: var(--blue);
+    font: 700 15.5px var(--font);
+    box-shadow: none;
+    animation: none;
+  }
+  html.native #guide #guide-maps svg { width: 22px; height: 22px; }
+  html.native #guide #guide-maps::after { content: attr(aria-label); }
+
+  html.native #guide .guide-hint { grid-area: hint; margin: -2px 0 0; color: var(--text-dim); font-size: 12px; }
+
+  /* Volver a centrar, arriba del panel a la derecha (aparece si moviste el
+     mapa con el dedo). */
+  html.native #guide #guide-recenter {
+    position: absolute;
+    right: 12px;
+    bottom: calc(100% + 12px);
+    width: 46px; height: 46px;
+    box-shadow: var(--shadow);
+  }
+}

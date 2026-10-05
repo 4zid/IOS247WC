@@ -36,7 +36,7 @@ export const WEB_FILES = [
 ];
 
 // Archivos propios de la capa nativa (más capacitor.js, que sale de node_modules).
-const NATIVE_FILES = ['native.css', 'text.js', 'bridge.js', 'gestures.js'];
+const NATIVE_FILES = ['native.css', 'text.js', 'bridge.js', 'gestures.js', 'guide.js'];
 
 export class BuildError extends Error {}
 
@@ -51,6 +51,7 @@ const NATIVE_BLOCK = [
   '<script src="native/text.js"></script>',
   '<script src="native/bridge.js"></script>',
   '<script src="native/gestures.js"></script>',
+  '<script src="native/guide.js"></script>',
 ].join('\n');
 
 // Inter va empaquetada: en la app no dependemos de Google Fonts (ni de red
@@ -186,6 +187,43 @@ const PATCHES = {
       name: 'respaldo a Overpass con el punto redondeado',
       anchor: /const query = overpassQuery\(center, radius\);/g,
       replace: () => 'const query = overpassQuery({ lat: snap(center.lat), lng: snap(center.lng) }, radius + 250);',
+    },
+    // Guía con el mapa (native/guide.js): la guía pasa a ser un panel abajo y
+    // arriba se ve el mapa siguiéndote, con el recorrido que se acorta a
+    // medida que caminás. guide.js necesita piezas internas de app.js (que es
+    // un módulo): se las pasamos al final, y lo avisamos en cada vuelta de la
+    // guía y cuando llega una ruta recalculada. El aviso va a window.WCGuide y
+    // no a window.WC, porque index.html crea window.WC de nuevo después de los
+    // scripts nativos.
+    {
+      name: 'guía con el mapa: piezas para native/guide.js',
+      anchor: /^window\.WC\.ready = true;$/gm,
+      replace: (m) => [
+        '// App iOS: native/guide.js arma la guía con el mapa con estas piezas.',
+        'window.WC.guideKit = { state, el, map, setRoute, fitPoints, distance, fmtDistance, fmtMinutes, t };',
+        m,
+      ].join('\n'),
+    },
+    {
+      name: 'guía con el mapa: aviso en cada vuelta de la guía',
+      anchor: /^( {2})maybeRecalculateRoute\(\);\n\}/gm,
+      replace: (_m, ind) => `${ind}maybeRecalculateRoute();\n${ind}window.WCGuide?.tick();\n}`,
+    },
+    // app.js da por desviado al que está a más de 45 m de todos los vértices
+    // del recorrido, pero en una cuadra larga (o una avenida recta) los
+    // vértices quedan lejos: a mitad de cuadra, sobre el recorrido, ya estás a
+    // más de 45 m de los dos y recalculaba cada 20 s sin motivo (y la
+    // indicación volvía a «Caminá hacia…»). Ahora además tenés que estar a
+    // más de 45 m de la línea misma.
+    {
+      name: 'guía con el mapa: desvío medido contra la línea del recorrido',
+      anchor: /\.every\(\(c\) => distance\(state\.me, \{ lat: c\[0\], lng: c\[1\] \}\) > 45\);/g,
+      replace: () => '.every((c) => distance(state.me, { lat: c[0], lng: c[1] }) > 45) &&\n    (window.WCGuide?.offRoute?.(state.me, state.route.coords, 45) ?? true);',
+    },
+    {
+      name: 'guía con el mapa: aviso al recalcular la ruta',
+      anchor: /^( {2})setRoute\(map, fresh\.coords, false\);$/gm,
+      replace: (m, ind) => `${m}\n${ind}window.WCGuide?.tick();`,
     },
   ],
 };

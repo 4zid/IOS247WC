@@ -27,7 +27,7 @@ HOW TO TEST (about one minute)
 1. Open the app. A 3-step intro appears: tap "Next" twice, then "Continue".
 2. In the iOS dialog, choose "Allow While Using App".
 3. The app scans the area and shows a card with the closest public toilet: name, distance, a mini-map and the walking route.
-4. Tap "Guide me". A large arrow points to the toilet using the iPhone compass, with live distance and walking time. The screen stays on during guidance and the phone vibrates on arrival. Tap the X to exit.
+4. Tap "Guide me". The map shows your walking route, follows you and shortens the route as you walk; below it, an arrow points to the toilet using the iPhone compass, with the live remaining distance, walking time and next turn. The screen stays on during guidance and the phone vibrates on arrival. Tap the X to exit.
 5. Optional: the list icon shows all toilets, with filters (Free, 24 h, Accessible, Changing table) and "Include bars and shops". The blue directions icon (a diamond with a turn arrow, "Open in Maps") opens the walking route in Google Maps if installed, otherwise in Apple Maps.
 6. Home Screen quick action: touch and hold the app icon and choose "Nearest toilet". The app scans and starts guidance right away.
 
@@ -75,9 +75,11 @@ The app is designed for iPhone. On iPad it runs in iPhone compatibility mode.
 > 2. En el cartel de iOS, elegí «Permitir al usar la app».
 > 3. La app escanea la zona y muestra una tarjeta con el baño público más
 >    cercano: nombre, distancia, un minimapa y la ruta a pie.
-> 4. Tocá «Guiarme». Una flecha grande apunta al baño con la brújula del
->    iPhone, con la distancia y el tiempo caminando en vivo. La pantalla queda
->    encendida durante la guía y el teléfono vibra al llegar. Tocá la X para salir.
+> 4. Tocá «Guiarme». El mapa muestra el recorrido a pie, te sigue y lo va
+>    acortando mientras caminás; abajo, una flecha apunta al baño con la
+>    brújula del iPhone, con la distancia y el tiempo que faltan y la próxima
+>    indicación, en vivo. La pantalla queda encendida durante la guía y el
+>    teléfono vibra al llegar. Tocá la X para salir.
 > 5. Opcional: el ícono de lista muestra todos los baños, con filtros (Gratis,
 >    24 h, Accesible, Cambiador) e «Incluir bares y negocios». El ícono azul de
 >    indicaciones (un rombo con una flecha de giro, «Abrir en Mapas») abre la

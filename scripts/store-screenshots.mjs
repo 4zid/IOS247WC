@@ -446,7 +446,8 @@ async function screens(browser, base, lang) {
     }));
     check(g.compass === '1' && g.rot !== '', `${lang} guía: la flecha no tomó la brújula (${JSON.stringify(g)})`);
     await healthy(page, errors, blocked, `${lang} guía`);
-    files[3] = await shot(page, lang, 3, { homeLight: true });
+    // La guía es un panel blanco abajo (native.css): barra de inicio oscura.
+    files[3] = await shot(page, lang, 3);
 
     await page.click('#guide-close');
     await mapIdle(page, 'bestMap');

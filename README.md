@@ -39,13 +39,13 @@ metida adentro de una app de iOS con [Capacitor](https://capacitorjs.com/) 8, m�
 una **capa nativa** que reemplaza lo que en una app no anda bien desde el
 navegador: el permiso de ubicación, la brújula, la vibración, la pantalla
 encendida y los links. También suma el gesto de iOS de deslizar desde el borde
-para volver.
+para volver, y la guía muestra el mapa con el recorrido mientras caminás.
 
 ```
 web/      la web, copiada tal cual de 4zid/247wc (no se edita a mano)
-native/   la capa nativa del lado web: bridge.js, text.js, gestures.js, native.css
+native/   la capa nativa del lado web: bridge.js, text.js, gestures.js, guide.js, native.css
    │
-   │  npm run build   copia web/ + native/ a www/ y aplica 12 parches chiquitos
+   │  npm run build   copia web/ + native/ a www/ y aplica 16 parches chiquitos
    ▼
 www/      la web lista para la app (se genera, no está en git)
    │
@@ -82,6 +82,7 @@ repo no hace falta leerlo; sirve si algún día alguien tiene que tocar el códi
 | El botón redondo de la derecha, arriba del botón azul («Centrar en mi ubicación»), tiene una flecha de navegación y te muestra solo tu punto, muy de cerca (zoom 17) | **«Mi ubicación»**: el ícono es un anillo con un punto azul adentro (como tu punto en el mapa) y al tocarlo quedás en el centro del mapa, un poco más de lejos, con los **baños más cercanos a la vista**: hasta 3, a menos de 1 km, de los que muestra la lista (con tus filtros). Si no hay ninguno a menos de 1 km, igual quedás en el centro, con unos 600 m a tu alrededor a la vista (unas 6 cuadras para cada lado). Si la app todavía no sabe dónde estás, escanea, igual que la web. |
 | En los iPhone con Face ID, el botón azul («Escanear baños») queda a unos 50 px de la hoja de abajo: la web le suma el área segura de abajo (la barra de inicio), que en el iPhone ya tapa la hoja | **El botón azul queda a 12 px de la hoja, y «Mi ubicación» a su derecha, en la misma fila** (alineados por el centro). Los avisos de abajo bajan con ellos. Si el texto del botón azul es largo y el iPhone angosto («Buscando en esta zona…» en un iPhone SE o mini), el botón azul se corre un poco a la izquierda para no tocar a «Mi ubicación»; en el iPhone SE de 1.ª generación (320 px), además, el texto largo termina en «…». |
 | Para volver hay que tocar «Lista», bajar la hoja o tocar la X | **Deslizar desde el borde izquierdo para volver**, como en las apps de iOS: del detalle de un baño a la lista (mientras deslizás, el detalle se corre y deja ver la lista debajo, donde la habías dejado); la lista o la tarjeta del más cercano abiertas enteras bajan siguiendo al dedo y queda el mapa; el modal de Info (ajustes) se corre y se cierra. Si la soltás antes de un tercio de la pantalla (y sin envión), todo vuelve a su lugar; lo mismo si apoyás un segundo dedo. Mientras termina un gesto no empieza otro, así dos deslizamientos seguidos no vuelven a abrir la lista. El dedo tiene que arrancar pegado al borde (los primeros 24 px). **No** funciona en la portada, en la introducción ni en la guía (la guía se cierra con la X, para no salir sin querer mientras caminás), ni con la hoja abajo y sin un baño abierto (ahí no hay a dónde volver). |
+| La guía tapa toda la pantalla con la brújula grande; para ver el mapa hay que tocar «Ver en el mapa» (y la guía queda en pausa). La distancia es en línea recta y la indicación es la maniobra más cercana, aunque ya la hayas pasado | **La guía con el mapa**: arriba, el mapa te sigue mientras caminás y el recorrido se va acortando desde tu punto (lo caminado desaparece). Abajo, un panel con la brújula más chica al centro, la distancia y los minutos que faltan **por el recorrido** a los costados, la **próxima** indicación («Seguí hasta 120 m: girá a la derecha…») y un solo botón, «Abrir en Mapas». Si movés el mapa con el dedo deja de seguirte y aparece un botón para volver a centrar. Los otros baños se ven tenues y no se pueden tocar (para no cambiar de destino sin querer). Si te desviás, recalcula la ruta midiendo la distancia a la línea del recorrido (la web, solo a sus esquinas, y en una cuadra larga recalculaba sin motivo). |
 
 Además: es **solo para iPhone**, en vertical, desde **iOS 15**. El idioma
 (español o inglés) sigue al del iPhone, y también se traducen el cartel de
@@ -824,15 +825,16 @@ npm test
 
 `npm test` arma `www/` y corre `tests/bridge.e2e.mjs`: abre la app en Chromium
 simulando un iPhone, con la parte nativa de Capacitor imitada
-(`tests/fixtures/capacitor-mock.js`), y revisa 16 escenarios (T1 a T16):
+(`tests/fixtures/capacitor-mock.js`), y revisa 17 escenarios (T1 a T17):
 ubicación, permiso negado con el botón Abrir Ajustes, la guía con brújula y
 pantalla encendida, vibración, links y mapas, tema claro y oscuro, pantalla de
 arranque, acceso directo, el modal de Info, la API con su plan B, los detalles
 de la ubicación, la pantalla previa al permiso («Continuar», sin «Ahora no»),
 «Mi ubicación» (el ícono y el encuadre con los baños cercanos), el botón azul
 a 12 px de la hoja con «Mi ubicación» en su fila (todos los textos, en
-todos los anchos de iPhone) y deslizar desde el borde para volver (con un dedo simulado
-por el protocolo de Chrome). Si algo falla, sale con error. Deja capturas en
+todos los anchos de iPhone), deslizar desde el borde para volver (con un dedo simulado
+por el protocolo de Chrome) y la guía con el mapa (caminando por el recorrido,
+desviándote y moviendo el mapa con el dedo). Si algo falla, sale con error. Deja capturas en
 `tests/.output/`.
 
 Para correr solo algunas: `node tests/bridge.e2e.mjs T2 T4`.
@@ -853,7 +855,8 @@ native/                    capa nativa del lado web (se inyecta en www/index.htm
   bridge.js                reemplaza ubicación, brújula, vibración, links, fetch… por lo nativo
   text.js                  textos de la web que cambian en la app (es/en)
   gestures.js              deslizar desde el borde izquierdo para volver
-  native.css               retoques mínimos de estilo (y el botón azul más cerca de la hoja)
+  guide.js                 la guía con el mapa: el recorrido se acorta y el mapa te sigue
+  native.css               retoques mínimos de estilo (el botón azul, el panel de la guía)
 www/                       la web armada para la app (se genera; no está en git)
 
 ios/App/
