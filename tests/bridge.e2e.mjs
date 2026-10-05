@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* 247WC iOS — pruebas de punta a punta de la capa nativa (native/bridge.js).
+/* 247WC iOS — pruebas de punta a punta de la capa nativa (native/bridge.js, gestures.js y native.css).
 
    Sirve www/ (ya construido: npm test corre el build antes) desde 127.0.0.1,
    abre Chromium emulando un iPhone y, antes que cualquier script de la página,
@@ -172,6 +172,59 @@ async function scanFlow(page) {
   await page.locator('#scan-go').click();
   await page.locator('#view-best').waitFor({ state: 'visible', timeout: 10000 });
   await page.waitForFunction((name) => document.getElementById('best-name')?.textContent === name, NEAREST.tags.name, { timeout: 5000 });
+}
+
+// Distancia en metros entre dos puntos { lat, lng } (la misma cuenta que app.js).
+function meters(a, b) {
+  const R = 6371000, rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+// Los baños del fixture (sin los comercios) a menos de 1 km de `me`, del más cercano al más lejano.
+const toiletsNear = (me, max = 1000) => TOILETS.elements
+  .filter((e) => e.tags.amenity === 'toilets')
+  .map((e) => ({ name: e.tags.name, lat: e.lat, lng: e.lon, d: meters(me, { lat: e.lat, lng: e.lon }) }))
+  .filter((x) => x.d <= max)
+  .sort((a, b) => a.d - b.d);
+
+// Baja la hoja a su altura mínima (como el teclado en la manija) y espera la transición.
+async function collapseSheet(page) {
+  if (await page.evaluate(() => document.getElementById('sheet').dataset.open) === 'full') {
+    await page.locator('.sheet-handle').press('Enter');
+  }
+  await page.waitForFunction(() => document.getElementById('sheet').dataset.open === 'peek');
+  await page.waitForTimeout(450);   // .32 s de la hoja y .2 s del botón azul
+}
+
+// Arma la espera del próximo 'moveend' del mapa (antes de tocar lo que lo mueve).
+async function armMoveEnd(page) {
+  await page.evaluate(() => {
+    window.__moved = false;
+    window.WC.map.once('moveend', () => { window.__moved = true; });
+  });
+  return () => page.waitForFunction(() => window.__moved === true, null, { timeout: 5000 });
+}
+
+const box = (page, sel) => page.evaluate((s) => {
+  const r = document.querySelector(s).getBoundingClientRect();
+  return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height };
+}, sel);
+
+// Dedo de verdad por el protocolo de Chrome: touchStart, varios touchMove y
+// touchEnd, como en la pantalla del iPhone. `during` corre antes de soltar.
+async function swipe(page, cdp, { from, to, y = 520, steps = 10, stepMs = 16, during = null }) {
+  const touch = (type, x) => cdp.send('Input.dispatchTouchEvent', {
+    type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1, radiusX: 8, radiusY: 8, force: 1 }],
+  });
+  await touch('touchStart', from);
+  for (let i = 1; i <= steps; i++) {
+    await page.waitForTimeout(stepMs);
+    await touch('touchMove', from + ((to - from) * i) / steps);
+  }
+  if (during) await during();
+  await touch('touchEnd', to);
 }
 
 // Sin pantalla de error fatal ni excepciones de la página.
@@ -599,6 +652,348 @@ const SCENARIOS = [
       await healthy(page, errors);
       return page;
     } finally { await context.close(); }
+  }],
+
+  ['T14', 'locate', '«Mi ubicación»: tu punto azul y vos al centro con los baños cercanos a la vista', async (b, base) => {
+    // a) El ícono: un anillo con el punto azul relleno, no la flecha de navegación.
+    let { context, page, errors } = await openApp(b, base, { config: { permission: 'prompt' } });
+    try {
+      const icon = await page.evaluate(() => {
+        const svg = document.querySelector('#btn-locate svg');
+        const circles = [...svg.querySelectorAll('circle')];
+        const probe = document.createElement('i');
+        probe.style.color = 'var(--blue)';
+        document.body.append(probe);
+        const blue = getComputedStyle(probe).color;
+        probe.remove();
+        return {
+          circles: circles.length,
+          paths: svg.querySelectorAll('path, use').length,
+          r: circles.map((c) => parseFloat(c.getAttribute('r'))),
+          style: circles[1]?.getAttribute('style') || '',
+          fill: circles[1] ? getComputedStyle(circles[1]).fill : '',
+          outerFill: circles[0] ? getComputedStyle(circles[0]).fill : '',
+          blue,
+        };
+      });
+      assert(icon.circles === 2 && icon.paths === 0, `ícono de #btn-locate: ${icon.circles} círculos y ${icon.paths} paths (¿la flecha vieja?)`);
+      assert(icon.r[1] < icon.r[0], `el punto no está adentro del anillo: r = ${icon.r}`);
+      assert(/var\(--blue\)/.test(icon.style) && icon.fill === icon.blue, `el punto no es azul: ${icon.style} → ${icon.fill} (azul ${icon.blue})`);
+      assert(icon.outerFill !== icon.blue, 'el anillo también está relleno de azul');
+
+      // b) Después de escanear, con el mapa lejos: «Mi ubicación» te trae de vuelta.
+      await scanFlow(page);
+      await collapseSheet(page);
+      await page.evaluate(() => window.WC.map.jumpTo({ center: [-58.6, -34.9], zoom: 11 }));
+      const moved = await armMoveEnd(page);
+      await page.locator('#btn-locate').click();
+      await moved();
+      await page.waitForFunction(() => !window.WC.map.isMoving());
+      const me = { lat: -34.6037, lng: -58.3816 };   // la posición por defecto del mock
+      const near = toiletsNear(me).slice(0, 3);
+      assert(near.length === 3, `el fixture tiene ${near.length} baños a menos de 1 km (esperaba 3)`);
+      const v = await page.evaluate(([pos, pts]) => {
+        const m = window.WC.map;
+        const xy = (p) => { const q = m.project([p.lng, p.lat]); return { x: q.x, y: q.y }; };
+        return {
+          zoom: m.getZoom(),
+          me: xy(pos),
+          pts: pts.map((p) => ({ name: p.name, ...xy(p) })),
+          sheetTop: document.getElementById('sheet').getBoundingClientRect().top,
+          W: innerWidth,
+        };
+      }, [me, near]);
+      assert(v.zoom >= 13.5 && v.zoom <= 16, `zoom ${v.zoom.toFixed(2)} (esperaba entre 13,5 y 16)`);
+      // El centro de lo que se ve del mapa: entre el borde de arriba y la hoja.
+      const cy = v.sheetTop / 2;
+      assert(Math.abs(v.me.x - v.W / 2) <= 6 && Math.abs(v.me.y - cy) <= 30,
+        `tu punto quedó en (${v.me.x.toFixed(0)}, ${v.me.y.toFixed(0)}); el centro visible es (${v.W / 2}, ${cy.toFixed(0)})`);
+      for (const p of v.pts) {
+        assert(p.x >= 0 && p.x <= v.W && p.y >= 0 && p.y <= v.sheetTop,
+          `«${p.name}» quedó fuera de la vista: (${p.x.toFixed(0)}, ${p.y.toFixed(0)}), hoja en y=${v.sheetTop.toFixed(0)}`);
+      }
+      await healthy(page, errors);
+      await shot(page, 'T14-locate');
+    } finally { await context.close(); }
+
+    // c) Sin baños a menos de 1 km (estás ~1,7 km al norte): unos 600 m a tu
+    //    alrededor, con vos igual en el centro de lo que se ve.
+    const far = { lat: -34.5887, lng: -58.3816 };
+    assert(toiletsNear(far).length === 0, 'la posición lejana tiene baños a menos de 1 km');
+    ({ context, page, errors } = await openApp(b, base, {
+      config: { permission: 'granted', position: { latitude: far.lat, longitude: far.lng, accuracy: 12 } },
+    }));
+    try {
+      await page.locator('#view-best').waitFor({ state: 'visible', timeout: 10000 });
+      await collapseSheet(page);
+      await page.evaluate(() => window.WC.map.jumpTo({ center: [-58.6, -34.9], zoom: 11 }));
+      const moved = await armMoveEnd(page);
+      await page.locator('#btn-locate').click();
+      await moved();
+      await page.waitForFunction(() => !window.WC.map.isMoving());
+      const v = await page.evaluate((pos) => {
+        const m = window.WC.map;
+        const q = m.project([pos.lng, pos.lat]);
+        return { zoom: m.getZoom(), x: q.x, y: q.y, sheetTop: document.getElementById('sheet').getBoundingClientRect().top, W: innerWidth };
+      }, far);
+      assert(v.zoom >= 13.5 && v.zoom <= 16, `sin baños cerca: zoom ${v.zoom.toFixed(2)} (esperaba entre 13,5 y 16)`);
+      // A ese zoom, 600 m son más que el ancho libre del mapa (entre los márgenes).
+      const mPerPx = (156543.03 * Math.cos((far.lat * Math.PI) / 180)) / 2 ** v.zoom;
+      assert(1200 / mPerPx <= v.W - 120 + 2, `sin baños cerca: 1,2 km ocupan ${(1200 / mPerPx).toFixed(0)} px (el mapa libre tiene ${v.W - 120})`);
+      const cy = v.sheetTop / 2;
+      assert(Math.abs(v.x - v.W / 2) <= 6 && Math.abs(v.y - cy) <= 30,
+        `sin baños cerca: tu punto quedó en (${v.x.toFixed(0)}, ${v.y.toFixed(0)}); el centro visible es (${v.W / 2}, ${cy.toFixed(0)})`);
+      await healthy(page, errors);
+      return page;
+    } finally { await shot(page, 'T14-locate-far'); await context.close(); }
+  }],
+
+  ['T15', 'fab-gap', 'Botón azul a ~12 px de la hoja con el área segura del iPhone; la web sin cambios', async (b, base) => {
+    // El área segura de abajo de un iPhone con Face ID (34 px): la web la lee de --safe-b.
+    const SAFE = 34;
+    const setSafe = (page) => page.evaluate((px) => document.documentElement.style.setProperty('--safe-b', `${px}px`), SAFE);
+    const measure = (page) => page.evaluate(() => {
+      const r = (s) => document.querySelector(s).getBoundingClientRect();
+      const fab = r('.scan-fab'), loc = r('#btn-locate'), sheet = r('#sheet');
+      return {
+        gap: sheet.top - fab.bottom,
+        fab: { left: fab.left, right: fab.right, top: fab.top, bottom: fab.bottom },
+        loc: { left: loc.left, right: loc.right, top: loc.top, bottom: loc.bottom },
+        peek: getComputedStyle(document.documentElement).getPropertyValue('--sheet-peek').trim(),
+        padB: getComputedStyle(document.getElementById('sheet')).paddingBottom,
+        native: document.documentElement.classList.contains('native'),
+        nativeCss: [...document.styleSheets].some((s) => /native\/native\.css/.test(s.href || '')),
+        sheetState: document.body.dataset.sheet,
+      };
+    });
+    // Con la máquina cargada las transiciones (.32 s la hoja, .2 s el botón)
+    // pueden tardar más: se mide cuando dos lecturas seguidas coinciden.
+    const settled = async (page) => {
+      let prev = null;
+      for (let i = 0; i < 30; i++) {
+        await page.waitForTimeout(100);
+        const m = await measure(page);
+        if (prev && prev.gap === m.gap && prev.fab.top === m.fab.top && prev.loc.top === m.loc.top) return m;
+        prev = m;
+      }
+      return prev;
+    };
+    const apart = (a, c) => ({
+      h: a.right <= c.left || c.right <= a.left,
+      v: a.bottom <= c.top || c.bottom <= a.top,
+    });
+
+    // a) En la app, con la tarjeta (peek 132) y con la lista (peek 214).
+    let { context, page, errors } = await openApp(b, base, { config: { permission: 'prompt' } });
+    try {
+      await setSafe(page);
+      await scanFlow(page);
+      await collapseSheet(page);
+      const best = await settled(page);
+      assert(best.padB === `${18 + SAFE}px`, `el área segura no se aplicó (padding de la hoja: ${best.padB})`);
+      assert(best.gap >= 8 && best.gap <= 16, `tarjeta (peek ${best.peek}): el botón azul queda a ${best.gap.toFixed(1)} px de la hoja`);
+      let o = apart(best.loc, best.fab);
+      assert(o.h && o.v, `«Mi ubicación» se pisa con el botón azul: ${JSON.stringify({ loc: best.loc, fab: best.fab })}`);
+      await shot(page, 'T15-fab-gap');
+
+      // Con la tarjeta compacta abajo, la lista se abre desde el chip de arriba.
+      await page.locator('#status').click();
+      await page.waitForFunction(() => document.getElementById('sheet').dataset.open === 'full' && !document.getElementById('view-list').hidden);
+      await collapseSheet(page);
+      const list = await settled(page);
+      assert(list.peek === '214px', `la lista no quedó abajo (peek ${list.peek})`);
+      assert(list.gap >= 8 && list.gap <= 16, `lista (peek ${list.peek}): el botón azul queda a ${list.gap.toFixed(1)} px de la hoja`);
+      o = apart(list.loc, list.fab);
+      assert(o.h && o.v, `«Mi ubicación» se pisa con el botón azul en la lista: ${JSON.stringify({ loc: list.loc, fab: list.fab })}`);
+      await healthy(page, errors);
+      await shot(page, 'T15-fab-gap-list');
+    } finally { await context.close(); }
+
+    // b) En un navegador común (sin la capa nativa) queda donde lo pone la web:
+    //    18 px más el área segura. native.css se carga igual, pero sus reglas
+    //    van con html.native.
+    ({ context, page, errors } = await openApp(b, base, { mock: false }));
+    try {
+      await setSafe(page);
+      const web = await settled(page);
+      assert(!web.native && web.nativeCss, `modo web: clase native ${web.native}, native.css cargado ${web.nativeCss}`);
+      assert(web.sheetState === 'peek', `modo web: la hoja está ${web.sheetState}`);
+      assert(Math.abs(web.gap - (18 + SAFE)) <= 1, `modo web: el botón azul queda a ${web.gap.toFixed(1)} px de la hoja (la web lo pone a ${18 + SAFE})`);
+      await healthy(page, errors.filter((e) => !/sw\.js|api\/toilets|404/.test(e)));
+      return page;
+    } finally { await shot(page, 'T15-fab-gap-web'); await context.close(); }
+  }],
+
+  ['T16', 'swipe-back', 'Deslizar desde el borde izquierdo para volver (detalle, lista, ajustes; no en la guía)', async (b, base) => {
+    const { context, page, errors } = await openApp(b, base, { config: { permission: 'prompt' } });
+    try {
+      const cdp = await context.newCDPSession(page);
+      const ui = () => page.evaluate(() => {
+        const d = document.getElementById('view-detail');
+        const l = document.getElementById('view-list');
+        return {
+          detail: !d.hidden, list: !l.hidden,
+          open: document.getElementById('sheet').dataset.open,
+          info: document.getElementById('info').open,
+          guide: !document.getElementById('guide').hidden,
+          detailTranslate: d.style.translate, detailOpacity: d.style.opacity,
+          listTranslate: l.style.translate,
+        };
+      });
+      const settle = () => page.waitForTimeout(450);   // 200 ms de la salida + la limpieza
+      const openList = async () => {
+        await page.locator('#status').click();
+        await page.waitForFunction(() => document.getElementById('sheet').dataset.open === 'full' && !document.getElementById('view-list').hidden);
+        await page.waitForTimeout(400);
+      };
+      const openDetail = async () => {
+        await openList();
+        await page.locator('#list .item').first().click();
+        await page.waitForFunction(() => !document.getElementById('view-detail').hidden && document.getElementById('sheet').dataset.open === 'full');
+        await page.waitForTimeout(400);
+      };
+
+      await scanFlow(page);
+
+      // c) Lista abierta entera → deslizar desde el borde la baja.
+      await openList();
+      let sheetMid = '';
+      await swipe(page, cdp, {
+        from: 6, to: 300,
+        during: async () => { sheetMid = await page.evaluate(() => document.getElementById('sheet').style.translate); },
+      });
+      assert(/^0px \d+px$/.test(sheetMid) && parseFloat(sheetMid.split(' ')[1]) > 40, `(c) la hoja no bajó siguiendo al dedo: translate «${sheetMid}»`);
+      await page.waitForFunction(() => document.getElementById('sheet').dataset.open === 'peek', null, { timeout: 2000 })
+        .catch(() => { throw new Fail('(c) la lista abierta no bajó con el gesto'); });
+      await settle();
+      let s = await ui();
+      const sheetStyle = await page.evaluate(() => document.getElementById('sheet').style.cssText);
+      assert(s.list && s.listTranslate === '' && !/translate|height/.test(sheetStyle), `(c) después de bajar la lista: ${JSON.stringify(s)} · hoja «${sheetStyle}»`);
+
+      // c2) Dos gestos seguidos no la vuelven a abrir (el segundo llega mientras baja).
+      await openList();
+      await swipe(page, cdp, { from: 6, to: 300 });
+      await swipe(page, cdp, { from: 6, to: 300 });
+      await page.waitForTimeout(900);
+      s = await ui();
+      assert(s.open === 'peek', `(c2) dos gestos seguidos dejaron la hoja «${s.open}»`);
+
+      // b) Detalle: un gesto corto y lento no vuelve y la vista queda en su lugar.
+      await openDetail();
+      await swipe(page, cdp, { from: 6, to: 60, steps: 10, stepMs: 40 });
+      await settle();
+      s = await ui();
+      assert(s.detail && !s.list && s.open === 'full', `(b) un gesto corto volvió: ${JSON.stringify(s)}`);
+      assert(s.detailTranslate === '' && s.detailOpacity === '', `(b) la vista quedó corrida: translate «${s.detailTranslate}», opacity «${s.detailOpacity}»`);
+
+      // b2) Un segundo dedo en medio del gesto: todo vuelve a su lugar.
+      const tp = (id, x) => ({ x, y: 520, id, radiusX: 8, radiusY: 8, force: 1 });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [tp(1, 6)] });
+      for (let i = 1; i <= 8; i++) {
+        await page.waitForTimeout(16);
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [tp(1, 6 + i * 20)] });
+      }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [tp(1, 166), tp(2, 250)] });
+      await page.waitForTimeout(16);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [tp(1, 330), tp(2, 330)] });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await settle();
+      s = await ui();
+      assert(s.detail && !s.list && s.open === 'full' && s.detailTranslate === '' && s.listTranslate === '',
+        `(b2) con un segundo dedo: ${JSON.stringify(s)}`);
+
+      // e) Lejos del borde (x = 200) no hace nada.
+      await swipe(page, cdp, { from: 200, to: 390 });
+      await settle();
+      s = await ui();
+      assert(s.detail && s.open === 'full' && s.detailTranslate === '', `(e) un gesto desde x=200 hizo algo: ${JSON.stringify(s)}`);
+
+      // a) Desde el borde hasta x = 300: la vista sigue al dedo y vuelve a la lista.
+      let midTranslate = '';
+      let behind = null;
+      await swipe(page, cdp, {
+        from: 6, to: 300,
+        during: async () => {
+          midTranslate = await page.evaluate(() => document.getElementById('view-detail').style.translate);
+          behind = await page.evaluate(() => {
+            const l = document.getElementById('view-list');
+            const r = l.getBoundingClientRect();
+            return { shown: !l.hidden && r.height > 100, top: r.top, detailTop: document.getElementById('view-detail').getBoundingClientRect().top };
+          });
+        },
+      });
+      assert(/^2\d\dpx/.test(midTranslate), `(a) la vista no siguió al dedo: translate «${midTranslate}»`);
+      assert(behind?.shown && Math.abs(behind.top - behind.detailTop) <= 1, `(a) la lista no se ve detrás del detalle: ${JSON.stringify(behind)}`);
+      await page.waitForFunction(() => document.getElementById('view-detail').hidden && !document.getElementById('view-list').hidden, null, { timeout: 2000 })
+        .catch(() => { throw new Fail('(a) el gesto desde el borde no volvió a la lista'); });
+      await settle();
+      s = await ui();
+      assert(s.detailTranslate === '' && s.detailOpacity === '', `(a) la vista del detalle quedó corrida: ${JSON.stringify(s)}`);
+      await shot(page, 'T16-swipe-back');
+
+      // a2) Si habías bajado en la lista, detrás del detalle se ve en el mismo lugar
+      //     (Chromium ya lo conserva al ocultarla; gestures.js lo repone por si el
+      //     WebView de iOS no).
+      await openList();
+      const scrolled = await page.evaluate(() => {
+        const l = document.getElementById('view-list');
+        // El fixture tiene pocos baños y la lista entra entera: le damos aire
+        // abajo para que haya scroll.
+        l.style.paddingBottom = '600px';
+        l.scrollTop = 120;
+        return l.scrollTop;
+      });
+      await page.waitForTimeout(100);
+      await page.evaluate(() => {
+        const l = document.getElementById('view-list');
+        const lt = l.getBoundingClientRect().top;
+        [...l.querySelectorAll('.item')].find((it) => it.getBoundingClientRect().top > lt + 10)?.click();
+      });
+      await page.waitForFunction(() => !document.getElementById('view-detail').hidden);
+      await page.waitForTimeout(400);
+      let behindScroll = -1;
+      await swipe(page, cdp, {
+        from: 6, to: 300,
+        during: async () => { behindScroll = await page.evaluate(() => document.getElementById('view-list').scrollTop); },
+      });
+      await page.waitForFunction(() => document.getElementById('view-detail').hidden, null, { timeout: 2000 })
+        .catch(() => { throw new Fail('(a2) el gesto no volvió a la lista'); });
+      await settle();
+      const after = await page.evaluate(() => document.getElementById('view-list').scrollTop);
+      assert(scrolled > 0 && Math.abs(behindScroll - scrolled) <= 1 && Math.abs(after - scrolled) <= 1,
+        `(a2) la lista bajada ${scrolled} px se vio en ${behindScroll} px detrás y quedó en ${after} px`);
+
+      // d) Ajustes: un gesto corto no lo cierra; desde el borde hasta x = 300, sí.
+      await page.locator('#btn-info').click();
+      await page.locator('#info').waitFor({ state: 'visible' });
+      await page.waitForTimeout(300);
+      await swipe(page, cdp, { from: 6, to: 50, steps: 10, stepMs: 40 });
+      await settle();
+      assert((await ui()).info, '(d) un gesto corto cerró ajustes');
+      await swipe(page, cdp, { from: 6, to: 300 });
+      await page.waitForFunction(() => !document.getElementById('info').open, null, { timeout: 2000 })
+        .catch(() => { throw new Fail('(d) el gesto desde el borde no cerró ajustes'); });
+      await settle();
+      const infoStyle = await page.evaluate(() => document.getElementById('info').style.cssText);
+      assert(!/translate|opacity/.test(infoStyle), `(d) el modal quedó con estilos del gesto: ${infoStyle}`);
+
+      // f) Guía: el gesto no hace nada (se cierra con la X).
+      await openDetail();
+      await page.locator('#btn-guide').click();
+      await page.locator('#guide').waitFor({ state: 'visible' });
+      await page.waitForTimeout(300);
+      const before = await ui();
+      await swipe(page, cdp, { from: 6, to: 300 });
+      await settle();
+      s = await ui();
+      assert(s.guide, '(f) el gesto cerró la guía');
+      assert(s.detail === before.detail && s.open === before.open && s.detailTranslate === '',
+        `(f) el gesto cambió lo de abajo de la guía: ${JSON.stringify(before)} → ${JSON.stringify(s)}`);
+      await page.locator('#guide-close').click();
+
+      await healthy(page, errors);
+      return page;
+    } finally { await shot(page, 'T16-swipe-back-end'); await context.close(); }
   }],
 ];
 

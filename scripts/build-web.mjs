@@ -61,9 +61,9 @@ const LOCAL_FONT = [
   '</style>',
 ].join('\n');
 
-// «Mi ubicación»: en vez de la flecha de navegación, tu punto azul con su
-// halo (el mismo que ves en el mapa). El ancla es el botón entero, porque la
-// flecha también la usa el botón azul.
+// «Mi ubicación»: en vez de la flecha de navegación, un anillo con un punto
+// azul adentro (como tu punto en el mapa). El ancla es el botón entero, porque
+// la flecha también la usa el botón azul.
 const LOCATE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
   '<circle cx="12" cy="12" r="7.6"/>' +
   '<circle cx="12" cy="12" r="3.9" style="fill: var(--blue); stroke: none"/></svg>';
@@ -78,9 +78,10 @@ const LOCATE_HANDLER_OLD = [
   '});',
 ].join('\n');
 const LOCATE_HANDLER_NEW = [
-  '// App iOS: «Mi ubicación» te deja en el centro y encuadra alrededor los',
-  '// baños más cercanos (hasta 3, a menos de 1 km), con un zoom de barrio. Si',
-  '// no hay ninguno cerca, igual se ve la zona (~1,5 km de ancho).',
+  '// App iOS: «Mi ubicación» te deja en el centro de lo que se ve del mapa (entre',
+  '// el borde de arriba y la hoja) y encuadra alrededor los baños más cercanos',
+  '// (hasta 3, a menos de 1 km). Si no hay ninguno, igual ves unos 600 m a tu',
+  '// alrededor, para ubicarte en el barrio.',
   'function locateMe() {',
   '  const me = state.me;',
   '  const near = visiblePlaces()',
@@ -88,10 +89,15 @@ const LOCATE_HANDLER_NEW = [
   '    .filter((x) => x.d <= 1000)',
   '    .sort((a, b) => a.d - b.d)',
   '    .slice(0, 3);',
-  '  if (!near.length) return setView(map, me.lat, me.lng, 15);',
-  '  // Cada baño y su reflejo respecto de vos: el encuadre queda centrado en tu punto.',
   '  const pts = [[me.lat, me.lng]];',
-  '  for (const { p } of near) pts.push([p.lat, p.lng], [2 * me.lat - p.lat, 2 * me.lng - p.lng]);',
+  '  if (near.length) {',
+  '    // Cada baño y su reflejo respecto de vos: el encuadre queda centrado en tu punto.',
+  '    for (const { p } of near) pts.push([p.lat, p.lng], [2 * me.lat - p.lat, 2 * me.lng - p.lng]);',
+  '  } else {',
+  '    const dLat = 600 / 111320;',
+  '    const dLng = dLat / Math.cos((me.lat * Math.PI) / 180);',
+  '    pts.push([me.lat + dLat, me.lng + dLng], [me.lat - dLat, me.lng - dLng]);',
+  '  }',
   '  fitPoints(map, pts, { top: 130, bottom: PEEK() + 110, left: 60, right: 60, maxZoom: 16 });',
   '}',
   '',

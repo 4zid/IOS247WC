@@ -38,13 +38,14 @@ La app es **la misma web** de [4zid/247wc](https://github.com/4zid/247wc)
 metida adentro de una app de iOS con [Capacitor](https://capacitorjs.com/) 8, más
 una **capa nativa** que reemplaza lo que en una app no anda bien desde el
 navegador: el permiso de ubicación, la brújula, la vibración, la pantalla
-encendida y los links.
+encendida y los links. También suma el gesto de iOS de deslizar desde el borde
+para volver.
 
 ```
 web/      la web, copiada tal cual de 4zid/247wc (no se edita a mano)
-native/   la capa nativa del lado web: bridge.js, text.js, native.css
+native/   la capa nativa del lado web: bridge.js, text.js, gestures.js, native.css
    │
-   │  npm run build   copia web/ + native/ a www/ y aplica 10 parches chiquitos
+   │  npm run build   copia web/ + native/ a www/ y aplica 12 parches chiquitos
    ▼
 www/      la web lista para la app (se genera, no está en git)
    │
@@ -78,6 +79,9 @@ repo no hace falta leerlo; sirve si algún día alguien tiene que tocar el códi
 | Instalar como PWA, service worker, fuente de Google Fonts | No hay nada de eso: **todo viene adentro de la app** (HTML, código, el motor del mapa y la tipografía Inter). Solo necesita internet para buscar baños, para las calles del mapa y para la ruta a pie. |
 | La búsqueda va a `/api/toilets` del mismo sitio | Va a `https://247-wc.vercel.app/api/toilets` por una conexión nativa. Si esa API no responde, la app consulta OpenStreetMap directo, igual que la web. |
 | Barra de estado del navegador | La barra de estado sigue el tema claro u oscuro de la app; ícono con variantes oscura y «tintada» de iOS 18; pantalla de arranque con el logo. |
+| El botón redondo de la derecha, arriba del botón azul («Centrar en mi ubicación»), tiene una flecha de navegación y te muestra solo tu punto, muy de cerca (zoom 17) | **«Mi ubicación»**: el ícono es un anillo con un punto azul adentro (como tu punto en el mapa) y al tocarlo quedás en el centro del mapa, un poco más de lejos, con los **baños más cercanos a la vista**: hasta 3, a menos de 1 km, de los que muestra la lista (con tus filtros). Si no hay ninguno a menos de 1 km, igual quedás en el centro, con unos 600 m a tu alrededor a la vista (unas 6 cuadras para cada lado). Si la app todavía no sabe dónde estás, escanea, igual que la web. |
+| En los iPhone con Face ID, el botón azul («Escanear baños») queda a unos 50 px de la hoja de abajo: la web le suma el área segura de abajo (la barra de inicio), que en el iPhone ya tapa la hoja | **El botón azul queda a 12 px de la hoja**, y «Mi ubicación» y los avisos de abajo bajan con él (entre «Mi ubicación» y el botón azul queda la misma distancia que en la web). |
+| Para volver hay que tocar «Lista», bajar la hoja o tocar la X | **Deslizar desde el borde izquierdo para volver**, como en las apps de iOS: del detalle de un baño a la lista (mientras deslizás, el detalle se corre y deja ver la lista debajo, donde la habías dejado); la lista o la tarjeta del más cercano abiertas enteras bajan siguiendo al dedo y queda el mapa; el modal de Info (ajustes) se corre y se cierra. Si la soltás antes de un tercio de la pantalla (y sin envión), todo vuelve a su lugar; lo mismo si apoyás un segundo dedo. Mientras termina un gesto no empieza otro, así dos deslizamientos seguidos no vuelven a abrir la lista. El dedo tiene que arrancar pegado al borde (los primeros 24 px). **No** funciona en la portada, en la introducción ni en la guía (la guía se cierra con la X, para no salir sin querer mientras caminás), ni con la hoja abajo y sin un baño abierto (ahí no hay a dónde volver). |
 
 Además: es **solo para iPhone**, en vertical, desde **iOS 15**. El idioma
 (español o inglés) sigue al del iPhone, y también se traducen el cartel de
@@ -232,8 +236,9 @@ según el norte del mapa (la app lo avisa). Para probarlas, usá tu iPhone.
    **Ajustes → General → VPN y gestión de dispositivos** → tu cuenta → **Confiar**.
 
 Probá todo: escanear, la guía con la brújula (caminá un poco), la vibración al
-llegar, «Abrir en Mapas», y el acceso directo (mantené apretado el ícono →
-**Baño más cercano**).
+llegar, «Abrir en Mapas», «Mi ubicación», deslizar desde el borde izquierdo
+para volver (desde el detalle de un baño o la lista abierta) y el acceso
+directo (mantené apretado el ícono → **Baño más cercano**).
 
 ### 5. Subir a App Store Connect
 
@@ -819,11 +824,15 @@ npm test
 
 `npm test` arma `www/` y corre `tests/bridge.e2e.mjs`: abre la app en Chromium
 simulando un iPhone, con la parte nativa de Capacitor imitada
-(`tests/fixtures/capacitor-mock.js`), y revisa 13 escenarios (T1 a T13):
+(`tests/fixtures/capacitor-mock.js`), y revisa 16 escenarios (T1 a T16):
 ubicación, permiso negado con el botón Abrir Ajustes, la guía con brújula y
 pantalla encendida, vibración, links y mapas, tema claro y oscuro, pantalla de
 arranque, acceso directo, el modal de Info, la API con su plan B, los detalles
-de la ubicación y la pantalla previa al permiso («Continuar», sin «Ahora no»). Si algo falla, sale con error. Deja capturas en `tests/.output/`.
+de la ubicación, la pantalla previa al permiso («Continuar», sin «Ahora no»),
+«Mi ubicación» (el ícono y el encuadre con los baños cercanos), el botón azul
+a 12 px de la hoja y deslizar desde el borde para volver (con un dedo simulado
+por el protocolo de Chrome). Si algo falla, sale con error. Deja capturas en
+`tests/.output/`.
 
 Para correr solo algunas: `node tests/bridge.e2e.mjs T2 T4`.
 
@@ -842,7 +851,8 @@ web/                       copia de la web 4zid/247wc. NO se edita a mano
 native/                    capa nativa del lado web (se inyecta en www/index.html)
   bridge.js                reemplaza ubicación, brújula, vibración, links, fetch… por lo nativo
   text.js                  textos de la web que cambian en la app (es/en)
-  native.css               retoques mínimos de estilo
+  gestures.js              deslizar desde el borde izquierdo para volver
+  native.css               retoques mínimos de estilo (y el botón azul más cerca de la hoja)
 www/                       la web armada para la app (se genera; no está en git)
 
 ios/App/
