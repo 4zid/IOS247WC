@@ -520,7 +520,7 @@ navegador común no cambian nada.
   | elemento | en la web | en la app |
   |---|---|---|
   | `.scan-fab` (el botón azul) | `bottom: calc(var(--sheet-peek) + 18px + var(--safe-b))` | `calc(var(--sheet-peek) + 12px)`; además `line-height: 18px`, `width: max-content`, `max-width: calc(100vw - 80px)` y `margin-left: calc(-1 * var(--fab-shift, 0px))` |
-  | `#fab-label` (su texto) | — | `min-width: 0; overflow: hidden; text-overflow: ellipsis` |
+  | `#fab-label` (su texto) | — | `flex: none; max-width: calc(100vw - 155px); overflow: hidden; text-overflow: ellipsis` |
   | `.map-controls` («Mi ubicación») | `calc(var(--sheet-peek) + 88px + var(--safe-b))`, arriba del botón azul | `calc(var(--sheet-peek) + 13px)`: a la derecha del botón azul, en la misma fila |
   | `.toast` | `calc(var(--sheet-peek) + 86px + var(--safe-b))` | `calc(var(--sheet-peek) + 76px)` |
 
@@ -543,12 +543,21 @@ navegador común no cambian nada.
   `--fab-shift` (ver «Shims de `bridge.js`»): los px que el botón azul tiene
   que correrse a la izquierda para dejar 10 px hasta «Mi ubicación», o `0px`
   si centrado ya los deja (el caso de casi todos los textos desde 375 px y de
-  todos desde 402). Si ni corriéndose entra (en 320 px, el iPhone SE de 1.ª
-  generación con iOS 15), `max-width` lo limita al lugar libre
-  (`100vw − 80px`: 12 de margen izquierdo, 10 de separación y 58 de «Mi
-  ubicación») y el texto termina en «…». `width: max-content` hace falta
-  porque, con el texto recortable (`min-width: 0`), el ancho automático de un
-  `position: fixed` con `left: 50%` sería la mitad de la pantalla.
+  todos desde 402). Si ni corriéndose entra (en pantallas de 320 px: el
+  iPhone SE de 1.ª generación y, con Ajustes → Pantalla y brillo → Zoom de
+  pantalla en «Texto más grande», el SE de 2.ª/3.ª generación, los mini y los
+  de 6,1"), el texto se limita al lugar libre y termina en «…»: `100vw −
+  155px` = `100vw − 80px` (12 de margen izquierdo, 10 de separación y 58 de
+  «Mi ubicación») − 48 de relleno − 18 del ícono − 9 de separación. Pasa con
+  los textos más largos («Buscando en esta zona…», «Sumar bares y
+  negocios»).
+
+  `#fab-label` va con `flex: none` para que no se achique mientras app.js
+  anima el ancho del botón al cambiar de texto (`updateFab`, 280 ms): durante
+  esa animación lo recorta el borde redondeado del botón (su `overflow:
+  hidden`), como en la web, y no aparece «…» en ningún ancho. `width:
+  max-content` y el `max-width` del botón son de resguardo (con el `nowrap` de
+  la web el ancho automático ya es el del contenido).
 
   `--sheet-peek` lo cambia app.js según la vista (214 px con la lista o el
   detalle, 132 con la tarjeta del más cercano) y todo lo sigue solo. Con la

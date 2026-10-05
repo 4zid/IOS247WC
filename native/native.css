@@ -57,9 +57,13 @@ html.native #scan[data-onb="2"] #onb-skip {
    Con un texto largo en un iPhone angosto («Buscando en esta zona…» en uno de
    375 px) el botón azul se acercaría a «Mi ubicación»: bridge.js lo corre a
    la izquierda lo justo (--fab-shift) para dejar 10 px entre los dos. Si ni
-   así entra (320 px), se limita al ancho libre y el texto termina en «…».
-   width: max-content porque, con el texto recortable (min-width: 0), el ancho
-   «automático» de un fixed con left: 50% sería la mitad de la pantalla. */
+   así entra (en pantallas de 320 px), el texto se limita al ancho libre y
+   termina en «…»: 100vw − 155 px = 100vw − 80 (12 de margen, 10 de
+   separación y 58 de «Mi ubicación») − 48 de relleno − 18 del ícono − 9 de
+   separación. flex: none para que el texto no se achique mientras app.js
+   anima el ancho al cambiar de texto (ahí lo recorta el borde redondeado del
+   botón, como en la web, y no aparece «…»). width: max-content y el
+   max-width del botón son de resguardo. */
 @media (max-width: 759px) {
   html.native .scan-fab {
     bottom: calc(var(--sheet-peek) + 12px);
@@ -68,7 +72,7 @@ html.native #scan[data-onb="2"] #onb-skip {
     max-width: calc(100vw - 80px);
     margin-left: calc(-1 * var(--fab-shift, 0px));
   }
-  html.native #fab-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  html.native #fab-label { flex: none; max-width: calc(100vw - 155px); overflow: hidden; text-overflow: ellipsis; }
   html.native .map-controls { bottom: calc(var(--sheet-peek) + 13px); }
   html.native .toast { bottom: calc(var(--sheet-peek) + 76px); }
 }

@@ -763,6 +763,8 @@ const SCENARIOS = [
         fab: { left: fab.left, right: fab.right, top: fab.top, bottom: fab.bottom, width: fab.width, height: fab.height },
         loc: { left: loc.left, right: loc.right, top: loc.top, bottom: loc.bottom },
         cut: label.scrollWidth > label.clientWidth + 1,
+        text: label.textContent,
+        anim: ['#sheet', '.scan-fab', '.map-controls'].reduce((n, sel) => n + document.querySelector(sel).getAnimations().length, 0),
         shift: getComputedStyle(document.documentElement).getPropertyValue('--fab-shift').trim(),
         peek: getComputedStyle(document.documentElement).getPropertyValue('--sheet-peek').trim(),
         padB: getComputedStyle(document.getElementById('sheet')).paddingBottom,
@@ -772,13 +774,14 @@ const SCENARIOS = [
       };
     });
     // Con la máquina cargada las transiciones (.32 s la hoja, .2 s el botón)
-    // pueden tardar más: se mide cuando dos lecturas seguidas coinciden.
+    // pueden tardar más: se mide cuando no queda ninguna corriendo y dos
+    // lecturas seguidas coinciden.
     const settled = async (page) => {
       let prev = null;
       for (let i = 0; i < 30; i++) {
         await page.waitForTimeout(100);
         const m = await measure(page);
-        if (prev && prev.gap === m.gap && prev.fab.top === m.fab.top && prev.fab.left === m.fab.left && prev.loc.top === m.loc.top) return m;
+        if (m.anim === 0 && prev && prev.gap === m.gap && prev.fab.top === m.fab.top && prev.fab.left === m.fab.left && prev.loc.top === m.loc.top) return m;
         prev = m;
       }
       return prev;
@@ -818,22 +821,30 @@ const SCENARIOS = [
       await shot(page, 'T15-fab-gap-list');
 
       // c) Todos los textos del botón azul, en los dos idiomas, en cada ancho de
-      //    iPhone (320: SE de 1.ª generación con iOS 15; 375: SE, mini; 440: Pro
-      //    Max). Solo se corre a la izquierda si hace falta, y nunca se recorta
-      //    salvo en 320.
+      //    iPhone (320: SE de 1.ª generación, o SE 2/3, mini y 6,1" con Zoom de
+      //    pantalla; 375: SE, mini; 420: Air; 428: Pro Max 12/13 y 14 Plus; 440:
+      //    Pro Max). Solo se corre a la izquierda si hace falta, y nunca se
+      //    recorta salvo en 320.
       const LABELS = [
         'Escanear baños', 'Escaneando…', 'Buscar en esta zona', 'Buscando en esta zona…', 'Seguir guiando', 'Reintentar', 'Sumar bares y negocios', 'Volver a mi ubicación',
         'Scan for toilets', 'Scanning…', 'Search this area', 'Searching this area…', 'Resume guide', 'Try again', 'Add bars and shops', 'Back to my location',
       ];
       const original = await page.locator('#fab-label').textContent();
       let shifted = 0, cut = 0;
-      for (const W of [320, 375, 390, 393, 402, 414, 430, 440]) {
+      for (const W of [320, 375, 390, 393, 402, 414, 420, 428, 430, 440]) {
+        // Al cambiar el ancho, MapLibre se redimensiona ('moveend') y app.js
+        // (updateFab) volvería a poner su texto con una animación: primero se
+        // repone el suyo y se espera ese moveend.
+        await page.evaluate((l) => { document.getElementById('fab-label').textContent = l; }, original);
+        const resized = await armMoveEnd(page);
         await page.setViewportSize({ width: W, height: 852 });
+        await resized();
         for (const label of LABELS) {
           await page.evaluate((l) => { document.getElementById('fab-label').textContent = l; }, label);
           await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
           const m = await measure(page);
           const what = `${W} px, «${label}»`;
+          assert(m.text === label, `${what}: mientras se medía, el texto cambió a «${m.text}»`);
           sameRow(m, what);
           // Sin correrse: centrado. Si se corre, es porque centrado quedaba a menos de 10 px.
           const natural = m.fab.width;
@@ -854,6 +865,30 @@ const SCENARIOS = [
       const back = await settled(page);
       sameRow(back, 'de vuelta a 393 px');
       assert(back.shift === '0px', `de vuelta a 393 px quedó corrido (--fab-shift ${back.shift})`);
+
+      // d) El camino real: el texto lo cambia updateFab(), que anima el ancho
+      //    (280 ms) y deja entrar el texto nuevo. En 375 px, «Buscando en esta
+      //    zona…» obliga a correrse, y mientras crece el texto no termina en «…».
+      await page.setViewportSize({ width: 375, height: 852 });
+      await settled(page);
+      await page.evaluate(() => { const map = window.WC.map, c = map.getCenter(); map.panTo([c.lng + 0.03, c.lat], { duration: 0 }, { originalEvent: new Event('pointermove') }); });
+      await page.waitForFunction(() => document.getElementById('btn-scan-again').dataset.mode === 'zone', null, { timeout: 5000 })
+        .catch(() => { throw new Fail('(d) el botón azul no pasó a «Buscar en esta zona»'); });
+      await page.evaluate(() => Promise.all(document.getElementById('btn-scan-again').getAnimations().map((a) => a.finished)));
+      await page.locator('#btn-scan-again').click();
+      // Durante la animación del ancho: el texto no se achica (lo recorta el borde del botón).
+      const during = [];
+      for (let i = 0; i < 8; i++) {
+        during.push(await page.evaluate(() => { const l = document.getElementById('fab-label'); return { cut: l.scrollWidth > l.clientWidth + 1, text: l.textContent }; }));
+        await page.evaluate(() => new Promise((r) => requestAnimationFrame(r)));
+      }
+      assert(during.every((d) => !d.cut), `(d) mientras crece, el texto termina en «…»: ${JSON.stringify(during)}`);
+      await page.evaluate(() => Promise.all(document.getElementById('btn-scan-again').getAnimations().map((a) => a.finished))
+        .then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
+      const busy = await measure(page);
+      assert(busy.text === 'Buscando en esta zona…', `(d) el botón azul dice «${busy.text}»`);
+      sameRow(busy, '375 px, «Buscando en esta zona…» por updateFab()');
+      assert(busy.shift !== '0px' && !busy.cut, `(d) con updateFab(): --fab-shift ${busy.shift}, recortado ${busy.cut}`);
       await healthy(page, errors);
     } finally { await context.close(); }
 
