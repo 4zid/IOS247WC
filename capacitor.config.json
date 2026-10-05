@@ -1,0 +1,27 @@
+{
+  "appId": "com.wc247.app",
+  "appName": "247WC",
+  "webDir": "www",
+  "loggingBehavior": "debug",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "allowsLinkPreview": false,
+    "preferredContentMode": "mobile",
+    "appendUserAgent": "247WC-iOS"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "launchShowDuration": 4000,
+      "launchFadeOutDuration": 250,
+      "showSpinner": false
+    },
+    "CapacitorHttp": {
+      "enabled": false
+    },
+    "SystemBars": {
+      "style": "DEFAULT"
+    }
+  }
+}

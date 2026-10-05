@@ -1,0 +1,29 @@
+{
+  "name": "247wc-ios",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "247WC para iOS: la web app empaquetada con Capacitor.",
+  "dependencies": {
+    "@capacitor/browser": "^8.0.5",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.5.2",
+    "@capacitor/splash-screen": "^8.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
+    "playwright": "1.56.1"
+  },
+  "scripts": {
+    "web:update": "node scripts/update-web.mjs",
+    "build": "node scripts/build-web.mjs",
+    "sync": "npm run build && cap sync ios",
+    "ios": "npm run sync && cap open ios",
+    "assets": "node scripts/make-assets.mjs",
+    "test": "npm run build && node tests/bridge.e2e.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

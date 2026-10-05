@@ -1,0 +1,6 @@
+{
+  "repo": "https://github.com/4zid/247wc",
+  "commit": "640286f00efcddb8fd83c61535d5e977c4877194",
+  "committedAt": "2026-10-05T14:27:44+00:00",
+  "note": "Copia de la web app. No editar a mano: se actualiza con 'npm run web:update'."
+}

@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>247WC — Baños públicos cerca tuyo</title>
+<meta name="description" content="Encontrá el baño público más cercano en segundos. Usa tu ubicación, te muestra el mapa y te guía caminando. Gratis y sin cuenta." />
+<meta name="theme-color" content="#ffffff" />
+<script>
+/* Tema antes del primer pintado, para que no parpadee. auto = sigue al sistema. */
+(function () {
+  var pref = 'auto';
+  try { pref = (localStorage.getItem('247wc:theme') || 'auto').replace(/"/g, ''); } catch (e) {}
+  var dark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  var m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute('content', dark ? '#0b0f19' : '#ffffff');
+})();
+</script>
+<meta name="color-scheme" content="light dark" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="247WC" />
+<meta property="og:title" content="247WC — Baños públicos cerca tuyo" />
+<meta property="og:description" content="El baño más cercano, en el mapa, con guía paso a paso. Gratis." />
+<meta property="og:type" content="website" />
+
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="preconnect" href="https://overpass-api.de" />
+<link rel="preconnect" href="https://tile.openstreetmap.org" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      media="print" onload="this.media='all'" />
+<link rel="stylesheet" href="vendor/maplibre/maplibre-gl.css?v=35" />
+<link rel="stylesheet" href="styles.css?v=35" />
+</head>
+<body>
+
+<script>
+/* Guardia de arranque. Va inline y sin dependencias a propósito: si falla
+   cualquier otra cosa (MapLibre, app.js, un service worker viejo), esto sigue
+   vivo y lo muestra en pantalla en vez de dejar la app muda. */
+window.WC = { build: '35', started: false, ready: false, errors: [] };
+
+window.WC.fatal = function (msg, detail) {
+  window.WC.errors.push(String(msg) + (detail ? ' — ' + detail : ''));
+  var box = document.getElementById('fatal');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'fatal';
+    box.className = 'fatal';
+    document.body.appendChild(box);
+  }
+  var es = /^es/i.test(navigator.language || '');
+  box.innerHTML =
+    '<strong>' + (es ? 'La app no pudo arrancar' : "The app couldn't start") + '</strong>' +
+    '<p>' + String(msg).slice(0, 220) + '</p>' +
+    '<button type="button" id="fatal-reload">' + (es ? 'Recargar' : 'Reload') + '</button>' +
+    '<button type="button" id="fatal-reset">' + (es ? 'Reiniciar la app (borra la caché)' : 'Reset the app (clears cache)') + '</button>';
+  document.getElementById('fatal-reload').onclick = function () { location.reload(); };
+  document.getElementById('fatal-reset').onclick = function () { window.WC.reset(); };
+};
+
+/* Borra service workers y cachés: la salida de emergencia cuando quedó algo
+   viejo pegado en el teléfono. */
+window.WC.reset = async function () {
+  try {
+    if (navigator.serviceWorker) {
+      var regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(function (r) { return r.unregister(); }));
+    }
+    if (window.caches) {
+      var keys = await caches.keys();
+      await Promise.all(keys.map(function (k) { return caches.delete(k); }));
+    }
+  } catch (e) { /* seguimos igual */ }
+  location.replace(location.pathname + '?fresh=' + Date.now());
+};
+
+window.addEventListener('error', function (e) {
+  window.WC.fatal(e.message || 'Error de JavaScript', e.filename ? e.filename.split('/').pop() : '');
+});
+window.addEventListener('unhandledrejection', function (e) {
+  var r = e.reason;
+  window.WC.fatal((r && r.message) || 'Promesa rechazada');
+});
+
+/* Si a los 7 segundos app.js nunca llegó a arrancar, avisamos igual. */
+setTimeout(function () {
+  if (!window.WC.started) {
+    window.WC.fatal(/^es/i.test(navigator.language || '')
+      ? 'El código de la app no llegó a ejecutarse. Puede ser una versión vieja guardada en el teléfono.'
+      : "The app code never ran. It may be an old version cached on your phone.");
+  }
+}, 7000);
+</script>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.5a2.6 2.6 0 0 0-2.4-1.3c-1.5 0-2.6.8-2.6 1.9 0 2.6 5.2 1.3 5.2 3.9 0 1.1-1.1 1.9-2.6 1.9a2.7 2.7 0 0 1-2.6-1.4M12 6.8v1.4M12 15.9v1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-free" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.2 2.3 2.3 4.7-4.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-wheel" viewBox="0 0 24 24"><circle cx="13" cy="4.5" r="1.6"/><path d="M11.5 8v5h4.5l2.5 5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.6 11.2a5 5 0 1 0 6.4 6.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-gender" viewBox="0 0 24 24"><circle cx="7.5" cy="5" r="1.7"/><circle cx="16.5" cy="5" r="1.7"/><path d="M5.5 9.5h4v5.5H8.2V21H6.8v-6H5.5V9.5ZM14 9.5h5l1.5 6h-1.8V21h-4.4v-5.5h-1.8l1.5-6Z" stroke-linejoin="round"/></symbol>
+  <symbol id="i-baby" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><path d="M7 21v-5a5 5 0 0 1 10 0v5M9 21h6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3.5s6 6.4 6 10.4a6 6 0 0 1-12 0c0-4 6-10.4 6-10.4Z" stroke-linejoin="round"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M5 5.5A1.5 1.5 0 0 1 6.5 4h11A1.5 1.5 0 0 1 19 5.5v10L15.5 19H6.5A1.5 1.5 0 0 1 5 17.5v-12Z" stroke-linejoin="round"/><path d="M8.5 9h7M8.5 12.5h5" stroke-linecap="round"/></symbol>
+  <symbol id="i-gmaps" viewBox="0 0 24 24"><clipPath id="gm-pin"><path d="M12 22.6C12 22.6 4.6 14.9 4.6 9.3a7.4 7.4 0 1 1 14.8 0c0 5.6-7.4 13.3-7.4 13.3Z"/></clipPath><g clip-path="url(#gm-pin)" stroke="none"><polygon fill="#34A853" points="12,9.2 19.52,-11.47 4.48,-11.47 -7.05,-1.8 -8.67,16.72"/><polygon fill="#4285F4" points="12,9.2 27.56,24.76 34.0,9.2 28.85,-4.94 19.52,-11.47"/><polygon fill="#FBBC04" points="12,9.2 -8.67,16.72 -3.56,24.76 4.48,29.87"/><polygon fill="#EA4335" points="12,9.2 4.48,29.87 15.82,30.87 27.56,24.76"/></g><circle cx="12" cy="9.2" r="2.7" fill="#fff" stroke="none"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-nav" viewBox="0 0 24 24"><path d="M12 3.5 19 20l-7-4-7 4 7-16.5Z" stroke-linejoin="round"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9.5 6.5h10M9.5 12h10M9.5 17.5h10" stroke-linecap="round"/><circle cx="5" cy="6.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="5" cy="17.5" r="1.3" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="fab-scan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 1.5v3M12 19.5v3M22.5 12h-3M4.5 12h-3" stroke-linecap="round"/></symbol>
+  <symbol id="fab-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5" stroke-linecap="round"/></symbol>
+  <symbol id="fab-retry" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v4.5h-4.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="fab-store" viewBox="0 0 24 24"><path d="M4.5 10.5V20h15v-9.5" stroke-linejoin="round"/><path d="M3 9.2 4.8 4h14.4L21 9.2a2.25 2.25 0 0 1-4.5.3 2.25 2.25 0 0 1-4.5 0 2.25 2.25 0 0 1-4.5 0A2.25 2.25 0 0 1 3 9.2Z" stroke-linejoin="round"/><path d="M10 20v-4.5h4V20" stroke-linejoin="round"/></symbol>
+  <symbol id="fab-home" viewBox="0 0 24 24"><path d="M4 12.5 20 4l-8.5 16-1.8-6.2L4 12.5Z" stroke-linejoin="round"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.6"/><path d="M10.5 18.5h3" stroke-linecap="round"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.2"/><path d="M15.5 8.5V6.7a2.2 2.2 0 0 0-2.2-2.2H6.7a2.2 2.2 0 0 0-2.2 2.2v6.6a2.2 2.2 0 0 0 2.2 2.2h1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div id="map" role="application" aria-label="Mapa de baños públicos cercanos" data-i18n-aria="mapAria"></div>
+
+<header class="topbar">
+  <div class="brand" aria-hidden="true" translate="no">
+    <img class="brand-logo light" src="brand/logo/logo-horizontal.svg" alt="" width="119" height="32" />
+    <img class="brand-logo dark" src="brand/logo/logo-horizontal-on-dark.svg" alt="" width="119" height="32" />
+  </div>
+  <button id="status" class="status" type="button" aria-label="Sin ubicación. Tocá para escanear baños." data-i18n-aria="statusAriaIdle">
+    <span class="status-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><rect x="5" y="3" width="7.5" height="7" rx="1.6"/><path d="M3.5 10h17c0 3.6-2.9 6.5-6.5 6.5h-4A6.5 6.5 0 0 1 3.5 10Z" stroke-linejoin="round"/><path d="M9 16.5 8.2 21h7.6l-.8-4.5" stroke-linejoin="round"/></svg>
+    </span>
+    <span class="status-dot" data-state="off" aria-hidden="true"></span>
+    <span id="status-count" class="status-count" aria-hidden="true">—</span>
+  </button>
+  <span class="topbar-spacer"></span>
+  <button id="btn-info" class="icon-btn" type="button" aria-label="Ajustes" data-i18n-aria="settingsAria">
+    <svg><use href="#i-gear"/></svg>
+  </button>
+</header>
+
+<div class="map-controls">
+  <div class="zoom-group desk-only" role="group" aria-label="Zoom del mapa" data-i18n-aria="zoomGroup">
+    <button id="btn-zoom-in" class="icon-btn" type="button" aria-label="Acercar" data-i18n-aria="zoomIn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12" stroke-linecap="round"/></svg>
+    </button>
+    <button id="btn-zoom-out" class="icon-btn" type="button" aria-label="Alejar" data-i18n-aria="zoomOut">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <button id="btn-locate" class="icon-btn round" type="button" aria-label="Centrar en mi ubicación" data-i18n-aria="locateAria">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5 20 4l-8.5 16-1.8-6.2L4 12.5Z" stroke-linejoin="round"/></svg>
+  </button>
+</div>
+
+<button id="btn-scan-again" class="scan-fab" type="button" data-mode="scan">
+  <span class="scan-fab-icon" aria-hidden="true"><svg><use href="#fab-scan"/></svg></span>
+  <span id="fab-label">Escanear baños</span>
+</button>
+
+<!-- Panel inferior: lista + detalle -->
+<section id="sheet" class="sheet" data-open="peek" aria-label="Baños cercanos" data-i18n-aria="sheetAria">
+  <button class="sheet-handle drag-zone" type="button" aria-label="Expandir la lista" data-i18n-aria="sheetToggle" aria-expanded="false"><span></span></button>
+
+  <div id="view-list" class="sheet-view">
+    <div class="list-head">
+    <div class="sheet-head drag-zone">
+      <h1 id="list-title" tabindex="-1" data-i18n="listTitle">Baños cerca</h1>
+      <span id="count-pill" class="count">—</span>
+    </div>
+
+    <label class="toggle-row" for="opt-business">
+      <span class="toggle-copy" data-i18n="business">Incluir bares y negocios</span>
+      <input type="checkbox" id="opt-business" class="toggle-input" />
+      <span class="toggle-ui" aria-hidden="true"></span>
+    </label>
+
+    <div class="filters" role="group" aria-label="Filtros" data-i18n-aria="filtersAria">
+      <button class="chip" data-filter="free" type="button" data-i18n="fFree">Gratis</button>
+      <button class="chip" data-filter="open24" type="button" data-i18n="fOpen24">24 h</button>
+      <button class="chip" data-filter="wheelchair" type="button" data-i18n="fWheelchair">Accesible</button>
+      <button class="chip" data-filter="changing" type="button" data-i18n="fChanging">Cambiador</button>
+    </div>
+    </div>
+
+    <div id="list-welcome" class="list-welcome desk-only">
+      <strong data-i18n="welcomeTitle">Encontrá el baño más cercano</strong>
+      <p data-i18n="welcomeSub">Escaneá y te mostramos los baños públicos a 3 km, ordenados por cercanía.</p>
+      <button id="welcome-scan" class="btn primary compact" type="button">
+        <span class="btn-ico" aria-hidden="true"><svg><use href="#fab-scan"/></svg></span>
+        <span data-i18n="scanFab">Escanear baños</span>
+      </button>
+    </div>
+    <p id="list-note" class="list-note desk-only" hidden data-i18n="approxLoc">Ubicación aproximada</p>
+
+    <ul id="list" class="list"></ul>
+    <p id="empty" class="empty" hidden></p>
+    <footer class="credits">
+      <span data-i18n="creditsData">Datos de</span> <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
+      <span data-i18n="creditsAnd">y</span> <a href="https://www.refugerestrooms.org/" target="_blank" rel="noopener">Refuge Restrooms</a> ·
+      <button id="btn-contribute" class="linkish" type="button" data-i18n="missing">¿Falta un baño?</button>
+    </footer>
+  </div>
+
+  <div id="view-best" class="sheet-view" hidden>
+    <!-- Con la hoja abajo: una sola fila sobre el mapa. Con la hoja arriba: la tarjeta completa. -->
+    <div class="best-compact drag-zone">
+      <div class="best-compact-copy">
+        <strong id="bc-name">Baño</strong>
+        <span id="bc-meta"></span>
+      </div>
+      <button id="bc-guide" class="btn primary compact" type="button">
+        <span class="btn-ico" aria-hidden="true">
+          <svg class="ico-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.8 8.2-2.3 5.3-5.3 2.3 2.3-5.3 5.3-2.3Z" stroke-linejoin="round"/></svg><svg class="ico-phone" viewBox="0 0 24 24"><use href="#i-phone"/></svg>
+        </span>
+        <span data-i18n="guide">Guiarme</span>
+      </button>
+    </div>
+
+    <div class="best-full">
+      <div id="best-map" class="best-map" aria-hidden="true"></div>
+      <h2 id="best-name">Baño</h2>
+      <p id="best-meta" class="meta"></p>
+      <ul id="best-attrs" class="attr-list compact"></ul>
+      <div class="actions-row tight">
+        <button id="best-guide" class="btn primary" type="button">
+          <span class="btn-ico" aria-hidden="true">
+            <svg class="ico-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.8 8.2-2.3 5.3-5.3 2.3 2.3-5.3 5.3-2.3Z" stroke-linejoin="round"/></svg><svg class="ico-phone" viewBox="0 0 24 24"><use href="#i-phone"/></svg>
+          </span>
+          <span data-i18n="guide">Guiarme</span>
+        </button>
+        <button id="best-maps" class="btn square" type="button" aria-label="Abrir en Google Maps" data-i18n-aria="openMaps">
+          <svg><use href="#i-gmaps"/></svg>
+        </button>
+        <button id="best-all" class="btn square line-ico" type="button" aria-label="Ver todos" data-i18n-aria="seeAll">
+          <svg viewBox="0 0 24 24"><use href="#i-list"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-detail" class="sheet-view" hidden>
+    <div class="sheet-head drag-zone">
+      <button id="btn-back" class="back" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span data-i18n="backList">Lista</span>
+      </button>
+    </div>
+    <h2 id="d-name" tabindex="-1">Baño</h2>
+    <p id="d-meta" class="meta"></p>
+    <div class="actions-row">
+      <button id="btn-guide" class="btn primary" type="button" aria-controls="d-handoff">
+        <span class="btn-ico" aria-hidden="true"><svg class="ico-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.8 8.2-2.3 5.3-5.3 2.3 2.3-5.3 5.3-2.3Z" stroke-linejoin="round"/></svg><svg class="ico-phone" viewBox="0 0 24 24"><use href="#i-phone"/></svg></span>
+        <span data-i18n="guideWalk">Guiarme caminando</span>
+      </button>
+      <button id="btn-maps" class="btn square" type="button" aria-label="Abrir en Google Maps" data-i18n-aria="openMaps" data-i18n-title="openMaps">
+        <svg><use href="#i-gmaps"/></svg>
+      </button>
+    </div>
+
+    <div id="d-handoff" class="handoff" hidden>
+      <div id="d-qr" class="handoff-qr" role="img" aria-label="Código QR con la ruta a pie en Google Maps" data-i18n-aria="handoffQrAria"></div>
+      <div class="handoff-copy">
+        <strong data-i18n="handoffTitle">Escaneá con la cámara del teléfono</strong>
+        <p data-i18n="handoffSub">Se abre la ruta a pie en Google Maps, sin instalar nada.</p>
+        <p id="d-qr-fail" class="handoff-fail" hidden data-i18n="handoffNoQr">No pudimos generar el QR. Copiá el link o abrí la ruta en Google Maps.</p>
+        <button id="d-copy" class="btn compact" type="button">
+          <span class="btn-ico" aria-hidden="true"><svg><use href="#i-copy"/></svg></span>
+          <span data-i18n="handoffCopy">Copiar link</span>
+        </button>
+      </div>
+    </div>
+
+    <ul id="d-attrs" class="attr-list"></ul>
+    <details id="d-steps-wrap" class="steps-wrap" hidden>
+      <summary data-i18n="steps">Ver indicaciones</summary>
+      <ol id="d-steps" class="steps"></ol>
+    </details>
+    <p class="disclaimer" data-i18n="disclaimer">Datos de la comunidad: puede que algún baño esté cerrado. Si ves un error, corregilo en OpenStreetMap.</p>
+  </div>
+</section>
+
+<!-- Pantalla de escaneo -->
+<div id="scan" class="scan" data-state="idle" data-word="buscar">
+  <div class="scan-top">
+    <p class="word" data-word="buscar">
+      <span class="word-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5" stroke-linecap="round"/></svg>
+      </span>
+      <span data-i18n="wBuscar">Buscar</span>
+    </p>
+    <p class="word" data-word="encontrar">
+      <span class="word-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.3"/></svg>
+      </span>
+      <span data-i18n="wEncontrar">Encontrar</span>
+    </p>
+    <p class="word" data-word="llegar">
+      <span class="word-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M4 12.5 20 4l-8.5 16-1.8-6.2L4 12.5Z" stroke-linejoin="round"/></svg>
+      </span>
+      <span data-i18n="wLlegar">Llegar</span>
+    </p>
+  </div>
+
+  <div id="onb-art" class="onb-art" aria-hidden="true">
+    <div class="onb-scene" data-step="0">
+      <span class="onb-ring"></span><span class="onb-ring"></span><span class="onb-ring"></span>
+      <div class="onb-card oc-solo"><svg class="onb-ico" viewBox="0 0 72 72" aria-hidden="true"><defs><linearGradient id="o-g-pin" x1="14" y1="6" x2="58" y2="62" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#63a8ff"/><stop offset="1" stop-color="#0a58e0"/></linearGradient></defs><ellipse cx="36" cy="65" rx="13" ry="3.6" fill="#0a3c8c" opacity=".18"/><path d="M36 5C22.7 5 12.5 15.2 12.5 28.4c0 16.4 19.6 31.6 22.2 33.5a2.2 2.2 0 0 0 2.6 0c2.6-1.9 22.2-17.1 22.2-33.5C59.5 15.2 49.3 5 36 5z" fill="url(#o-g-pin)"/><circle cx="36" cy="28.5" r="13.5" fill="#fff"/><text x="36" y="33" text-anchor="middle" font-size="12" font-weight="800" fill="#0a6cff" font-family="Geist, sans-serif" letter-spacing="-.4">WC</text><ellipse cx="25" cy="15" rx="7" ry="3.6" fill="#fff" opacity=".35" transform="rotate(-32 25 15)"/></svg><strong data-i18n="artNear">Baños a 3&nbsp;km</strong></div>
+    </div>
+    <div class="onb-scene" data-step="1">
+      <div class="onb-card oc-a"><svg class="onb-ico" viewBox="0 0 72 72" aria-hidden="true"><defs><linearGradient id="o-g-seal" x1="10" y1="8" x2="62" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#43d69a"/><stop offset="1" stop-color="#079563"/></linearGradient></defs><ellipse cx="36" cy="66" rx="15" ry="3.4" fill="#06573a" opacity=".16"/><g fill="url(#o-g-seal)"><circle cx="58.00" cy="35.00" r="8.6"/><circle cx="55.05" cy="46.00" r="8.6"/><circle cx="47.00" cy="54.05" r="8.6"/><circle cx="36.00" cy="57.00" r="8.6"/><circle cx="25.00" cy="54.05" r="8.6"/><circle cx="16.95" cy="46.00" r="8.6"/><circle cx="14.00" cy="35.00" r="8.6"/><circle cx="16.95" cy="24.00" r="8.6"/><circle cx="25.00" cy="15.95" r="8.6"/><circle cx="36.00" cy="13.00" r="8.6"/><circle cx="47.00" cy="15.95" r="8.6"/><circle cx="55.05" cy="24.00" r="8.6"/><circle cx="36" cy="35" r="23"/></g><path d="M26.5 35.5l6.6 6.6 13-13.4" fill="none" stroke="#fff" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="25" cy="20" rx="7" ry="3.4" fill="#fff" opacity=".32" transform="rotate(-35 25 20)"/></svg><strong data-i18n="artFree">Gratis o pago</strong></div>
+      <div class="onb-card oc-b"><svg class="onb-ico" viewBox="0 0 72 72" aria-hidden="true"><defs><linearGradient id="o-g-clock" x1="10" y1="8" x2="62" y2="62" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#63a8ff"/><stop offset="1" stop-color="#0a58e0"/></linearGradient><linearGradient id="o-g-face" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e6efff"/></linearGradient></defs><ellipse cx="36" cy="66" rx="15" ry="3.4" fill="#0a3c8c" opacity=".16"/><circle cx="36" cy="35" r="28" fill="url(#o-g-clock)"/><circle cx="36" cy="35" r="21.5" fill="url(#o-g-face)"/><g stroke="#9db7e0" stroke-width="2.4" stroke-linecap="round"><path d="M36 17.5v3.5M36 49v3.5M18.5 35H22M50 35h3.5"/></g><path d="M36 35V24.5M36 35l7.5 5" stroke="#0a3f99" stroke-width="3.6" stroke-linecap="round" fill="none"/><circle cx="36" cy="35" r="3" fill="#0a6cff"/><ellipse cx="24" cy="16" rx="7" ry="3.4" fill="#fff" opacity=".32" transform="rotate(-35 24 16)"/></svg><strong data-i18n="art24">Abierto 24&nbsp;h</strong></div>
+    </div>
+    <div class="onb-scene" data-step="2">
+      <div class="onb-card oc-solo oc-tilt"><svg class="onb-ico" viewBox="0 0 72 72" aria-hidden="true"><defs><linearGradient id="o-g-comp" x1="10" y1="8" x2="62" y2="62" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#63a8ff"/><stop offset="1" stop-color="#0a58e0"/></linearGradient><linearGradient id="o-g-cface" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e6efff"/></linearGradient></defs><ellipse cx="36" cy="66" rx="15" ry="3.4" fill="#0a3c8c" opacity=".16"/><circle cx="36" cy="35" r="28" fill="url(#o-g-comp)"/><circle cx="36" cy="35" r="21.5" fill="url(#o-g-cface)"/><g class="onb-needle"><path d="M36 15.5l6 19.5H30z" fill="#0a6cff"/><path d="M36 54.5l-6-19.5h12z" fill="#b9cbe8"/></g><circle cx="36" cy="35" r="3.2" fill="#fff" stroke="#0a3f99" stroke-width="1.6"/><ellipse cx="24" cy="16" rx="7" ry="3.4" fill="#fff" opacity=".32" transform="rotate(-35 24 16)"/></svg><strong data-i18n="artGuide">Guía con brújula</strong></div>
+    </div>
+  </div>
+
+  <div class="scan-bottom" role="dialog" aria-modal="true" aria-labelledby="scan-title">
+    <span class="scan-logo" aria-hidden="true">
+      <svg viewBox="16 10 70 80"><g transform="translate(0 -2)"><rect x="20" y="15" width="20" height="26" rx="5" fill="#0a6cff"/><path d="M23 48H79" stroke="#0a6cff" stroke-width="10" stroke-linecap="round"/><path d="M28 56H76Q76 70 61 73H41Q28 70 28 56Z" fill="#0a6cff"/><path d="M51 70V78Q51 84 57 84H66" fill="none" stroke="#0a6cff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="79" cy="84" r="5.5" fill="#0a0e17"/></g></svg>
+    </span>
+    <h2 id="scan-title" data-i18n="scanTitle">El baño más cercano</h2>
+    <p id="scan-sub" data-i18n="scanSub">Tocá escanear y buscamos los baños públicos que tenés alrededor.</p>
+    <div id="onb-dots" class="onb-dots" aria-hidden="true" hidden><i></i><i></i><i></i></div>
+    <span id="onb-step" class="sr-only" aria-live="polite"></span>
+
+    <div id="scan-result" class="scan-result" hidden>
+      <small data-i18n="nearest">El más cercano</small>
+      <strong id="scan-result-name">—</strong>
+      <span id="scan-result-meta">—</span>
+    </div>
+
+    <div class="scan-actions">
+      <button id="onb-next" class="pill" type="button" hidden data-i18n="onbNext">Siguiente</button>
+      <button id="onb-skip" class="pill ghost" type="button" hidden data-i18n="onbSkip">Saltar</button>
+      <button id="scan-go" class="pill" type="button">
+        <span class="pill-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 1.5v3M12 19.5v3M22.5 12h-3M4.5 12h-3" stroke-linecap="round"/></svg>
+        </span>
+        <span id="scan-go-label" data-i18n="scanFab">Escanear baños</span>
+      </button>
+      <button id="scan-guide" class="pill" type="button" hidden data-i18n="guideWalk">Guiarme caminando</button>
+      <button id="scan-list" class="pill ghost" type="button" hidden data-i18n="seeAll">Ver todos</button>
+      <button id="scan-business" class="pill ghost" type="button" hidden data-i18n="scanBusiness">Buscar también en bares y negocios</button>
+      <button id="scan-manual" class="pill ghost" type="button" hidden data-i18n="scanManual">Buscar sin ubicación</button>
+      <button id="scan-dismiss" class="pill ghost" type="button" data-i18n="scanDismiss">Ver el mapa sin escanear</button>
+    </div>
+
+    <p id="scan-help" class="scan-help" hidden></p>
+  </div>
+</div>
+
+<!-- Modo guía a pantalla completa -->
+<div id="guide" class="guide" hidden>
+  <div class="guide-top">
+    <button id="guide-close" class="icon-btn" type="button" aria-label="Salir de la guía" data-i18n-aria="guideCloseAria">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
+    </button>
+    <div class="guide-target">
+      <small data-i18n="goingTo">Yendo a</small>
+      <strong id="guide-name">Baño</strong>
+    </div>
+  </div>
+
+  <div class="dial" aria-hidden="true">
+    <div class="dial-ring" id="guide-ring">
+      <span class="n">N</span><span class="e">E</span><span class="s">S</span><span class="w" data-i18n="cardW">O</span>
+    </div>
+    <div class="dial-face">
+      <div class="dial-arrow" id="guide-arrow">
+        <svg viewBox="0 0 120 120"><path d="M60 8 96 104 60 84 24 104Z"/></svg>
+      </div>
+      <div class="dial-check"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></div>
+    </div>
+  </div>
+
+  <div class="guide-modules">
+    <div class="gmod guide-stats">
+      <div><strong id="guide-dist">—</strong><small data-i18n="distance">Distancia</small></div>
+      <div class="guide-sep"></div>
+      <div><strong id="guide-eta">—</strong><small data-i18n="walkingLabel">Caminando</small></div>
+    </div>
+    <div class="gmod guide-step-row">
+      <span class="step-ico">
+        <svg class="ico-nav" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-nav"/></svg>
+        <svg class="ico-ok" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-check"/></svg>
+      </span>
+      <p id="guide-step" class="guide-step"></p>
+    </div>
+    <button id="guide-compass" class="btn gmod" type="button" hidden data-i18n="compassOn">Activar brújula</button>
+    <div class="gmod-row">
+      <button id="guide-maps" class="btn gmod square" type="button" aria-label="Abrir en Google Maps" data-i18n-aria="openMaps">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-gmaps"/></svg>
+      </button>
+      <button id="guide-map" class="btn gmod" type="button" data-i18n="seeMap">Ver en el mapa</button>
+    </div>
+    <p id="guide-hint" class="guide-hint" data-i18n="guideHint">Seguí la flecha. Vibra cuando estés llegando.</p>
+  </div>
+</div>
+
+<!-- Hoja de información -->
+<dialog id="info" class="modal">
+  <div class="modal-head">
+    <h2 data-i18n="settings">Ajustes</h2>
+    <button id="info-close" class="icon-btn small" type="button" aria-label="Cerrar" data-i18n-aria="close">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <p class="section-label" data-i18n="appearance">Apariencia</p>
+  <div class="row">
+    <span data-i18n="theme">Tema</span>
+    <div class="seg" role="group" aria-label="Tema">
+      <button type="button" class="seg-btn" data-theme="auto" data-i18n="themeAuto">Auto</button>
+      <button type="button" class="seg-btn" data-theme="light" data-i18n="themeLight">Claro</button>
+      <button type="button" class="seg-btn" data-theme="dark" data-i18n="themeDark">Oscuro</button>
+    </div>
+  </div>
+  <div class="row">
+    <span data-i18n="language">Idioma</span>
+    <div class="seg" role="group" aria-label="Idioma">
+      <button type="button" class="seg-btn" data-lang="es">Español</button>
+      <button type="button" class="seg-btn" data-lang="en">English</button>
+    </div>
+  </div>
+
+  <p class="section-label" data-i18n="about">Acerca de</p>
+  <p class="about" data-i18n-html="infoP">El baño público más cercano, sin vueltas. <strong>Tu ubicación no se guarda</strong>: se usa en el teléfono para ordenar por cercanía, y a nuestra búsqueda solo llega el punto a consultar, que no se almacena.</p>
+  <div class="row"><span data-i18n="dataSources">Datos</span><span class="row-value">OpenStreetMap · Refuge Restrooms</span></div>
+  <div class="row"><span data-i18n="install">Instalar</span><span class="row-value" data-i18n="installHow">Compartir → Agregar a inicio</span></div>
+  <button id="btn-onb" class="btn ghost" type="button" data-i18n="onbAgain">Ver la introducción</button>
+
+  <p class="section-label" data-i18n="advanced">Avanzado</p>
+  <details class="diag">
+    <summary data-i18n="diag">Diagnóstico</summary>
+    <dl id="diag-text" class="diag-list"></dl>
+  </details>
+  <button id="btn-reset" class="btn ghost" type="button" data-i18n="reset">Reiniciar la app (borra la caché)</button>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<span id="sr-status" class="sr-only" aria-live="polite"></span>
+
+<script src="vendor/maplibre/maplibre-gl.js?v=35"></script>
+<script src="app.js?v=35" type="module"></script>
+</body>
+</html>

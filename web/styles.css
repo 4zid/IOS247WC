@@ -1,0 +1,1354 @@
+/* 247WC — hoja de estilos única.
+   Tema claro tipo fintech: blanco, tipografía grande y un degradado azul
+   que sangra desde abajo. Mobile-first, con una variante ancha al final. */
+
+:root {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f3f6fb;
+  --surface-3: #e9eff8;
+  --line: #e4e9f2;
+  --text: #0a0e17;
+  --text-dim: #6d7789;
+
+  --blue: #0a6cff;
+  --blue-dark: #0052d4;
+  --blue-soft: #e8f1ff;
+  --sky: #9fd0ff;
+  --green: #0aa06e;
+  --amber: #b86b00;
+  --orange: #e8590c;       /* 3,58:1 sobre blanco: pasa WCAG 1.4.11 */
+  --route-line: #0a6cff;   /* la ruta en el mapa; en modo noche se compensa por el filtro */
+
+  --radius: 20px;
+  --radius-sm: 14px;
+  --shadow-sm: 0 2px 10px rgba(12, 26, 56, .06);
+  --shadow: 0 10px 30px rgba(12, 26, 56, .12);
+  --shadow-lg: 0 -18px 50px rgba(12, 26, 56, .14);
+
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+  --sheet-peek: 214px;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+/* El atributo hidden tiene que ganarle a cualquier display propio. */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overscroll-behavior: none;
+  /* Solo desplazamiento: sin pellizco ni doble toque para hacer zoom en la
+     interfaz. El mapa hace su propio zoom por JS (Leaflet), así que no se
+     ve afectado. */
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  letter-spacing: -.011em;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; }
+
+/* ---------- Mapa ---------- */
+#map { position: fixed; inset: 0; background: var(--surface-2); z-index: 0; }
+.maplibregl-canvas { outline: none; }
+.maplibregl-canvas:focus-visible { outline: 2px solid var(--blue); outline-offset: -3px; }
+.maplibregl-ctrl-attrib, .maplibregl-ctrl-logo { display: none; }
+
+/* Contenedor de marcador: MapLibre lo posiciona; el contenido rota adentro. */
+.mk { pointer-events: none; }
+.mk-pin { pointer-events: auto; cursor: pointer; }
+.pin-wrap { position: relative; width: 36px; height: 43px; }
+.pin-wrap .wc-pin { position: absolute; left: 0; top: 0; }
+
+.me-dot {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--blue);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 3px rgba(10, 108, 255, .2);
+}
+
+.wc-pin {
+  display: grid;
+  place-items: center;
+  width: 36px; height: 36px;
+  border-radius: 50% 50% 50% 5px;
+  transform: rotate(-45deg);
+  background: var(--blue);
+  color: #fff;
+  border: 2.5px solid #fff;
+  box-shadow: 0 2px 6px rgba(12, 26, 56, .18);
+  font: 800 11px/1 var(--font);
+}
+.wc-pin > span { transform: rotate(45deg); }
+.wc-pin[data-paid="1"] { background: #f59e0b; }
+.wc-pin[data-kind="business"] { background: #6d7789; }
+.wc-pin[data-selected="1"] { transform: rotate(-45deg) scale(1.18); box-shadow: 0 0 0 5px rgba(10, 108, 255, .22); }
+.pin-tip { display: none; }
+
+/* ---------- Barra superior ---------- */
+.topbar {
+  position: fixed;
+  top: calc(10px + var(--safe-t));
+  left: 12px; right: 12px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Logo oficial (brand/logo): en curvas, así que no carga ninguna fuente.
+   32 px de alto ≈ 120 de ancho, el mínimo de la guía. Una versión por tema. */
+.brand {
+  display: flex; align-items: center;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+.brand-logo { display: block; width: auto; height: 32px; }
+.brand-logo.dark, html[data-theme="dark"] .brand-logo.light { display: none; }
+html[data-theme="dark"] .brand-logo.dark { display: block; }
+
+.topbar-spacer { flex: 1; }
+
+/* Chip de estado: inodoro + punto + cantidad. El estado se lee por color Y
+   por forma (relleno / anillo), porque verde y naranja son justo el par que
+   se confunde con el daltonismo más común. */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 16px 0 13px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  font: 700 15px var(--font);
+  letter-spacing: -.02em;
+  cursor: pointer;
+}
+.status-icon { width: 20px; height: 20px; color: var(--text); }
+.status-icon svg { stroke-width: 1.7; }
+.status-count { min-width: 1ch; font-variant-numeric: tabular-nums; }
+
+.status-dot {
+  flex: none;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.status-dot[data-state="live"] { background: var(--green); }
+.status-dot[data-state="off"] { background: transparent; border: 2.5px solid var(--orange); }
+.status-dot[data-state="loading"] { background: var(--blue); animation: pulse 1.1s ease-in-out infinite; }
+
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: .25 } }
+
+.icon-btn {
+  flex: none;
+  width: 42px; height: 42px;
+  padding: 10px;
+  display: grid; place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+.icon-btn:active { transform: scale(.94); }
+.icon-btn.round { width: 46px; height: 46px; box-shadow: var(--shadow); }
+
+.map-controls {
+  position: fixed;
+  right: 12px;
+  bottom: calc(var(--sheet-peek) + 88px + var(--safe-b));
+  z-index: 18;
+  display: grid;
+  gap: 10px;
+}
+
+/* ---------- Botón flotante de escaneo ---------- */
+.scan-fab {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--sheet-peek) + 18px + var(--safe-b));
+  transform: translateX(-50%);
+  z-index: 19;
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 15px 24px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  font: 700 15px var(--font);
+  cursor: pointer;
+}
+.scan-fab:active { transform: translateX(-50%) scale(.97); }
+.scan-fab { white-space: nowrap; overflow: hidden; }
+.scan-fab-icon { display: grid; width: 18px; height: 18px; flex: none; }
+.scan-fab-icon svg { stroke-width: 2; }
+.scan-fab[data-mode="busy"] { pointer-events: none; }
+.scan-fab[data-mode="busy"] .scan-fab-icon { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Ondas de radar sobre tu posición mientras escanea */
+.scan-pulse { position: relative; width: 0; height: 0; pointer-events: none; }
+.scan-pulse span {
+  position: absolute;
+  left: -120px; top: -120px;
+  width: 240px; height: 240px;
+  border-radius: 50%;
+  border: 2px solid var(--blue);
+  background: rgba(10, 108, 255, .07);
+  opacity: 0;
+  animation: ping 1.8s cubic-bezier(.2, .6, .35, 1) infinite;
+}
+.scan-pulse span:nth-child(2) { animation-delay: .6s; }
+.scan-pulse span:nth-child(3) { animation-delay: 1.2s; }
+@keyframes ping {
+  0% { transform: scale(.12); opacity: .9; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+.scan-fab, .map-controls { transition: opacity .2s ease, transform .2s ease; }
+body[data-sheet="full"] .scan-fab {
+  opacity: 0;
+  transform: translateX(-50%) translateY(20px);
+  pointer-events: none;
+}
+body[data-sheet="full"] .map-controls { opacity: 0; pointer-events: none; }
+
+/* ---------- Pantalla de escaneo ---------- */
+.scan {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 22px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: calc(40px + var(--safe-t)) 24px calc(20px + var(--safe-b));
+  /* Opaco a propósito: si deja ver el mapa, se ensucia con los controles. */
+  overflow-x: hidden;
+  background: #fff;
+  animation: fade-in .32s ease;
+}
+.scan[data-state="off"] { display: none; }
+
+@keyframes fade-in { from { opacity: 0 } }
+
+/* Las tres palabras: solo la del estado actual está encendida. */
+.scan-top { position: relative; z-index: 1; display: grid; gap: 4px; flex: none; }   /* por encima del degradado */
+.scan-bottom, .scan-top { flex: none; }
+
+.word {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: clamp(34px, 11vw, 46px);
+  font-weight: 700;
+  letter-spacing: -.045em;
+  color: rgba(10, 14, 23, .14);
+  transition: color .35s ease, opacity .35s ease;
+}
+.word-ico {
+  display: grid; place-items: center;
+  flex: none;
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  opacity: 0;
+  transform: scale(.8);
+  transition: opacity .3s ease, transform .3s cubic-bezier(.22, 1, .36, 1);
+}
+.word-ico svg { width: 22px; height: 22px; stroke-width: 2; }
+
+.scan[data-word="buscar"] .word[data-word="buscar"],
+.scan[data-word="encontrar"] .word[data-word="encontrar"],
+.scan[data-word="llegar"] .word[data-word="llegar"] { color: var(--text); }
+
+.scan[data-word="buscar"] .word[data-word="buscar"] .word-ico,
+.scan[data-word="encontrar"] .word[data-word="encontrar"] .word-ico,
+.scan[data-word="llegar"] .word[data-word="llegar"] .word-ico { opacity: 1; transform: scale(1); }
+
+.scan[data-state="locating"] .word[data-word="encontrar"] .word-ico,
+.scan[data-state="searching"] .word[data-word="encontrar"] .word-ico {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.scan-bottom { position: relative; z-index: 0; display: grid; justify-items: start; gap: 8px; color: #fff; }
+
+/* El degradado va pegado al bloque de texto, no a la pantalla: arranca
+   38vh por encima y sigue hasta el borde inferior. Así el texto blanco
+   siempre cae sobre azul saturado, mida lo que mida el contenido. */
+.scan-bottom::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: -50vw; right: -50vw;
+  top: -38vh;
+  bottom: calc(-20px - var(--safe-b));
+  background: linear-gradient(180deg,
+    rgba(255, 255, 255, 0) 0%,
+    #dbeaff 20%,
+    #8ebdff 34%,
+    #2e80ff 48%,
+    var(--blue) 64%,
+    var(--blue-dark) 100%);
+}
+
+.scan-logo {
+  display: grid; place-items: center;
+  width: 46px; height: 46px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--blue);
+}
+.scan-logo svg { width: 23px; height: 26px; stroke: none; }   /* símbolo de marca: cada trazo trae el suyo */
+
+.scan-bottom h2 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -.04em;
+}
+.scan-bottom > p {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, .82);
+}
+
+/* Onboarding: tres puntos de progreso; el activo se estira. Son tres
+   elementos de 6 px: animar el ancho no cuesta nada y evita que los otros
+   salten de lugar. */
+.onb-dots { display: flex; gap: 6px; margin-top: 14px; }
+.onb-dots[hidden] { display: none; }
+.onb-dots i {
+  width: 6px; height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, .38);
+  transition: width .3s cubic-bezier(.22, 1, .36, 1), background-color .3s ease;
+}
+.onb-dots i.on { width: 18px; background: #fff; }
+.scan[data-state="onboarding"] .scan-bottom { touch-action: pan-y; }
+
+/* Ilustración de cada paso: las mismas cards del hero de la landing, en
+   versión compacta. Cada escena se diseña en 300×240 y se escala para entrar
+   en el alto libre (--onb-s lo calcula app.js). Solo se ve la del paso
+   activo; al pasar de display:none a visible, sus animaciones arrancan solas. */
+.onb-art {
+  display: none;
+  position: relative;
+  z-index: 1;                 /* por encima del degradado de .scan-bottom */
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.scan[data-state="onboarding"] .onb-art { display: block; }
+.scan[data-state="onboarding"] .scan-logo { display: none; }
+.onb-scene {
+  display: none;
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 300px; height: 240px;
+  margin: -120px 0 0 -150px;   /* centrada aunque el alto libre sea menor */
+  transform: scale(var(--onb-s, 1));
+}
+.scan[data-onb="0"] .onb-scene[data-step="0"],
+.scan[data-onb="1"] .onb-scene[data-step="1"],
+.scan[data-onb="2"] .onb-scene[data-step="2"] { display: block; }
+
+.onb-card {
+  --r: 0deg;
+  position: absolute;
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  width: 196px;
+  padding: 18px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(16, 32, 64, .03), 0 26px 50px -26px rgba(16, 32, 64, .28);
+  transform: rotate(var(--r));
+  animation: onb-card .6s cubic-bezier(.34, 1.4, .64, 1) both;
+}
+.onb-card strong { font-size: 19px; font-weight: 650; line-height: 1.15; letter-spacing: -.03em; color: var(--text); }
+.onb-ico { width: 52px; height: 52px; filter: drop-shadow(0 8px 12px rgba(10, 60, 140, .16));
+  /* Íconos de relleno (vienen de la landing): sin el trazo que la app les da a todos los svg */
+  fill: #000; stroke: none; stroke-width: 1; }
+
+.oc-solo { left: 52px; top: 54px; --r: -3deg; }
+.oc-tilt { --r: 3deg; }
+.oc-a { left: 8px; top: 4px; width: 180px; --r: -5deg; }
+.oc-b { left: 112px; top: 104px; width: 180px; --r: 4deg; animation-delay: .09s; }
+
+/* Paso 1: anillos de radar detrás del pin, se abren una vez. */
+.onb-ring {
+  position: absolute;
+  left: 50%; top: 50%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(10, 108, 255, .16);
+  background: rgba(10, 108, 255, .035);
+  transform: translate(-50%, -50%);
+  animation: onb-ring .9s cubic-bezier(.22, 1, .36, 1) both;
+}
+.onb-ring:nth-child(1) { width: 300px; height: 300px; animation-delay: .16s; }
+.onb-ring:nth-child(2) { width: 210px; height: 210px; animation-delay: .08s; }
+.onb-ring:nth-child(3) { width: 120px; height: 120px; }
+
+/* Paso 3: la aguja gira hasta apuntar al baño. */
+.onb-needle {
+  transform-box: view-box;
+  transform-origin: 36px 35px;
+  transform: rotate(38deg);
+  animation: onb-needle 1.1s .25s cubic-bezier(.34, 1.5, .64, 1) both;
+}
+
+@keyframes onb-card { from { opacity: 0; transform: translateY(16px) scale(.9) rotate(var(--r)); } }
+@keyframes onb-ring { from { opacity: 0; transform: translate(-50%, -50%) scale(.6); } }
+@keyframes onb-needle { from { transform: rotate(-60deg); } }
+
+.onb-in { animation: onb-in .26s cubic-bezier(.22, 1, .36, 1) both; }
+#scan-sub.onb-in { animation-delay: .04s; }
+@keyframes onb-in { from { opacity: 0; transform: translateY(8px); } }
+
+.scan-result {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, .17);
+  border: 1px solid rgba(255, 255, 255, .28);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  text-align: left;
+}
+.scan-result small { font-size: 13px; font-weight: 500; color: rgba(255, 255, 255, .78); }
+.scan-result strong { font-size: 18px; font-weight: 700; letter-spacing: -.03em; }
+.scan-result span { font-size: 13.5px; font-weight: 600; color: rgba(255, 255, 255, .9); }
+
+.scan-actions { display: grid; gap: 10px; width: 100%; margin-top: 14px; order: 1; }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  padding: 17px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text);
+  font: 700 15.5px var(--font);
+  letter-spacing: -.01em;
+  cursor: pointer;
+}
+.pill:active { transform: scale(.985); }
+.pill-ico { width: 18px; height: 18px; color: var(--blue); }
+.pill.ghost {
+  background: rgba(255, 255, 255, .18);
+  color: #fff;
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, .3);
+  font-weight: 600;
+}
+
+.scan .scan-help {
+  width: 100%;
+  max-width: none;
+  margin: 12px 0 0;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-align: left;
+  box-shadow: var(--shadow-sm);
+}
+.scan .scan-help strong { font-weight: 700; color: var(--text); }
+.scan .scan-help em { color: var(--blue); font-style: normal; font-weight: 600; }
+
+/* ---------- Hoja inferior ---------- */
+.sheet {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 25;
+  max-height: 86vh;
+  padding: 0 24px calc(18px + var(--safe-b));
+  background: var(--surface);
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -1px 0 var(--line), 0 -12px 32px rgba(12, 26, 56, .08);
+  display: flex;
+  flex-direction: column;
+  min-height: var(--sheet-peek);
+  transform: translateY(calc(100% - var(--sheet-peek)));
+  transition: transform .32s cubic-bezier(.22, 1, .36, 1);
+}
+.sheet[data-open="full"] { transform: translateY(0); }
+.sheet[data-open="hidden"] { transform: translateY(100%); }
+.sheet.dragging { transition: none; }
+
+/* Todo lo que se pueda arrastrar bloquea el scroll nativo para que iOS no
+   se quede con el gesto a mitad de camino. */
+.drag-zone { touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+
+.sheet-handle { display: grid; place-items: center; width: 100%; padding: 14px 0 10px; border: 0; background: none; font: inherit; color: inherit; }
+.sheet-handle span { display: block; width: 40px; height: 5px; border-radius: 999px; background: #d8dee8; }
+
+.sheet-view { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+.sheet-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 0 14px;
+}
+.sheet-head h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -.04em; }
+.count { font-size: 14px; font-weight: 600; color: var(--text-dim); }
+
+/* Switch de bares y negocios: una línea, sin tarjeta */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.toggle-copy { font-size: 15px; font-weight: 600; }
+
+.toggle-input { position: absolute; opacity: 0; width: 0; height: 0; }
+.toggle-ui {
+  flex: none;
+  position: relative;
+  width: 46px; height: 28px;
+  border-radius: 999px;
+  background: #d8dee8;
+  transition: background .2s ease;
+}
+.toggle-ui::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform .22s cubic-bezier(.22, 1, .36, 1);
+}
+.toggle-input:checked + .toggle-ui { background: var(--blue); }
+.toggle-input:checked + .toggle-ui::after { transform: translateX(18px); }
+.toggle-input:focus-visible + .toggle-ui { outline: 2px solid var(--blue); outline-offset: 3px; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 0 4px; }
+
+.chip {
+  flex: none;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font: 600 12.5px var(--font);
+  cursor: pointer;
+}
+.chip[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+/* Lista: la distancia es un bloque, el nombre manda, los atributos van con ícono */
+.list { list-style: none; margin: 0; padding: 0; }
+.list li + li { border-top: 1px solid var(--line); }
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 13px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.item[data-selected="1"] .dist-tile { background: var(--blue); color: #fff; }
+.item[data-selected="1"] .dist-tile small { color: rgba(255, 255, 255, .8); }
+
+.dist-tile {
+  flex: none;
+  width: 64px;
+  padding: 9px 4px 8px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  text-align: center;
+  display: grid;
+  gap: 1px;
+}
+.dist-tile strong { font-size: 16px; font-weight: 700; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.dist-tile small { font-size: 11px; color: var(--text-dim); font-weight: 600; }
+
+.item-body { min-width: 0; flex: 1; display: grid; gap: 5px; }
+.item-body h3 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Atributos en línea: ícono + texto corto, hasta tres */
+.attr-inline { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; font-weight: 600; color: var(--text-dim); }
+.attr-inline span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.attr-inline svg { width: 15px; height: 15px; flex: none; }
+.attr-inline .good { color: var(--green); }
+.attr-inline .paid { color: var(--amber); }
+
+.item-go { flex: none; width: 18px; height: 18px; color: #c3cbd9; }
+
+.empty { padding: 28px 0; text-align: center; color: var(--text-dim); font-size: 14px; line-height: 1.55; }
+
+.credits { padding: 18px 0 4px; font-size: 11.5px; color: var(--text-dim); line-height: 1.6; }
+.credits a, .linkish {
+  color: var(--text-dim);
+  text-decoration: underline;
+  background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+}
+
+/* ---------- Mejor opción ---------- */
+/* Fila compacta: solo con la hoja abajo. Tarjeta completa: con la hoja arriba. */
+.best-compact { display: none; align-items: center; gap: 12px; padding: 2px 0 10px; }
+.best-compact-copy { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.best-compact-copy strong { font-size: 18px; font-weight: 700; letter-spacing: -.03em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.best-compact-copy span { font-size: 14px; font-weight: 600; color: var(--blue); }
+.btn.compact { width: auto; flex: none; padding: 13px 18px; font-size: 14.5px; }
+.btn.compact .btn-ico { width: 18px; height: 18px; }
+body[data-sheet="peek"] #view-best .best-compact { display: flex; }
+body[data-sheet="peek"] #view-best .best-full { display: none; }
+
+.eyebrow {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  color: var(--text-dim);
+}
+.best-map {
+  height: 210px;
+  margin: 0 0 18px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--surface-2);
+  pointer-events: none;           /* es una imagen: el gesto se lo queda la hoja */
+}
+.best-map .maplibregl-canvas { border-radius: 20px; }
+#view-best h2 { margin: 0 0 6px; font-size: 30px; font-weight: 700; letter-spacing: -.04em; line-height: 1.1; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-ico { width: 20px; height: 20px; flex: none; }
+.btn-ico svg { stroke-width: 2; }
+
+/* ---------- Detalle ---------- */
+.back {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 0;
+  border: 0; background: none;
+  color: var(--text-dim);
+  font: 600 14px var(--font);
+  cursor: pointer;
+}
+.back svg { width: 18px; height: 18px; }
+
+#view-detail h2 { margin: 0 0 6px; font-size: 30px; font-weight: 700; letter-spacing: -.04em; line-height: 1.1; }
+.meta { margin: 0 0 14px; color: var(--blue); font-size: 15px; font-weight: 600; }
+
+/* Ficha de atributos: una fila por dato, ícono a la izquierda */
+.attr-list { list-style: none; margin: 0 0 16px; padding: 0; }
+.attr-list li { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.attr-list li:last-child { border-bottom: 0; }
+.attr-list svg { width: 20px; height: 20px; flex: none; color: var(--text-dim); }
+.attr-list .k { flex: 1; color: var(--text-dim); }
+.attr-list .v { font-weight: 600; text-align: right; }
+.attr-list .v.good { color: var(--green); }
+.attr-list .v.paid { color: var(--amber); }
+.attr-list.compact { margin-bottom: 14px; }
+.attr-list.compact li { padding: 9px 0; font-size: 13.5px; }
+.attr-list.compact li:last-child { border-bottom: 0; }
+.attr-list:empty { display: none; }
+
+.btn {
+  width: 100%;
+  padding: 17px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: 700 15.5px var(--font);
+  cursor: pointer;
+}
+.btn:active { transform: scale(.985); }
+.btn.primary { background: var(--blue); color: #fff; }
+.btn.ghost { background: transparent; color: var(--text-dim); font-weight: 600; }
+
+.actions-row { display: flex; gap: 10px; margin: 0 0 18px; }
+.actions-row.tight { margin-bottom: 18px; }
+.btn.block { display: flex; margin: 0 0 18px; }
+.actions-row .btn.primary { flex: 1; }
+.actions-row .btn:not(.primary):not(.square) { flex: 1; }
+.btn.square {
+  flex: none;
+  width: 56px;
+  padding: 0;
+  display: grid; place-items: center;
+  background: var(--surface-2);
+}
+.btn.square svg { width: 26px; height: 26px; stroke: none; }
+/* Botón cuadrado con ícono de línea (lista): el de Maps usa colores propios, este va con trazo */
+.btn.square.line-ico svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; }
+.btn.square.line-ico { color: var(--text); }
+
+.steps-wrap { border-top: 1px solid var(--line); padding: 12px 0; margin-bottom: 8px; }
+.steps-wrap summary { cursor: pointer; font: 600 14px var(--font); color: var(--text); list-style: none; }
+.steps-wrap summary::-webkit-details-marker { display: none; }
+.steps-wrap summary { display: flex; align-items: center; justify-content: space-between; }
+.steps-wrap summary::after {
+  content: '';
+  flex: none;
+  width: 10px; height: 10px;
+  margin: 0 5px 0 4px; /* la rotación agranda el área desplazable: se compensa con margen */
+  border-right: 2px solid var(--text-dim);
+  border-bottom: 2px solid var(--text-dim);
+  transform: rotate(45deg) translateY(-3px);
+  transition: transform .2s ease;
+}
+.steps-wrap[open] summary::after { transform: rotate(-135deg) translateY(-3px); }
+.steps { margin: 12px 0 0; padding-left: 20px; display: grid; gap: 8px; font-size: 13.5px; color: var(--text-dim); }
+.steps li::marker { color: var(--blue); font-weight: 700; }
+
+/* Seguir en el teléfono: QR con la ruta. Con mouse aparece a cualquier ancho. */
+.handoff {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 18px;
+  margin: -4px 0 18px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  animation: view-in .22s cubic-bezier(.22, 1, .36, 1) both;
+}
+/* El QR siempre negro sobre blanco, también de noche: si no, las cámaras no lo leen. */
+.handoff-qr { flex: none; width: 152px; height: 152px; padding: 8px; border-radius: var(--radius-sm); background: #fff; }
+.handoff-qr svg { display: block; stroke: none; }
+.handoff-copy { flex: 1 1 160px; min-width: 0; display: grid; gap: 6px; justify-items: start; }
+.handoff-copy strong { font-size: 15.5px; font-weight: 700; letter-spacing: -.02em; line-height: 1.25; }
+.handoff-copy p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--text-dim); }
+.handoff .btn.compact { margin-top: 6px; background: var(--surface); }
+@keyframes view-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* Guiarme: brújula en el teléfono, teléfono en la compu. */
+.ico-phone { display: none; }
+html[data-input="mouse"] .ico-compass { display: none; }
+html[data-input="mouse"] .ico-phone { display: block; }
+
+.list-welcome, .list-note, .item-badge { display: none; }
+
+.disclaimer { font-size: 11.5px; color: var(--text-dim); line-height: 1.55; margin: 6px 0 0; }
+
+/* ---------- Modo guía ---------- */
+.guide {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 16px;
+  padding: calc(12px + var(--safe-t)) 16px calc(14px + var(--safe-b));
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  background: linear-gradient(180deg,
+    var(--bg) 0%, var(--bg) 30%,
+    #dbeaff 46%,
+    #8ebdff 58%,
+    #2e80ff 70%,
+    var(--blue) 84%,
+    var(--blue-dark) 100%);
+}
+
+.guide-top { display: flex; align-items: center; gap: 12px; padding: 0 4px; }
+.guide-target { display: grid; min-width: 0; }
+.guide-target small { font-size: 13px; font-weight: 500; color: var(--text-dim); }
+.guide-target strong { font-size: 17px; font-weight: 700; letter-spacing: -.03em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Brújula: un aro con marcas y puntos cardinales que gira con el teléfono,
+   y adentro la flecha hacia el baño. */
+.dial {
+  position: relative;
+  align-self: center;
+  justify-self: center;
+  width: min(60vw, 240px);
+  height: min(60vw, 240px);
+  margin: 18px 0;
+}
+.dial-ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  transform: rotate(var(--ring, 0deg));
+  transition: transform .25s ease-out;
+}
+.dial-ring::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from -1deg, var(--tick, rgba(10, 108, 255, .3)) 0 2deg, transparent 2deg 30deg);
+  -webkit-mask: radial-gradient(circle, transparent 0 calc(50% - 9px), #000 calc(50% - 9px));
+  mask: radial-gradient(circle, transparent 0 calc(50% - 9px), #000 calc(50% - 9px));
+}
+/* Las letras van por fuera del aro y se contrarrotan para quedar derechas. */
+.dial-ring span {
+  position: absolute;
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  font: 700 12.5px/1 var(--font);
+  color: var(--text-dim);
+  transition: transform .25s ease-out;
+}
+.dial-ring .n { top: -26px; left: 50%; transform: translateX(-50%) rotate(calc(var(--ring, 0deg) * -1)); color: var(--blue); }
+.dial-ring .s { bottom: -26px; left: 50%; transform: translateX(-50%) rotate(calc(var(--ring, 0deg) * -1)); }
+.dial-ring .e { right: -26px; top: 50%; transform: translateY(-50%) rotate(calc(var(--ring, 0deg) * -1)); }
+.dial-ring .w { left: -26px; top: 50%; transform: translateY(-50%) rotate(calc(var(--ring, 0deg) * -1)); }
+
+.dial-face {
+  position: absolute; inset: 20px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 10px 30px rgba(10, 60, 140, .16);
+  display: grid; place-items: center;
+}
+.dial-arrow { width: 100%; height: 100%; display: grid; place-items: center; }
+.dial-arrow svg {
+  width: 54%; height: 54%;
+  fill: var(--blue);
+  stroke: none;
+  transform: rotate(var(--rot, 0deg));
+  transition: transform .25s ease-out;
+}
+.dial-check { display: none; width: 44%; height: 44%; color: var(--green); }
+.dial-check svg { width: 100%; height: 100%; stroke-width: 2.4; }
+.guide[data-arrived="1"] .dial-face { background: #e3f7ee; }
+.guide[data-arrived="1"] .dial-arrow { display: none; }
+.guide[data-arrived="1"] .dial-check { display: block; animation: pop .5s cubic-bezier(.2, .9, .3, 1.3); }
+
+@keyframes pop { from { transform: scale(.4); opacity: 0 } to { transform: none; opacity: 1 } }
+
+/* Módulos flotantes, tipo hoja de iOS: cada bloque es una pieza aparte
+   que sube con un pequeño desfasaje al abrir la guía. */
+.guide-modules { display: grid; gap: 10px; }
+.gmod {
+  background: var(--surface);
+  border-radius: 22px;
+  box-shadow: 0 10px 28px rgba(0, 40, 110, .22);
+  animation: rise .5s cubic-bezier(.2, .8, .2, 1) both;
+}
+.guide-modules > :nth-child(2) { animation-delay: .05s; }
+.guide-modules > :nth-child(3) { animation-delay: .1s; }
+.guide-modules > :nth-child(4) { animation-delay: .15s; }
+.gmod-row { display: flex; gap: 10px; }
+.gmod-row .gmod { animation-delay: .15s; }
+.gmod-row .btn:not(.square) { flex: 1; }
+.btn.gmod { color: var(--text); }
+.btn.gmod.square { width: 56px; }
+.btn.gmod.square svg { width: 28px; height: 28px; }
+
+@keyframes rise { from { transform: translateY(18px); opacity: 0 } to { transform: none; opacity: 1 } }
+
+.guide-stats { display: flex; justify-content: center; align-items: center; gap: 28px; padding: 16px 20px 14px; }
+.guide-stats div { display: grid; gap: 3px; text-align: center; }
+.guide-stats strong { font-size: 32px; font-weight: 700; letter-spacing: -.045em; line-height: 1; }
+.guide-stats small { font-size: 13px; font-weight: 500; color: var(--text-dim); }
+.guide-sep { width: 1px; height: 34px; background: var(--line); }
+
+.guide-step-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px 12px 12px; }
+.step-ico {
+  flex: none;
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.step-ico svg { width: 20px; height: 20px; }
+.step-ico .ico-ok { display: none; }
+.guide[data-arrived="1"] .step-ico { background: #e3f7ee; color: var(--green); }
+.guide[data-arrived="1"] .step-ico .ico-nav { display: none; }
+.guide[data-arrived="1"] .step-ico .ico-ok { display: block; }
+.guide-step { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.35; }
+
+.guide-hint { margin: 4px 0 0; text-align: center; font-size: 12px; color: rgba(255, 255, 255, .85); }
+.guide[data-arrived="1"] .guide-hint { display: none; }
+
+/* ---------- Ajustes ---------- */
+.modal {
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  padding: 22px 24px 20px;
+  border: 0;
+  border-radius: 26px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  overflow-y: auto;
+}
+.modal::backdrop { background: rgba(10, 20, 40, .35); backdrop-filter: blur(3px); }
+.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.modal-head h2 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -.035em; }
+.icon-btn.small { width: 36px; height: 36px; padding: 9px; background: var(--surface-2); box-shadow: none; }
+
+.section-label {
+  margin: 20px 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  color: var(--text-dim);
+}
+.row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14.5px; font-weight: 600;
+}
+.row:last-of-type { border-bottom: 0; }
+.row-value { font-weight: 500; color: var(--text-dim); text-align: right; }
+.about { margin: 8px 0 6px; font-size: 13.5px; line-height: 1.55; color: var(--text-dim); }
+.about strong { color: var(--text); font-weight: 600; }
+
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--surface-2); }
+.seg-btn { padding: 7px 13px; border: 0; border-radius: 999px; background: transparent; color: var(--text-dim); font: 600 13px var(--font); cursor: pointer; }
+.seg-btn[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+
+.diag { font-size: 13.5px; color: var(--text); border-top: 1px solid var(--line); }
+.diag summary { padding: 12px 0; cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+.diag summary::-webkit-details-marker { display: none; }
+.diag summary::after { content: ''; width: 9px; height: 9px; border-right: 2px solid var(--text-dim); border-bottom: 2px solid var(--text-dim); transform: rotate(45deg) translateY(-3px); }
+.diag[open] summary::after { transform: rotate(-135deg) translateY(-3px); }
+.diag-list { margin: 0 0 8px; padding: 4px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13px; }
+.diag-list dt { color: var(--text-dim); font-weight: 500; }
+.diag-list dd { margin: 0; font-weight: 600; word-break: break-word; }
+.modal .btn.ghost { width: 100%; margin-top: 4px; }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--sheet-peek) + 86px + var(--safe-b));
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: calc(100vw - 32px);
+  padding: 13px 20px;
+  border-radius: 999px;
+  background: var(--text);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  animation: toast-in .25s ease-out;
+}
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 10px) } }
+
+/* ---------- Pantallas anchas ---------- */
+@media (min-width: 760px) {
+  .sheet {
+    left: auto; right: 18px; bottom: 18px;
+    width: 400px;
+    max-height: calc(100vh - 120px);
+    border-radius: 26px;
+    transform: none;
+  }
+  .sheet[data-open] { transform: none; }
+  .sheet-handle { display: none; }
+  .drag-zone { cursor: auto; user-select: auto; -webkit-user-select: auto; touch-action: auto; }
+  .scan-fab { left: calc((100vw - 436px) / 2); bottom: calc(26px + var(--safe-b)); }
+  .map-controls { right: 436px; bottom: calc(26px + var(--safe-b)); }
+  body[data-sheet="full"] .scan-fab { opacity: 1; transform: translateX(-50%); pointer-events: auto; }
+  body[data-sheet="full"] .map-controls { opacity: 1; pointer-events: auto; }
+  .toast { bottom: 26px; }
+  .scan { padding-left: 15vw; padding-right: 15vw; }
+  .scan-bottom { max-width: 460px; }
+}
+
+@media (max-height: 760px) {
+  .word { font-size: clamp(26px, 8vw, 34px); }
+  .word-ico { width: 34px; height: 34px; border-radius: 10px; }
+  .word-ico svg { width: 18px; height: 18px; }
+  .scan-bottom h2 { font-size: 25px; }
+  .scan-logo { width: 40px; height: 40px; margin-bottom: 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  /* Las del onboarding tienen retardo: sin animación, directo a su lugar final. */
+  .onb-card, .onb-ring, .onb-needle, .onb-in { animation: none !important; }
+}
+
+/* ---------- Cartel de error fatal y diagnóstico ---------- */
+.fatal {
+  position: fixed;
+  left: 16px; right: 16px;
+  top: calc(16px + var(--safe-t));
+  z-index: 90;
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--text);
+  box-shadow: var(--shadow);
+  border: 1px solid #ffd9d9;
+  font-family: var(--font);
+}
+.fatal { max-height: 70vh; overflow-y: auto; }
+.fatal strong { font-size: 16px; font-weight: 700; }
+.fatal p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--text-dim); word-break: break-word; }
+.fatal button {
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  font: 600 14px var(--font);
+  cursor: pointer;
+}
+.fatal button + button { background: var(--surface-2); color: var(--text); }
+
+
+.diag summary { cursor: pointer; font-weight: 600; }
+.diag pre {
+  margin: 10px 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: 11.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.diag .btn { width: 100%; }
+
+/* Modo noche: mismos tokens con fondos oscuros. Lo activa data-theme en
+   <html> (auto sigue al sistema; el panel de ajustes lo puede forzar). */
+html[data-theme="dark"] {
+  --bg: #0b0f19;
+  --surface: #141927;
+  --surface-2: #1c2233;
+  --surface-3: #262e42;
+  --line: #283149;
+  --text: #f2f5fa;
+  --text-dim: #9aa6bb;
+  --blue: #2b7fff;
+  --blue-dark: #0a5ce0;
+  --blue-soft: #1a2a4a;
+  --green: #2fc98a;
+  --amber: #f0a33a;
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, .35);
+  --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  --shadow-lg: 0 -18px 50px rgba(0, 0, 0, .5);
+  /* Color de la ruta ANTES del filtro que invierte el mapa: así, filtrado, queda azul. */
+  --route-line: #248af9;
+}
+html[data-theme="dark"] .maplibregl-canvas { filter: invert(1) hue-rotate(180deg) brightness(.88) contrast(.95); }
+/* La portada es siempre clara: el degradado blanco → azul es la marca. */
+html[data-theme="dark"] .scan {
+  --bg: #ffffff; --surface: #ffffff; --surface-2: #f3f6fb; --surface-3: #e9eff8;
+  --line: #e4e9f2; --text: #0a0e17; --text-dim: #6d7789;
+  --blue: #0a6cff; --blue-dark: #0052d4; --blue-soft: #e8f1ff;
+  --shadow-sm: 0 2px 10px rgba(12, 26, 56, .06);
+}
+html[data-theme="dark"] .guide { background: linear-gradient(180deg, var(--bg) 0%, var(--bg) 30%, #12203a 46%, #163a78 58%, #1f62c8 70%, var(--blue) 84%, var(--blue-dark) 100%); }
+html[data-theme="dark"] .dial-ring::before { --tick: rgba(255, 255, 255, .25); }
+html[data-theme="dark"] .dial-ring span { color: #c3cde0; }
+html[data-theme="dark"] .dial-face { background: var(--surface-2); box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
+html[data-theme="dark"] .gmod { box-shadow: 0 10px 28px rgba(0, 0, 0, .4); }
+html[data-theme="dark"] .guide[data-arrived="1"] .dial-face, html[data-theme="dark"] .guide[data-arrived="1"] .step-ico { background: #12352a; }
+html[data-theme="dark"] .toast { background: var(--surface-3); }
+html[data-theme="dark"] .sheet-handle span, html[data-theme="dark"] .toggle-ui { background: #3a4460; }
+html[data-theme="dark"] .fatal { border-color: #5a2a2a; }
+html[data-theme="dark"] .status-dot[data-state="off"] { border-color: #ff7a3d; }
+html[data-theme="dark"] .dist-tile { background: var(--surface-3); }
+html[data-theme="dark"] .attr-list li + li { border-color: var(--line); }
+
+/* ---------- Guías de interfaz (Vercel Web Interface Guidelines) ---------- */
+html[data-theme="light"] { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+
+/* Foco visible solo con teclado, para todo lo interactivo. */
+:where(button, a, summary, input, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+.sheet-handle:focus-visible { outline-offset: -4px; border-radius: 12px; }
+
+/* Sin demora de doble toque en controles. */
+:where(button, a, summary, label, [role="button"]) { touch-action: manipulation; }
+
+/* Titulares sin viudas; números alineados. */
+h1, h2, h3, .guide-target strong { text-wrap: balance; }
+.meta, .guide-stats strong, .best-compact-copy span, .attr-list .v { font-variant-numeric: tabular-nums; }
+
+/* Hover solo donde hay puntero fino. */
+@media (hover: hover) and (pointer: fine) {
+  .btn, .pill, .icon-btn, .chip, .seg-btn, .status { transition: background-color .15s ease, filter .15s ease, transform .15s ease; }
+  .scan-fab, .map-controls { transition: background-color .15s ease, filter .15s ease, transform .2s ease, opacity .2s ease, visibility .2s; }
+  .btn:hover, .icon-btn:hover, .seg-btn:hover, .chip:hover, .status:hover { filter: brightness(.96); }
+  .btn.primary:hover, .scan-fab:hover { filter: brightness(1.08); }
+  .pill:hover { filter: brightness(.97); }
+  html[data-theme="dark"] .btn:hover, html[data-theme="dark"] .icon-btn:hover, html[data-theme="dark"] .chip:hover { filter: brightness(1.15); }
+}
+
+/* ---------- Escritorio: pantalla dividida (≥1024) ----------
+   Panel de contenido a la izquierda y el mapa como una tarjeta grande a la
+   derecha, vinculados entre sí. Va al final para ganarle al tema oscuro y al
+   bloque de hover. El celular no pasa por acá. */
+@media (max-width: 1023px) {
+  .desk-only { display: none !important; }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --panel-w: clamp(400px, calc(30vw + 32px), 480px);
+    --gut: 12px;
+    --head-h: 72px;
+    --map-cx: calc((var(--panel-w) + 100vw - var(--gut)) / 2);   /* centro del mapa */
+  }
+
+  body { background: var(--surface); }
+
+  /* Safari no recorta bien el canvas WebGL con border-radius: clip-path sí. */
+  #map {
+    inset: calc(var(--gut) + var(--safe-t)) var(--gut) calc(var(--gut) + var(--safe-b)) var(--panel-w);
+    border-radius: 24px;
+    clip-path: inset(0 round 24px);
+  }
+
+  /* Encabezado: solo el ancho del panel, plano. */
+  .topbar {
+    top: 0; left: 0; right: auto;
+    width: var(--panel-w);
+    height: calc(var(--head-h) + var(--safe-t));
+    padding: var(--safe-t) 20px 0 28px;
+    background: var(--surface);
+  }
+  .brand { height: auto; padding: 0; background: none; box-shadow: none; }
+  .status, .topbar .icon-btn { background: var(--surface-2); box-shadow: none; }
+
+  /* Panel fijo a la izquierda: cada vista es su propio scroll. */
+  .sheet {
+    top: calc(var(--head-h) + var(--safe-t)); right: auto; bottom: 0; left: 0;
+    width: var(--panel-w);
+    max-height: none;
+    min-height: 0;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    transform: none;
+    transition: none;
+  }
+  .sheet-view { flex: 1 1 auto; min-height: 0; padding: 0 28px calc(28px + var(--safe-b)); }
+  .sheet-view:not([hidden]) { animation: view-in .22s cubic-bezier(.22, 1, .36, 1) both; }
+
+  .list-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    margin: 0 -28px;
+    padding: 0 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .sheet-head { padding: 12px 0 14px; }
+  .sheet-head h1 { font-size: 28px; outline-offset: 4px; }
+  #count-pill { display: none; }          /* el número ya está en el chip de arriba */
+  .toggle-row { border-bottom: 0; }
+  .filters { gap: 8px; padding: 12px 0 14px; }
+  .chip { height: 34px; padding: 0 14px; font-size: 13.5px; }
+
+  /* Tarjetas tipo Airbnb: una columna, hover y seleccionada con fondo. */
+  .list { display: grid; gap: 4px; padding-top: 12px; transition: opacity .2s ease; }
+  .list li + li { border-top: 0; }
+  .item { gap: 16px; padding: 12px 14px 12px 12px; border-radius: 18px; transition: background-color .15s ease; }
+  .item[data-hover="1"] { background: var(--surface-2); }
+  .item[data-selected="1"] { background: var(--blue-soft); }
+  .dist-tile { width: 68px; }
+  .item-body h3 { font-size: 16.5px; }
+  .attr-inline { font-size: 13px; }
+
+  .item-badge {
+    display: inline-flex;
+    justify-self: start;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--blue);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+  }
+  .item.is-nearest { margin-bottom: 8px; padding-top: 16px; padding-bottom: 16px; box-shadow: inset 0 0 0 1px var(--line); }
+  .item.is-nearest[data-selected="1"] { box-shadow: none; }
+  .item.is-nearest h3 { font-size: 18px; }
+  .item.is-nearest .dist-tile { width: 76px; padding: 12px 4px 10px; }
+  .item.is-nearest .dist-tile strong { font-size: 18px; }
+
+  #view-list[aria-busy="true"] .list { opacity: .45; }
+
+  .list-note {
+    display: block;
+    margin: 12px 0 0;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .list-welcome { display: grid; justify-items: start; gap: 8px; max-width: 34ch; padding: 28px 0 8px; }
+  .list-welcome strong { font-size: 20px; font-weight: 700; letter-spacing: -.03em; }
+  .list-welcome p { margin: 0 0 8px; font-size: 14.5px; line-height: 1.5; color: var(--text-dim); }
+  .empty { max-width: 34ch; margin: 0 auto; }
+
+  #view-detail .sheet-head { padding: 18px 0 12px; }
+
+  /* Portada y onboarding: la columna del panel; el mapa queda a la vista. */
+  .scan {
+    right: auto;
+    width: var(--panel-w);
+    padding: calc(40px + var(--safe-t)) 32px calc(24px + var(--safe-b));
+  }
+  .scan-bottom { max-width: none; }
+  /* El −50vw desborda los dos bordes del panel y overflow-x lo recorta justo:
+     sin franja blanca. */
+  .scan-bottom::before { bottom: calc(-24px - var(--safe-b)); }
+
+  /* Onboarding: la ilustración del paso flota sobre el mapa en vivo, con un velo. */
+  .scan[data-state="onboarding"] .onb-art {
+    position: fixed;
+    inset: calc(var(--gut) + var(--safe-t)) var(--gut) calc(var(--gut) + var(--safe-b)) var(--panel-w);
+    border-radius: 24px;
+    background: radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, .7) 0%, rgba(255, 255, 255, .42) 50%, rgba(229, 238, 255, .3) 100%);
+    -webkit-backdrop-filter: blur(1.5px);
+    backdrop-filter: blur(1.5px);
+  }
+
+  /* Mientras la portada está abierta, el botón azul y los controles se van;
+     mientras ubica, busca o explica, los pins no reaccionan. */
+  body:not([data-scan="off"]) .scan-fab,
+  body:not([data-scan="off"]) .map-controls,
+  body:has(#guide:not([hidden])) .scan-fab,
+  body:has(#guide:not([hidden])) .map-controls { opacity: 0; visibility: hidden; pointer-events: none; }
+  body[data-scan="locating"] .mk-pin,
+  body[data-scan="searching"] .mk-pin,
+  body[data-scan="onboarding"] .mk-pin { pointer-events: none; }
+
+  /* Botón azul arriba al centro del mapa. Escanear es una píldora blanca
+     discreta; azul queda para cuando la app sugiere algo. */
+  .scan-fab {
+    left: var(--map-cx);
+    top: calc(var(--gut) + 16px + var(--safe-t));
+    bottom: auto;
+    box-shadow: 0 8px 24px rgba(10, 60, 160, .28);
+  }
+  .scan-fab[data-mode="scan"],
+  .scan-fab[data-mode="busy"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+  .scan-fab[data-mode="scan"] .scan-fab-icon,
+  .scan-fab[data-mode="busy"] .scan-fab-icon { color: var(--blue); }
+
+  .map-controls { right: calc(var(--gut) + 16px); bottom: calc(var(--gut) + 16px + var(--safe-b)); }
+  .zoom-group { display: grid; border-radius: 23px; background: var(--surface); box-shadow: var(--shadow); overflow: hidden; }
+  .zoom-group .icon-btn { width: 46px; height: 44px; padding: 12px; border-radius: 0; box-shadow: none; }
+  .zoom-group .icon-btn + .icon-btn { border-top: 1px solid var(--line); }
+  .zoom-group svg { stroke-width: 2; }
+
+  .toast {
+    left: var(--map-cx);
+    bottom: calc(var(--gut) + 24px + var(--safe-b));
+    max-width: calc(100vw - var(--panel-w) - var(--gut) - 190px);
+    border-radius: 20px;
+    text-align: center;
+  }
+
+  /* Tablet táctil apaisada: la guía con brújula vive en la columna del panel
+     y la ruta se sigue viendo en el mapa. */
+  .guide { right: auto; width: var(--panel-w); }
+  .dial { width: 200px; height: 200px; }
+}
+
+/* La tipografía grande de la portada solo si entra: en ventanas bajas sigue
+   la compresión de max-height: 760px. */
+@media (min-width: 1024px) and (min-height: 761px) {
+  .word { font-size: 46px; }
+  .scan-bottom h2 { font-size: 32px; }
+  .scan-bottom > p { font-size: 15.5px; }
+}
+
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .item:hover { background: var(--surface-2); }
+  .item[data-selected="1"]:hover { background: var(--blue-soft); }
+
+  .wc-pin { transition: transform .15s ease, box-shadow .15s ease; }
+  .mk-pin[data-hover="1"] .wc-pin {
+    transform: rotate(-45deg) scale(1.22);
+    box-shadow: 0 0 0 5px rgba(10, 108, 255, .22), 0 4px 12px rgba(12, 26, 56, .25);
+  }
+  .pin-tip {
+    display: block;
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    max-width: 240px;
+    padding: 7px 11px;
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    font: 600 13px/1.2 var(--font);
+    letter-spacing: -.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(-50%);
+    transition: opacity .12s ease;
+  }
+  .mk-pin[data-hover="1"] .pin-tip { opacity: 1; }
+}
