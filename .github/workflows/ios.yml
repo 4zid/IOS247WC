@@ -5,27 +5,15 @@
 # y se cancela si llega un push más nuevo a la misma rama. Cuenta estimada
 # por corrida: ~3 min de Linux + ~4–6 de macOS (≈40–60 de los incluidos).
 #
-# push solo en main: en una rama con PR, cada push dispararía push Y
-# pull_request, o sea dos builds de macOS iguales. Para probar una rama sin
-# PR: Actions → iOS build → Run workflow (eligiendo la rama).
+# Corre con cada push (a cualquier rama) que toque la app, y a mano desde
+# Actions → iOS build → Run workflow. No escucha pull_request a propósito: en
+# un repo privado sin forks, una rama con PR dispararía push Y pull_request,
+# o sea dos builds de macOS iguales.
 
 name: iOS build
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'ios/**'
-      - 'native/**'
-      - 'web/**'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'capacitor.config.json'
-      - '.github/workflows/ios.yml'
-      - '.github/ci/xcodebuild.sh'
-  pull_request:
     paths:
       - 'ios/**'
       - 'native/**'

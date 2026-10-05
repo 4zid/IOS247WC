@@ -321,8 +321,8 @@ ni certificados `.p12`, ni iPhones registrados.
 
 ### El otro workflow: «iOS build»
 
-`.github/workflows/ios.yml` corre solo en cada push a `main` (y en los pull
-requests) que toque la app. Primero corre las pruebas en Linux (barato) y, si
+`.github/workflows/ios.yml` corre en cada push (a cualquier rama) que toque la
+app, y a mano desde Actions → iOS build → Run workflow. Primero corre las pruebas en Linux (barato) y, si
 pasan, compila la app en una Mac, sin firmar, para avisarte enseguida si algo se
 rompió. No sube nada a Apple. Las capturas de las pruebas quedan como artifact
 (`capturas-pruebas`).
@@ -550,7 +550,7 @@ const API_BASE = 'https://247-wc.vercel.app';
 - **Repo público:** las Mac de GitHub son gratis.
 - **Repo privado:** el plan gratis trae **2000 minutos por mes**, y **cada
   minuto de macOS cuenta como 10**. Más o menos:
-  - **iOS build** (en cada push a `main` que toque la app): ~3 min de Linux + 4 a
+  - **iOS build** (en cada push que toque la app): ~3 min de Linux + 4 a
     6 de macOS ≈ **40 a 60 minutos** de los incluidos.
   - **TestFlight** (cuando lo corrés vos): ~10 min de macOS ≈ **60 a 100
     minutos**, más la espera en Linux, que cuesta poco.
@@ -687,7 +687,7 @@ tests/
   bridge.e2e.mjs           pruebas de la capa nativa (npm test)
   fixtures/                datos falsos para las pruebas
 .github/
-  workflows/ios.yml        compila en cada push a main
+  workflows/ios.yml        compila en cada push que toque la app
   workflows/testflight.yml sube a TestFlight sin Mac
   ci/                      ayudantes de esos workflows
 docs/NATIVE-API.md         contrato entre la web y la capa nativa
