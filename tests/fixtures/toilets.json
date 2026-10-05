@@ -1,0 +1,27 @@
+{
+  "version": 0.6,
+  "generator": "fixture 247WC (Overpass JSON)",
+  "elements": [
+    {
+      "type": "node", "id": 9000000001, "lat": -34.60055, "lon": -58.3816,
+      "tags": { "amenity": "toilets", "name": "Baño Plaza de la República", "fee": "no", "wheelchair": "yes", "opening_hours": "24/7", "unisex": "yes" }
+    },
+    {
+      "type": "node", "id": 9000000002, "lat": -34.599, "lon": -58.378,
+      "tags": { "amenity": "toilets", "name": "Baño Galerías Pacífico", "fee": "yes", "charge": "500 ARS", "opening_hours": "Mo-Su 10:00-21:00" }
+    },
+    {
+      "type": "node", "id": 9000000003, "lat": -34.6015, "lon": -58.388,
+      "tags": { "amenity": "toilets", "name": "Baño Plaza Lavalle", "fee": "no", "changing_table": "yes" }
+    },
+    {
+      "type": "node", "id": 9000000004, "lat": -34.6098, "lon": -58.3925,
+      "tags": { "amenity": "toilets", "name": "Baño Plaza del Congreso", "operator": "GCBA" }
+    },
+    {
+      "type": "node", "id": 9000000005, "lat": -34.6087, "lon": -58.3786,
+      "tags": { "amenity": "cafe", "name": "Café de la Avenida", "toilets": "yes", "toilets:access": "customers" }
+    }
+  ],
+  "fuentes": { "osm": 5, "refugio": 0, "espejo": "fixture" }
+}

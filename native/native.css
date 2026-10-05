@@ -1,0 +1,39 @@
+/* 247WC iOS — retoques mínimos para la app. No cambia el diseño de la web:
+   solo saca comportamientos de página web que en una app se sienten rotos.
+   Las clases native/native-ios las pone bridge.js en <html>. */
+
+/* Sin el recuadro gris al tocar ni el menú «Copiar / Buscar» o la lupa al
+   mantener apretado un botón, un ícono o un texto de la interfaz. */
+html.native {
+  -webkit-tap-highlight-color: transparent;
+}
+html.native body {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Donde sí tiene sentido seleccionar: campos y el diagnóstico (para soporte). */
+html.native input,
+html.native textarea,
+html.native [contenteditable="true"],
+html.native .diag-list {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* La fila «Instalar» del modal de info no aplica en la app. bridge.js la
+   oculta con JS; esto es el respaldo (iOS 15.4+). */
+html.native .row:has([data-i18n="installHow"]) {
+  display: none;
+}
+
+/* Link a la política de privacidad del modal de info (native/text.js): mismo
+   azul que el resto de los links de la app; el azul por defecto del WebView
+   casi no se lee en modo oscuro. */
+html.native .about a {
+  color: var(--blue);
+  font-weight: 600;
+  text-decoration: none;
+}

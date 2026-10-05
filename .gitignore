@@ -3,3 +3,4 @@ www/
 .DS_Store
 tests/.output/
 *.xcuserstate
+build/

@@ -1,0 +1,360 @@
+# Arma la app firmada y la sube a App Store Connect (TestFlight) sin Mac
+# propio: corre en un Mac de GitHub y firma con una clave de API de App Store
+# Connect y el certificado de distribución que Apple administra en la nube.
+#
+# Se lanza a mano: Actions → TestFlight → Run workflow.
+# Antes, una sola vez: registrar el bundle ID, crear la app en App Store
+# Connect, la clave de API y los cuatro secretos (README, «Subir sin Mac»).
+#
+# Cómo firma, y por qué así:
+# 1. El archive va SIN firmar. Con firma automática, `xcodebuild archive`
+#    firma con un certificado de desarrollo: en un Mac descartable crea uno
+#    nuevo en cada corrida («Created via API») y desde la segunda falla
+#    («already has an Apple Development signing certificate for this
+#    machine…»), o ni arranca si la cuenta no tiene iPhones registrados.
+#    Sin firmar, el archive no toca la cuenta de Apple.
+# 2. `-exportArchive` firma para el App Store con el certificado de
+#    distribución en la nube (Apple lo crea la primera vez), arma el perfil
+#    y sube el build. La app no usa entitlements (push, App Groups…), que es
+#    lo único que se pierde al archivar sin firmar; un paso lo verifica.
+#
+# Minutos: ~10 de macOS (≈100 de los incluidos en un repo privado) más la
+# espera del procesamiento de Apple, que corre en Linux.
+
+name: TestFlight
+
+run-name: TestFlight ${{ inputs.version }} ${{ inputs.notes }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: 'Qué probar (opcional, sin emojis): se muestra en TestFlight'
+        type: string
+        required: false
+        default: ''
+      version:
+        description: 'Versión visible, ej. 1.0.1 (opcional; vacío = la del proyecto de Xcode)'
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+# De a una subida por vez: dos en paralelo competirían por los perfiles de firma.
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  upload:
+    name: Archivar, firmar y subir
+    runs-on: macos-26
+    timeout-minutes: 45
+    outputs:
+      version: ${{ steps.app.outputs.version }}
+      build_number: ${{ steps.app.outputs.build_number }}
+      bundle_id: ${{ steps.app.outputs.bundle_id }}
+    steps:
+      # Primero de todo, para no gastar minutos de Mac si falta algo. Los
+      # secretos van solo a los pasos que los usan (npm ci, por ejemplo, no
+      # los ve).
+      - name: Revisar los secretos
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          # Corta la corrida con un error claro, en la página de la corrida y en el resumen.
+          report() {
+            local title=$1
+            shift
+            for line in "$@"; do echo "::error title=$title::$line"; done
+            {
+              echo "## $title"
+              echo
+              printf -- '- %s\n' "$@"
+              echo
+              echo "Paso a paso en el README, sección «Subir sin Mac»."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          }
+
+          missing=()
+          for name in APPLE_TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY; do
+            value=${!name}
+            [[ -n ${value//[[:space:]]/} ]] || missing+=("$name")
+          done
+          if [[ ${#missing[@]} -gt 0 ]]; then
+            list=$(printf '%s, ' "${missing[@]}")
+            report "Faltan secretos" \
+              "Faltan estos secretos del repositorio: ${list%, }." \
+              "Cargalos en GitHub → Settings → Secrets and variables → Actions → New repository secret."
+          fi
+
+          # Sin espacios ni saltos de línea de más, que se cuelan al pegar.
+          team=$(printf '%s' "$APPLE_TEAM_ID" | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
+          key_id=$(printf '%s' "$ASC_KEY_ID" | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
+          issuer=$(printf '%s' "$ASC_ISSUER_ID" | tr -d '[:space:]')
+
+          bad=()
+          [[ $team =~ ^[A-Z0-9]{10}$ ]] ||
+            bad+=("APPLE_TEAM_ID tiene que ser el Team ID: 10 letras y números (developer.apple.com → Account → Membership details).")
+          [[ $key_id =~ ^[A-Z0-9]{10}$ ]] ||
+            bad+=("ASC_KEY_ID tiene que ser el Key ID de la clave: 10 letras y números (App Store Connect → Users and Access → Integrations).")
+          [[ $issuer =~ ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$ ]] ||
+            bad+=("ASC_ISSUER_ID tiene que ser el Issuer ID, con la forma 1a2b3c4d-1a2b-1a2b-1a2b-1a2b3c4d5e6f (está arriba de la lista de claves en App Store Connect).")
+          if [[ ${#bad[@]} -gt 0 ]]; then
+            report "Secretos con formato inválido" "${bad[@]}"
+          fi
+
+          for value in "$team" "$key_id" "$issuer"; do echo "::add-mask::$value"; done
+          {
+            echo "TEAM_ID=$team"
+            echo "KEY_ID=$key_id"
+            echo "ISSUER_ID=$issuer"
+          } >> "$GITHUB_ENV"
+          echo "Los cuatro secretos están cargados."
+
+      - name: Bajar el código
+        id: checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      # Antes de compilar: ¿la clave pegada en el secreto sirve?
+      - name: Validar la clave de App Store Connect
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: node .github/ci/asc-key.mjs check
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Armar la web y sincronizar con Xcode
+        run: npm run sync
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Versión de Xcode
+        run: |
+          xcodebuild -version
+          echo "SDK de iOS: $(xcrun --sdk iphoneos --show-sdk-version)"
+
+      - name: Número de build y versión
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          # Número de corrida + 100: siempre crece y nunca choca con los builds
+          # que se suban desde Xcode (1, 2, 3…).
+          build_number=$((RUN_NUMBER + 100))
+          echo "BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
+
+          version=$(printf '%s' "$VERSION_INPUT" | tr -d '[:space:]')
+          if [[ -n $version ]]; then
+            if [[ ! $version =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
+              shown=${version//[!0-9A-Za-z._-]/?}  # sin «::» ni nada que GitHub tome como comando
+              echo "::error title=Versión inválida::«$shown» no sirve como versión: tiene que ser como 1.0.1 (hasta tres números separados por puntos)."
+              exit 1
+            fi
+            echo "VERSION_OVERRIDE=$version" >> "$GITHUB_ENV"
+          fi
+
+          # El archive va sin firmar: si algún día el proyecto suma
+          # entitlements (push, App Groups, dominios asociados…), se perderían
+          # en silencio. Mejor frenar acá.
+          if grep -q 'CODE_SIGN_ENTITLEMENTS' ios/App/App.xcodeproj/project.pbxproj; then
+            echo "::error title=Entitlements::El proyecto ahora tiene entitlements (CODE_SIGN_ENTITLEMENTS) y este workflow archiva sin firmar, así que no llegarían al build. Hay que adaptar .github/workflows/testflight.yml antes de subir."
+            exit 1
+          fi
+
+          echo "Build $build_number, versión ${version:-la del proyecto}"
+
+      - name: Restaurar paquetes de Swift
+        id: spm
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            build/DerivedData/SourcePackages
+          key: spm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json', 'ios/App/CapApp-SPM/Package.swift') }}
+          restore-keys: |
+            spm-${{ runner.os }}-${{ runner.arch }}-
+
+      # Sin -allowProvisioningUpdates ni clave: ver arriba, «Cómo firma».
+      - name: Archivar (sin firmar)
+        run: |
+          version_args=()
+          [[ -z ${VERSION_OVERRIDE:-} ]] || version_args=("MARKETING_VERSION=$VERSION_OVERRIDE")
+          bash .github/ci/xcodebuild.sh "$RUNNER_TEMP/logs/archive.log" \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -derivedDataPath build/DerivedData \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            ${version_args[@]+"${version_args[@]}"} \
+            archive
+
+      - name: Guardar paquetes de Swift
+        if: >-
+          !cancelled()
+          && steps.spm.outputs.cache-hit != 'true'
+          && hashFiles('build/DerivedData/SourcePackages/workspace-state.json', 'build/DerivedData/SourcePackages/checkouts/*/Package.swift') != ''
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            build/DerivedData/SourcePackages
+          key: ${{ steps.spm.outputs.cache-primary-key }}
+
+      - name: Leer versión y número del archive
+        id: app
+        run: |
+          apps=("$RUNNER_TEMP"/App.xcarchive/Products/Applications/*.app)
+          app=${apps[0]}
+          if [[ ! -d $app ]]; then
+            echo "::error title=Archive incompleto::El archive no tiene la app adentro (Products/Applications), así que no se puede exportar."
+            exit 1
+          fi
+          read_key() { /usr/libexec/PlistBuddy -c "Print :$1" "$app/Info.plist"; }
+          version=$(read_key CFBundleShortVersionString)
+          build=$(read_key CFBundleVersion)
+          bundle=$(read_key CFBundleIdentifier)
+          echo "Archive: $bundle $version ($build)"
+          {
+            echo "version=$version"
+            echo "build_number=$build"
+            echo "bundle_id=$bundle"
+          } >> "$GITHUB_OUTPUT"
+
+      # La clave se escribe recién acá (y se borra apenas termina la subida).
+      # .github/ci/ExportOptions.plist: app-store-connect + upload (firma para
+      # el App Store y sube directo, sin .ipa intermedio), firma automática con
+      # el certificado en la nube, símbolos para los reportes de cuelgues y
+      # manageAppVersionAndBuildNumber = false (el número de build lo pone este
+      # workflow y tiene que quedar tal cual: con él se encuentra el build).
+      # teamID va vacío en el repo y se completa con el secreto.
+      - name: Preparar la exportación
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          node .github/ci/asc-key.mjs write "$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
+          cp .github/ci/ExportOptions.plist "$RUNNER_TEMP/ExportOptions.plist"
+          plutil -replace teamID -string "$TEAM_ID" "$RUNNER_TEMP/ExportOptions.plist"
+          plutil -lint "$RUNNER_TEMP/ExportOptions.plist"
+          plutil -p "$RUNNER_TEMP/ExportOptions.plist"
+
+      # Firma para el App Store y sube a App Store Connect (destination: upload).
+      - name: Firmar y subir a App Store Connect
+        env:
+          XCBEAUTIFY: 'false'
+        run: |
+          bash .github/ci/xcodebuild.sh "$RUNNER_TEMP/logs/export.log" \
+            -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/AuthKey_$KEY_ID.p8" \
+            -authenticationKeyID "$KEY_ID" \
+            -authenticationKeyIssuerID "$ISSUER_ID"
+
+      - name: Borrar la clave
+        if: always()
+        run: rm -f "$RUNNER_TEMP"/AuthKey_*.p8
+
+      - name: Resumen
+        env:
+          NOTES: ${{ inputs.notes }}
+          VERSION: ${{ steps.app.outputs.version }}
+          BUILD: ${{ steps.app.outputs.build_number }}
+        run: |
+          wait_line="- El trabajo **Esperar a Apple** de esta misma corrida avisa cuando el build queda listo para probar"
+          if [[ -n $NOTES ]]; then wait_line+=" y carga las notas en «Qué probar»"; fi
+          {
+            echo "## 247WC $VERSION ($BUILD) subida a App Store Connect"
+            echo
+            echo "Apple la está procesando: suele tardar unos **15 minutos** (a veces más). Cuando termina llega un mail y el build aparece en **[App Store Connect](https://appstoreconnect.apple.com/apps) → Apps → 247WC → TestFlight**."
+            echo
+            echo "$wait_line."
+            echo "- Para instalarla en tu iPhone: en TestFlight → Internal Testing sumate como tester y abrí la app **TestFlight** en el teléfono."
+            if [[ -n $NOTES ]]; then echo "- Qué probar: $NOTES"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Explicar el error
+        if: failure() && steps.checkout.outcome == 'success'
+        run: |
+          logs="$RUNNER_TEMP/logs"
+          mkdir -p "$logs"
+          # El detalle de la exportación queda en una carpeta temporal de Xcode
+          # (*.xcdistributionlogs), cuya ruta sale en el log: la sumamos.
+          {
+            grep -ohE '"/[^"]+\.xcdistributionlogs"' "$logs"/*.log 2>/dev/null | tr -d '"' || true
+            find "${TMPDIR:-/tmp}" -maxdepth 2 -type d -name '*.xcdistributionlogs' 2>/dev/null || true
+          } | sort -u > "$RUNNER_TEMP/distribution-logs.txt"
+          while IFS= read -r dir; do
+            if [[ -d $dir && ! -e $logs/$(basename "$dir") ]]; then cp -R "$dir" "$logs/"; fi
+          done < "$RUNNER_TEMP/distribution-logs.txt"
+          # Por las dudas, sin tokens de acceso en lo que se sube.
+          find "$logs" -type f -exec perl -pi -e 's/(Bearer\s+)[\w.~+\/=-]+/$1***/g' {} + || true
+          node .github/ci/explain-failure.mjs "$logs"
+
+      - name: Subir los logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: testflight-logs
+          path: ${{ runner.temp }}/logs
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # Apple tarda en procesar el build: se espera en Linux, que cuesta 10 veces
+  # menos que el Mac. Si se pasa de tiempo deja un aviso, no un error.
+  wait:
+    name: Esperar a Apple
+    needs: upload
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/ci
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Esperar el procesamiento y cargar las notas
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          BUNDLE_ID: ${{ needs.upload.outputs.bundle_id }}
+          BUILD_NUMBER: ${{ needs.upload.outputs.build_number }}
+          APP_VERSION: ${{ needs.upload.outputs.version }}
+          NOTES: ${{ inputs.notes }}
+          WAIT_MINUTES: 45
+        run: node .github/ci/testflight-wait.mjs

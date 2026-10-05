@@ -1,0 +1,343 @@
+<!doctype html>
+<!--
+  247WC · Política de privacidad (ES) / Privacy Policy (EN)
+
+  Antes de publicar: reemplazá TODAS las apariciones de [TU EMAIL DE CONTACTO]
+  por tu email (están en la versión en español y en la inglesa, en el texto y
+  en el link mailto:). Con «Buscar y reemplazar todo» alcanza.
+
+  Página autocontenida: no carga fuentes, imágenes ni scripts de afuera (sería
+  raro que una política de privacidad le pase tu IP a terceros). Se publica tal
+  cual, por ejemplo en la raíz del repo de la web → https://247-wc.vercel.app/privacy.html
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<meta name="description" content="Política de privacidad de la app 247WC para iPhone. Privacy Policy of the 247WC iPhone app." />
+<title>247WC · Política de privacidad / Privacy Policy</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='23.5' fill='%230a6cff'/%3E%3Cg transform='translate(0 -2)'%3E%3Crect x='20' y='15' width='20' height='26' rx='5' fill='%23fff'/%3E%3Cpath d='M23 48H79' stroke='%23fff' stroke-width='10' stroke-linecap='round'/%3E%3Cpath d='M28 56H76Q76 70 61 73H41Q28 70 28 56Z' fill='%23fff'/%3E%3Cpath d='M51 70V78Q51 84 57 84H66' fill='none' stroke='%23fff' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='79' cy='84' r='5.5' fill='%239fd0ff'/%3E%3C/g%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f4f6fa;
+    --text: #0a0e17;
+    --muted: #5b6475;
+    --line: #e3e7ef;
+    --accent: #0a6cff;
+    --accent-soft: #e8f1ff;
+    --mark-bg: #fff3c4;
+    --mark-text: #6b4e00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0f19;
+      --surface: #141a27;
+      --text: #f2f4f8;
+      --muted: #9aa3b5;
+      --line: #252d3d;
+      --accent: #4d94ff;
+      --accent-soft: #13264a;
+      --mark-bg: #3d3100;
+      --mark-text: #ffe28a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+
+  header.top {
+    position: sticky; top: 0; z-index: 1;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  header.top .wrap { display: flex; align-items: center; gap: 12px; min-height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: -0.02em; font-size: 18px; color: var(--text); text-decoration: none; }
+  .brand svg { width: 32px; height: 32px; flex: none; }
+  .lang { margin-left: auto; display: flex; gap: 6px; }
+  .lang a {
+    color: var(--accent); text-decoration: none; font-weight: 600; font-size: 14px;
+    padding: 6px 12px; border-radius: 999px; background: var(--accent-soft);
+  }
+
+  section.policy { padding: 40px 0 8px; scroll-margin-top: 64px; }
+  section.policy + section.policy { border-top: 1px solid var(--line); margin-top: 32px; }
+  .eyebrow { color: var(--accent); font-weight: 700; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; margin: 0 0 8px; }
+  h1 { font-size: clamp(30px, 7vw, 42px); line-height: 1.1; letter-spacing: -0.035em; margin: 0 0 16px; }
+  h2 { font-size: 21px; line-height: 1.25; letter-spacing: -0.02em; margin: 36px 0 10px; }
+  h3 { font-size: 16px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  p, ul { margin: 0 0 14px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  li::marker { color: var(--accent); }
+  .lead { font-size: 18px; color: var(--muted); }
+  .meta { font-size: 14px; color: var(--muted); }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  strong { font-weight: 700; }
+
+  .summary {
+    background: var(--accent-soft); border-radius: 20px; padding: 20px 20px 8px; margin: 24px 0 8px;
+  }
+  .summary h2 { margin-top: 0; font-size: 18px; }
+  .summary ul { padding-left: 0; list-style: none; }
+  .summary li { position: relative; padding-left: 28px; margin-bottom: 10px; }
+  .summary li::before {
+    content: ""; position: absolute; left: 0; top: 4px; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5 9.2l2.6 2.6L13 6.4' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 18px no-repeat;
+  }
+
+  .services { display: grid; gap: 12px; margin: 16px 0; }
+  .service { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .service dl { margin: 8px 0 0; display: grid; grid-template-columns: 1fr; gap: 2px 12px; }
+  .service dt { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+  .service dd { margin: 0; }
+  @media (min-width: 600px) {
+    .service dl { grid-template-columns: 9.5em 1fr; }
+    .service dt { margin-top: 3px; }
+  }
+
+  .placeholder {
+    background: var(--mark-bg); color: var(--mark-text); border-radius: 6px; padding: 1px 6px;
+    font-weight: 700; white-space: nowrap;
+  }
+  a.placeholder { text-decoration: none; }
+
+  footer { padding: 32px 0 48px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#es" aria-label="247WC">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23.5" fill="#0a6cff"/><g transform="translate(0 -2)"><rect x="20" y="15" width="20" height="26" rx="5" fill="#fff"/><path d="M23 48H79" stroke="#fff" stroke-width="10" stroke-linecap="round"/><path d="M28 56H76Q76 70 61 73H41Q28 70 28 56Z" fill="#fff"/><path d="M51 70V78Q51 84 57 84H66" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="79" cy="84" r="5.5" fill="#9fd0ff"/></g></svg>
+      247WC
+    </a>
+    <nav class="lang" aria-label="Idioma / Language">
+      <a href="#es" hreflang="es" lang="es">Español</a>
+      <a href="#en" hreflang="en" lang="en">English</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============================================================ ESPAÑOL -->
+<section class="policy" id="es" lang="es">
+  <p class="eyebrow">247WC para iPhone</p>
+  <h1>Política de privacidad</h1>
+  <p class="lead">247WC te muestra el baño público más cercano y te guía caminando hasta la puerta. Esta política explica, sin vueltas, qué datos usa la app, adónde van y qué no hacemos con ellos.</p>
+  <p class="meta">Última actualización: 5 de octubre de 2026</p>
+
+  <div class="summary">
+    <h2>En corto</h2>
+    <ul>
+      <li><strong>No hay cuentas ni registro.</strong> No te pedimos nombre, email ni teléfono.</li>
+      <li><strong>Tu ubicación se usa en el teléfono</strong>, solo mientras usás la app, para buscar baños y guiarte.</li>
+      <li><strong>Para buscar, a nuestro servidor llega una zona aproximada</strong> (un punto redondeado a unos 250&nbsp;m), no tu posición exacta. Nada queda asociado a vos: solo se guarda en caché, hasta un día, la lista de baños de esa zona.</li>
+      <li><strong>Sin analytics, sin publicidad, sin rastreo y sin venta de datos.</strong></li>
+      <li><strong>Tus preferencias y tus últimos resultados quedan solo en tu teléfono</strong> y se borran al eliminar la app.</li>
+    </ul>
+  </div>
+
+  <h2>1. Quién es responsable</h2>
+  <p>La app 247WC la publica la persona o empresa que figura como desarrollador en su ficha del App Store. Para cualquier consulta sobre privacidad, escribinos a <a class="placeholder" href="mailto:[TU EMAIL DE CONTACTO]">[TU EMAIL DE CONTACTO]</a>.</p>
+
+  <h2>2. Tu ubicación</h2>
+  <ul>
+    <li>La app pide permiso <strong>«Al usar la app»</strong>. Nunca usa la ubicación en segundo plano ni con la app cerrada.</li>
+    <li>Con tu posición, el teléfono ordena los baños por cercanía, dibuja la ruta y mueve la flecha de la guía. Esos cálculos se hacen en el teléfono.</li>
+    <li>Si en tu iPhone está activada la ubicación aproximada, la app puede pedirte la ubicación exacta por esa vez, para encontrar el baño que de verdad tenés más cerca.</li>
+    <li>La brújula (hacia dónde apunta el teléfono) se lee en el teléfono y no sale de él.</li>
+    <li>Podés cambiar o quitar el permiso cuando quieras en <strong>Ajustes → 247WC → Ubicación</strong>. Sin ubicación, la app igual funciona: mové el mapa y tocá «Buscar en esta zona».</li>
+  </ul>
+
+  <h2>3. Qué se envía por internet, y a quién</h2>
+  <p>Para funcionar, la app se conecta con estos servicios. Ninguno recibe tu nombre, tu email ni un identificador tuyo.</p>
+  <div class="services">
+    <div class="service">
+      <h3>Búsqueda de baños de 247WC</h3>
+      <dl>
+        <dt>Qué es</dt><dd>Una función propia de 247WC, alojada en Vercel.</dd>
+        <dt>Qué recibe</dt><dd>Un punto redondeado a una grilla de unos 250&nbsp;m (no tu posición exacta) y el radio de búsqueda.</dd>
+        <dt>Para qué</dt><dd>Desde el servidor consulta OpenStreetMap (Overpass) y Refuge Restrooms y le devuelve a la app la lista de baños de esa zona.</dd>
+        <dt>Qué se guarda</dt><dd>La respuesta (la lista de baños de esa zona) queda en caché hasta un día, para que la misma zona responda al instante. No llevamos registros propios de quién buscó.</dd>
+      </dl>
+    </div>
+    <div class="service">
+      <h3>Servidores públicos de OpenStreetMap (Overpass)</h3>
+      <dl>
+        <dt>Cuándo</dt><dd>Solo si nuestra búsqueda no responde o no pudo consultar OpenStreetMap.</dd>
+        <dt>Qué reciben</dt><dd>El teléfono les pide los baños directamente, con el punto de búsqueda (tu posición o el centro del mapa) y el radio.</dd>
+      </dl>
+    </div>
+    <div class="service">
+      <h3>Ruta a pie: Valhalla (FOSSGIS e.V.) u OSRM</h3>
+      <dl>
+        <dt>Cuándo</dt><dd>Cuando la app calcula la ruta a pie hasta un baño: en la tarjeta del más cercano, al abrir un baño de la lista y durante la guía.</dd>
+        <dt>Qué reciben</dt><dd>El punto de partida (tu posición) y el destino (el baño elegido). Primero se usa Valhalla; si no responde, OSRM.</dd>
+      </dl>
+    </div>
+    <div class="service">
+      <h3>Mapa: OpenFreeMap</h3>
+      <dl>
+        <dt>Cuándo</dt><dd>Mientras ves el mapa.</dd>
+        <dt>Qué recibe</dt><dd>Los pedidos de las partes del mapa de la zona que estás mirando. Si OpenFreeMap no carga, se usan las de OpenStreetMap.</dd>
+      </dl>
+    </div>
+  </div>
+  <p>Como en cualquier conexión a internet, cada uno de estos servidores ve la dirección IP desde la que se conecta tu teléfono y datos técnicos del pedido (por ejemplo, la hora), y puede guardarlos en sus registros según su propia política. Nosotros no usamos tu IP para identificarte ni la combinamos con otros datos. Algunos de estos servicios están en otros países.</p>
+
+  <h2>4. Links que te llevan afuera</h2>
+  <ul>
+    <li><strong>«Abrir en Mapas»</strong> abre Google Maps (si la tenés instalada) o Mapas de Apple con el destino elegido. Desde ahí rige la política de esa app.</li>
+    <li><strong>«¿Falta un baño?»</strong> abre la web de OpenStreetMap centrada en tu zona, para que puedas sumarlo. Los créditos abren OpenStreetMap y Refuge Restrooms.</li>
+  </ul>
+  <p>Esas páginas se abren en Safari dentro de la app y se rigen por sus propias políticas de privacidad.</p>
+
+  <h2>5. Lo que se guarda en tu teléfono</h2>
+  <p>En el almacenamiento interno de la app (no en un servidor) quedan el idioma, el tema claro u oscuro, los filtros, si ya viste la introducción y los últimos resultados de búsqueda (la lista de baños y el punto donde buscaste), para mostrártelos rápido o si te quedás sin señal. Nada de esto se envía a ningún lado y se borra por completo al eliminar la app.</p>
+
+  <h2>6. Lo que no hacemos</h2>
+  <ul>
+    <li>No hay cuentas ni registro, y no te pedimos datos personales.</li>
+    <li>No usamos analytics, herramientas de medición ni publicidad.</li>
+    <li>No te rastreamos en apps o sitios de otras empresas ni usamos el identificador de publicidad.</li>
+    <li>No vendemos, alquilamos ni compartimos datos con fines comerciales.</li>
+    <li>No usamos tu ubicación en segundo plano.</li>
+  </ul>
+
+  <h2>7. Tus derechos</h2>
+  <p>Usamos tu ubicación porque vos lo pedís al tocar «Escanear», y solo para darte ese servicio. Como no guardamos datos personales asociados a vos, no tenemos un perfil tuyo que consultar, corregir o borrar. Igual, si tenés una pregunta o un pedido sobre tus datos, escribinos a <a class="placeholder" href="mailto:[TU EMAIL DE CONTACTO]">[TU EMAIL DE CONTACTO]</a> y te respondemos. Si vivís en un lugar con leyes de protección de datos (por ejemplo, la Argentina, la Unión Europea o el Reino Unido), también podés presentar un reclamo ante la autoridad de tu país.</p>
+
+  <h2>8. Niñas y niños</h2>
+  <p>247WC es apta para todo público y no le pide datos personales a nadie, tampoco a menores. No recopilamos a sabiendas información de niñas ni niños.</p>
+
+  <h2>9. Cambios en esta política</h2>
+  <p>Si la cambiamos, publicamos la versión nueva en esta misma página con la fecha actualizada. Si el cambio es importante (por ejemplo, si la app empezara a enviar otros datos), también lo vamos a avisar en las novedades de la versión de la app.</p>
+
+  <h2>10. Contacto</h2>
+  <p><a class="placeholder" href="mailto:[TU EMAIL DE CONTACTO]">[TU EMAIL DE CONTACTO]</a></p>
+</section>
+
+<!-- ============================================================ ENGLISH -->
+<section class="policy" id="en" lang="en">
+  <p class="eyebrow">247WC for iPhone</p>
+  <h1>Privacy Policy</h1>
+  <p class="lead">247WC shows you the closest public toilet and guides you there on foot. This policy explains, plainly, what data the app uses, where it goes and what we don't do with it.</p>
+  <p class="meta">Last updated: October 5, 2026</p>
+
+  <div class="summary">
+    <h2>In short</h2>
+    <ul>
+      <li><strong>No accounts, no sign-up.</strong> We don't ask for your name, email or phone number.</li>
+      <li><strong>Your location is used on your phone</strong>, only while you use the app, to find toilets and guide you.</li>
+      <li><strong>To search, our server receives an approximate area</strong> (a point rounded to about 250&nbsp;m), not your exact position. Nothing is linked to you: only the list of toilets for that area is cached, for up to a day.</li>
+      <li><strong>No analytics, no ads, no tracking, and we don't sell data.</strong></li>
+      <li><strong>Your preferences and latest results stay on your phone</strong> and are erased when you delete the app.</li>
+    </ul>
+  </div>
+
+  <h2>1. Who is responsible</h2>
+  <p>The 247WC app is published by the person or company listed as the developer on its App Store page. For any privacy question, write to <a class="placeholder" href="mailto:[TU EMAIL DE CONTACTO]">[TU EMAIL DE CONTACTO]</a>.</p>
+
+  <h2>2. Your location</h2>
+  <ul>
+    <li>The app asks for permission <strong>“While Using the App”</strong>. It never uses your location in the background or when the app is closed.</li>
+    <li>With your position, the phone sorts toilets by distance, draws the route and turns the guidance arrow. Those calculations happen on the phone.</li>
+    <li>If your iPhone is set to approximate location, the app may ask for your precise location just once, to find the toilet that is really closest to you.</li>
+    <li>The compass (which way your phone is pointing) is read on the phone and never leaves it.</li>
+    <li>You can change or remove the permission at any time in <strong>Settings → 247WC → Location</strong>. Without location the app still works: move the map and tap “Search this area”.</li>
+  </ul>
+
+  <h2>3. What is sent over the internet, and to whom</h2>
+  <p>To work, the app connects to these services. None of them receives your name, your email or an identifier of yours.</p>
+  <div class="services">
+    <div class="service">
+      <h3>247WC toilet search</h3>
+      <dl>
+        <dt>What it is</dt><dd>247WC's own function, hosted on Vercel.</dd>
+        <dt>What it receives</dt><dd>A point rounded to a grid of about 250&nbsp;m (not your exact position) and the search radius.</dd>
+        <dt>What for</dt><dd>From the server it queries OpenStreetMap (Overpass) and Refuge Restrooms and returns the list of toilets in that area to the app.</dd>
+        <dt>What is kept</dt><dd>The response (the list of toilets in that area) is cached for up to one day so the same area loads instantly. We keep no logs of our own about who searched.</dd>
+      </dl>
+    </div>
+    <div class="service">
+      <h3>Public OpenStreetMap servers (Overpass)</h3>
+      <dl>
+        <dt>When</dt><dd>Only if our search doesn't respond or couldn't reach OpenStreetMap.</dd>
+        <dt>What they receive</dt><dd>The phone asks them for toilets directly, with the search point (your position or the center of the map) and the radius.</dd>
+      </dl>
+    </div>
+    <div class="service">
+      <h3>Walking route: Valhalla (FOSSGIS e.V.) or OSRM</h3>
+      <dl>
+        <dt>When</dt><dd>When the app calculates the walking route to a toilet: on the closest-toilet card, when you open a toilet from the list, and during guidance.</dd>
+        <dt>What they receive</dt><dd>The starting point (your position) and the destination (the chosen toilet). Valhalla is used first; if it doesn't respond, OSRM.</dd>
+      </dl>
+    </div>
+    <div class="service">
+      <h3>Map: OpenFreeMap</h3>
+      <dl>
+        <dt>When</dt><dd>While you look at the map.</dd>
+        <dt>What it receives</dt><dd>Requests for the map pieces of the area you are viewing. If OpenFreeMap doesn't load, OpenStreetMap's are used.</dd>
+      </dl>
+    </div>
+  </div>
+  <p>As with any internet connection, each of these servers sees the IP address your phone connects from and technical details of the request (such as the time), and may keep them in its logs under its own policy. We don't use your IP address to identify you or combine it with other data. Some of these services are located in other countries.</p>
+
+  <h2>4. Links that take you elsewhere</h2>
+  <ul>
+    <li><strong>“Open in Maps”</strong> opens Google Maps (if installed) or Apple Maps with the chosen destination. From there, that app's policy applies.</li>
+    <li><strong>“Missing a toilet?”</strong> opens the OpenStreetMap website centered on your area so you can add it. The credits open OpenStreetMap and Refuge Restrooms.</li>
+  </ul>
+  <p>Those pages open in Safari inside the app and are governed by their own privacy policies.</p>
+
+  <h2>5. What is stored on your phone</h2>
+  <p>The app's internal storage (not a server) keeps your language, light or dark theme, filters, whether you've seen the intro, and your latest search results (the list of toilets and the point where you searched), so they show up quickly or when you have no signal. None of this is sent anywhere, and it is completely erased when you delete the app.</p>
+
+  <h2>6. What we don't do</h2>
+  <ul>
+    <li>No accounts or sign-up, and we don't ask for personal data.</li>
+    <li>No analytics, measurement tools or advertising.</li>
+    <li>We don't track you across other companies' apps or websites, and we don't use the advertising identifier.</li>
+    <li>We don't sell, rent or share data for commercial purposes.</li>
+    <li>We don't use your location in the background.</li>
+  </ul>
+
+  <h2>7. Your rights</h2>
+  <p>We use your location because you ask for it when you tap “Scan”, and only to provide that service. Since we don't keep personal data linked to you, we have no profile of you to access, correct or delete. Still, if you have a question or a request about your data, write to <a class="placeholder" href="mailto:[TU EMAIL DE CONTACTO]">[TU EMAIL DE CONTACTO]</a> and we'll answer. If you live somewhere with data protection laws (for example, the European Union, the United Kingdom or Argentina), you can also file a complaint with your local authority.</p>
+
+  <h2>8. Children</h2>
+  <p>247WC is suitable for all ages and doesn't ask anyone for personal data, including children. We don't knowingly collect information from children.</p>
+
+  <h2>9. Changes to this policy</h2>
+  <p>If we change it, we'll publish the new version on this page with an updated date. If the change is significant (for example, if the app started sending other data), we'll also mention it in the app's release notes.</p>
+
+  <h2>10. Contact</h2>
+  <p><a class="placeholder" href="mailto:[TU EMAIL DE CONTACTO]">[TU EMAIL DE CONTACTO]</a></p>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>247WC · Última actualización: 5 de octubre de 2026 · Last updated: October 5, 2026</p>
+    <p>Datos del mapa / Map data © colaboradores de OpenStreetMap / OpenStreetMap contributors.</p>
+  </div>
+</footer>
+
+</body>
+</html>

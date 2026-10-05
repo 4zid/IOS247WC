@@ -1,0 +1,8 @@
+{
+  "version": 8,
+  "name": "fixture vacío",
+  "sources": {},
+  "layers": [
+    { "id": "fondo", "type": "background", "paint": { "background-color": "#e9edf2" } }
+  ]
+}

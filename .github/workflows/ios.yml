@@ -1,0 +1,171 @@
+# Compila la app en cada cambio. Primero las pruebas de la capa web en Linux
+# (barato) y, solo si pasan, UN build de Release sin firmar en un Mac de
+# GitHub. En repos privados cada minuto de macOS se cobra como 10 de Linux:
+# por eso el Mac hace una sola compilación, únicamente si Linux salió bien,
+# y se cancela si llega un push más nuevo a la misma rama. Cuenta estimada
+# por corrida: ~3 min de Linux + ~4–6 de macOS (≈40–60 de los incluidos).
+#
+# push solo en main: en una rama con PR, cada push dispararía push Y
+# pull_request, o sea dos builds de macOS iguales. Para probar una rama sin
+# PR: Actions → iOS build → Run workflow (eligiendo la rama).
+
+name: iOS build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - 'native/**'
+      - 'web/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'capacitor.config.json'
+      - '.github/workflows/ios.yml'
+      - '.github/ci/xcodebuild.sh'
+  pull_request:
+    paths:
+      - 'ios/**'
+      - 'native/**'
+      - 'web/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'capacitor.config.json'
+      - '.github/workflows/ios.yml'
+      - '.github/ci/xcodebuild.sh'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  web:
+    name: Pruebas web (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+
+      # npm test arma www/ (scripts/build-web.mjs) y corre tests/bridge.e2e.mjs.
+      - name: Probar la capa nativa
+        run: npm test
+
+      # Se suben siempre (sirven para ver la app aunque todo pase); 7 días
+      # alcanzan y no llenan el espacio de artefactos del plan gratis.
+      - name: Subir capturas de las pruebas
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: capturas-pruebas
+          path: tests/.output
+          if-no-files-found: ignore
+          retention-days: 7
+
+  ios:
+    name: Compilar para iPhone (Release, sin firmar)
+    needs: web
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      # Los paquetes de Swift de los plugins viven en node_modules/@capacitor/*
+      # (ios/App/CapApp-SPM/Package.swift apunta ahí): sin npm ci no compila.
+      - name: Instalar dependencias
+        run: npm ci
+
+      # Arma www/ y lo copia a ios/App/App/public, genera capacitor.config.json
+      # y reescribe Package.swift según los plugins instalados.
+      - name: Armar la web y sincronizar con Xcode
+        run: npm run sync
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Versión de Xcode
+        run: |
+          xcodebuild -version
+          echo "SDK de iOS: $(xcrun --sdk iphoneos --show-sdk-version)"
+
+      # Va después de npm run sync: así la clave usa el Package.swift regenerado.
+      - name: Restaurar paquetes de Swift
+        id: spm
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            build/DerivedData/SourcePackages
+          key: spm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json', 'ios/App/CapApp-SPM/Package.swift') }}
+          restore-keys: |
+            spm-${{ runner.os }}-${{ runner.arch }}-
+
+      # Para un iPhone de verdad (no el simulador), sin firmar: verifica que
+      # todo compile y se empaquete sin necesitar certificados ni secretos.
+      - name: Compilar
+        run: |
+          bash .github/ci/xcodebuild.sh build/logs/xcodebuild-build.log \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            build
+
+      # Se guarda aunque falle la compilación (si los paquetes llegaron a
+      # resolverse): así un error en el Swift no obliga a bajarlos de nuevo.
+      - name: Guardar paquetes de Swift
+        if: >-
+          !cancelled()
+          && steps.spm.outputs.cache-hit != 'true'
+          && hashFiles('build/DerivedData/SourcePackages/workspace-state.json', 'build/DerivedData/SourcePackages/checkouts/*/Package.swift') != ''
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            build/DerivedData/SourcePackages
+          key: ${{ steps.spm.outputs.cache-primary-key }}
+
+      - name: Subir el log de xcodebuild
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: xcodebuild-log
+          path: build/logs/
+          if-no-files-found: ignore
+          retention-days: 14
