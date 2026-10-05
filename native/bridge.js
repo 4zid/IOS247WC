@@ -597,6 +597,39 @@
     }));
   });
 
+  /* ---------------------------------------- botón azul y «Mi ubicación» */
+
+  // En el teléfono van en la misma fila (native.css): el botón azul al centro
+  // y «Mi ubicación» a la derecha. Con un texto largo en un iPhone angosto
+  // («Buscando en esta zona…» en uno de 375 px) se tocarían: solo entonces el
+  // botón azul se corre a la izquierda lo justo para dejar FAB_GAP entre los
+  // dos. Sigue al ancho mientras cambia el texto (la web lo anima) y al girar.
+  safe('botón azul', () => {
+    const FAB_GAP = 10;
+    onReady(() => safe('botón azul', () => {
+      const fab = document.querySelector('.scan-fab');
+      const locate = document.getElementById('btn-locate');
+      if (!fab || !locate || typeof ResizeObserver !== 'function') return;
+      const root = document.documentElement;
+      const phone = window.matchMedia('(max-width: 759px)');
+      let last = null;
+      const fit = () => {
+        let shift = 0;
+        if (phone.matches) {
+          const half = root.clientWidth / 2;
+          shift = Math.max(0, Math.ceil(half + fab.offsetWidth / 2 - (locate.getBoundingClientRect().left - FAB_GAP)));
+        }
+        if (shift === last) return;
+        last = shift;
+        root.style.setProperty('--fab-shift', `${shift}px`);
+      };
+      new ResizeObserver(() => safe('botón azul', fit)).observe(fab);
+      window.addEventListener('resize', () => safe('botón azul', fit));
+      phone.addEventListener?.('change', () => safe('botón azul', fit));
+      fit();
+    }));
+  });
+
   /* ------------------------------------------------------- acceso directo */
 
   // «Baño más cercano» desde el ícono: mismo camino que el acceso directo de

@@ -748,17 +748,21 @@ const SCENARIOS = [
     } finally { await shot(page, 'T14-locate-far'); await context.close(); }
   }],
 
-  ['T15', 'fab-gap', 'Botón azul a ~12 px de la hoja con el área segura del iPhone; la web sin cambios', async (b, base) => {
+  ['T15', 'fab-gap', 'Botón azul a ~12 px de la hoja y «Mi ubicación» en su fila, sin pisarse en ningún ancho; la web sin cambios', async (b, base) => {
     // El área segura de abajo de un iPhone con Face ID (34 px): la web la lee de --safe-b.
     const SAFE = 34;
     const setSafe = (page) => page.evaluate((px) => document.documentElement.style.setProperty('--safe-b', `${px}px`), SAFE);
     const measure = (page) => page.evaluate(() => {
       const r = (s) => document.querySelector(s).getBoundingClientRect();
       const fab = r('.scan-fab'), loc = r('#btn-locate'), sheet = r('#sheet');
+      const label = document.getElementById('fab-label');
       return {
+        W: document.documentElement.clientWidth,
         gap: sheet.top - fab.bottom,
-        fab: { left: fab.left, right: fab.right, top: fab.top, bottom: fab.bottom },
+        fab: { left: fab.left, right: fab.right, top: fab.top, bottom: fab.bottom, width: fab.width, height: fab.height },
         loc: { left: loc.left, right: loc.right, top: loc.top, bottom: loc.bottom },
+        cut: label.scrollWidth > label.clientWidth + 1,
+        shift: getComputedStyle(document.documentElement).getPropertyValue('--fab-shift').trim(),
         peek: getComputedStyle(document.documentElement).getPropertyValue('--sheet-peek').trim(),
         padB: getComputedStyle(document.getElementById('sheet')).paddingBottom,
         native: document.documentElement.classList.contains('native'),
@@ -773,15 +777,21 @@ const SCENARIOS = [
       for (let i = 0; i < 30; i++) {
         await page.waitForTimeout(100);
         const m = await measure(page);
-        if (prev && prev.gap === m.gap && prev.fab.top === m.fab.top && prev.loc.top === m.loc.top) return m;
+        if (prev && prev.gap === m.gap && prev.fab.top === m.fab.top && prev.fab.left === m.fab.left && prev.loc.top === m.loc.top) return m;
         prev = m;
       }
       return prev;
     };
-    const apart = (a, c) => ({
-      h: a.right <= c.left || c.right <= a.left,
-      v: a.bottom <= c.top || c.bottom <= a.top,
-    });
+    const midY = (r) => (r.top + r.bottom) / 2;
+    const midX = (r) => (r.left + r.right) / 2;
+    // La misma fila: centros a la misma altura y 10 px (o más) entre los dos.
+    const sameRow = (m, what) => {
+      assert(Math.abs(m.fab.height - 48) <= 0.5, `${what}: el botón azul mide ${m.fab.height} px de alto (esperaba 48)`);
+      assert(Math.abs(midY(m.fab) - midY(m.loc)) <= 0.6,
+        `${what}: «Mi ubicación» no está alineado con el botón azul (centros en y=${midY(m.loc).toFixed(1)} y y=${midY(m.fab).toFixed(1)})`);
+      assert(m.loc.left - m.fab.right >= 9.5, `${what}: entre el botón azul y «Mi ubicación» quedan ${(m.loc.left - m.fab.right).toFixed(1)} px`);
+      assert(m.fab.left >= 11.5, `${what}: el botón azul se sale por la izquierda (x=${m.fab.left.toFixed(1)})`);
+    };
 
     // a) En la app, con la tarjeta (peek 132) y con la lista (peek 214).
     let { context, page, errors } = await openApp(b, base, { config: { permission: 'prompt' } });
@@ -792,8 +802,8 @@ const SCENARIOS = [
       const best = await settled(page);
       assert(best.padB === `${18 + SAFE}px`, `el área segura no se aplicó (padding de la hoja: ${best.padB})`);
       assert(best.gap >= 8 && best.gap <= 16, `tarjeta (peek ${best.peek}): el botón azul queda a ${best.gap.toFixed(1)} px de la hoja`);
-      let o = apart(best.loc, best.fab);
-      assert(o.h && o.v, `«Mi ubicación» se pisa con el botón azul: ${JSON.stringify({ loc: best.loc, fab: best.fab })}`);
+      sameRow(best, `tarjeta (peek ${best.peek})`);
+      assert(Math.abs(midX(best.fab) - best.W / 2) <= 0.5 && best.shift === '0px', `tarjeta: el botón azul no está centrado (x=${midX(best.fab).toFixed(1)}, --fab-shift ${best.shift})`);
       await shot(page, 'T15-fab-gap');
 
       // Con la tarjeta compacta abajo, la lista se abre desde el chip de arriba.
@@ -803,10 +813,47 @@ const SCENARIOS = [
       const list = await settled(page);
       assert(list.peek === '214px', `la lista no quedó abajo (peek ${list.peek})`);
       assert(list.gap >= 8 && list.gap <= 16, `lista (peek ${list.peek}): el botón azul queda a ${list.gap.toFixed(1)} px de la hoja`);
-      o = apart(list.loc, list.fab);
-      assert(o.h && o.v, `«Mi ubicación» se pisa con el botón azul en la lista: ${JSON.stringify({ loc: list.loc, fab: list.fab })}`);
-      await healthy(page, errors);
+      sameRow(list, `lista (peek ${list.peek})`);
       await shot(page, 'T15-fab-gap-list');
+
+      // c) Todos los textos del botón azul, en los dos idiomas, en cada ancho de
+      //    iPhone (320: SE de 1.ª generación con iOS 15; 375: SE, mini; 440: Pro
+      //    Max). Solo se corre a la izquierda si hace falta, y nunca se recorta
+      //    salvo en 320.
+      const LABELS = [
+        'Escanear baños', 'Escaneando…', 'Buscar en esta zona', 'Buscando en esta zona…', 'Seguir guiando', 'Reintentar', 'Sumar bares y negocios', 'Volver a mi ubicación',
+        'Scan for toilets', 'Scanning…', 'Search this area', 'Searching this area…', 'Resume guide', 'Try again', 'Add bars and shops', 'Back to my location',
+      ];
+      const original = await page.locator('#fab-label').textContent();
+      let shifted = 0, cut = 0;
+      for (const W of [320, 375, 390, 393, 402, 414, 430, 440]) {
+        await page.setViewportSize({ width: W, height: 852 });
+        for (const label of LABELS) {
+          await page.evaluate((l) => { document.getElementById('fab-label').textContent = l; }, label);
+          await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+          const m = await measure(page);
+          const what = `${W} px, «${label}»`;
+          sameRow(m, what);
+          // Sin correrse: centrado. Si se corre, es porque centrado quedaba a menos de 10 px.
+          const natural = m.fab.width;
+          const centeredGap = m.loc.left - (W / 2 + natural / 2);
+          if (centeredGap >= 10) {
+            assert(m.shift === '0px' && Math.abs(midX(m.fab) - W / 2) <= 0.5, `${what}: se corrió sin necesidad (--fab-shift ${m.shift})`);
+          } else {
+            shifted++;
+            assert(m.loc.left - m.fab.right <= 11, `${what}: se corrió de más (${(m.loc.left - m.fab.right).toFixed(1)} px hasta «Mi ubicación»)`);
+          }
+          if (W >= 375) assert(!m.cut, `${what}: el texto se recortó`);
+          if (m.cut) { cut++; assert(m.fab.width <= W - 80 + 0.5, `${what}: recortado pero más ancho que el lugar libre (${m.fab.width})`); }
+        }
+      }
+      assert(shifted > 0 && cut > 0, `(c) el caso angosto no se probó: ${shifted} corridos, ${cut} recortados`);
+      await page.setViewportSize({ width: 393, height: 852 });
+      await page.evaluate((l) => { document.getElementById('fab-label').textContent = l; }, original);
+      const back = await settled(page);
+      sameRow(back, 'de vuelta a 393 px');
+      assert(back.shift === '0px', `de vuelta a 393 px quedó corrido (--fab-shift ${back.shift})`);
+      await healthy(page, errors);
     } finally { await context.close(); }
 
     // b) En un navegador común (sin la capa nativa) queda donde lo pone la web:
@@ -819,6 +866,8 @@ const SCENARIOS = [
       assert(!web.native && web.nativeCss, `modo web: clase native ${web.native}, native.css cargado ${web.nativeCss}`);
       assert(web.sheetState === 'peek', `modo web: la hoja está ${web.sheetState}`);
       assert(Math.abs(web.gap - (18 + SAFE)) <= 1, `modo web: el botón azul queda a ${web.gap.toFixed(1)} px de la hoja (la web lo pone a ${18 + SAFE})`);
+      assert(web.shift === '', `modo web: --fab-shift está puesto (${web.shift})`);
+      assert(web.loc.bottom <= web.fab.top, 'modo web: «Mi ubicación» no está arriba del botón azul');
       await healthy(page, errors.filter((e) => !/sw\.js|api\/toilets|404/.test(e)));
       return page;
     } finally { await shot(page, 'T15-fab-gap-web'); await context.close(); }

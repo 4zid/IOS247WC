@@ -276,6 +276,13 @@ También:
 - **atribución del mapa:** suma ` · OpenFreeMap © OpenMapTiles` a la fila
   «Datos» del modal de info (el estilo del mapa la pide y el control de
   atribución del mapa está apagado);
+- **botón azul y «Mi ubicación» sin pisarse:** con `max-width: 759px`,
+  mantiene `--fab-shift` en `<html>` = `max(0, ⌈ancho/2 + ancho del botón
+  azul/2 − (borde izquierdo de #btn-locate − 10)⌉)` px, que `native.css` usa
+  como `margin-left` negativo del botón azul (ver «Retoques de
+  `native.css`»). Lo recalcula con un `ResizeObserver` sobre `.scan-fab`
+  (cuadro a cuadro mientras app.js anima el ancho al cambiar el texto), al
+  cambiar el tamaño de la ventana y al cruzar los 760 px (ahí vuelve a `0px`);
 - escucha `launchAction` (ver «Acceso directo»).
 
 ### Textos (`native/text.js`)
@@ -382,24 +389,44 @@ navegador común no cambian nada.
 - Los links de `.about` (la política de privacidad) en `--blue`.
 - Oculta «Ahora no» (`#onb-skip`, con `visibility` para no mover nada) en el
   último paso de la introducción (`#scan[data-onb="2"]`).
-- **El botón azul más cerca de la hoja** (solo con `max-width: 759px`: desde
-  760 px la web pasa al panel lateral, `wide` en app.js; en un iPhone en
-  vertical siempre se cumple):
+- **El botón azul más cerca de la hoja y «Mi ubicación» en su fila** (solo
+  con `max-width: 759px`: desde 760 px la web pasa al panel lateral, `wide`
+  en app.js; en un iPhone en vertical siempre se cumple):
 
   | elemento | en la web | en la app |
   |---|---|---|
-  | `.scan-fab` (el botón azul) | `bottom: calc(var(--sheet-peek) + 18px + var(--safe-b))` | `calc(var(--sheet-peek) + 12px)` |
-  | `.map-controls` («Mi ubicación») | `calc(var(--sheet-peek) + 88px + var(--safe-b))` | `calc(var(--sheet-peek) + 82px)` |
+  | `.scan-fab` (el botón azul) | `bottom: calc(var(--sheet-peek) + 18px + var(--safe-b))` | `calc(var(--sheet-peek) + 12px)`; además `line-height: 18px`, `width: max-content`, `max-width: calc(100vw - 80px)` y `margin-left: calc(-1 * var(--fab-shift, 0px))` |
+  | `#fab-label` (su texto) | — | `min-width: 0; overflow: hidden; text-overflow: ellipsis` |
+  | `.map-controls` («Mi ubicación») | `calc(var(--sheet-peek) + 88px + var(--safe-b))`, arriba del botón azul | `calc(var(--sheet-peek) + 13px)`: a la derecha del botón azul, en la misma fila |
   | `.toast` | `calc(var(--sheet-peek) + 86px + var(--safe-b))` | `calc(var(--sheet-peek) + 76px)` |
 
   `--safe-b` es `env(safe-area-inset-bottom)`: 34 px en los iPhone con Face
   ID. La web se lo suma, pero en el iPhone la hoja ya cubre esa franja (le
   agrega `--safe-b` a su propio relleno de abajo y su parte visible mide
   `--sheet-peek`), así que el botón azul quedaba a 18 + 34 = 52 px del borde
-  de la hoja. Ahora queda a 12 px. Los tres bajan juntos: entre «Mi
-  ubicación» y el botón azul queda la misma distancia que en la web (70 px
-  entre sus bordes de abajo) y el aviso sigue arriba del botón.
+  de la hoja. Ahora queda a 12 px.
+
+  «Mi ubicación» va en la misma fila, con los centros alineados: el botón azul
+  mide 48 px de alto (15 de relleno arriba y abajo y 18 de alto de línea,
+  fijado para que no dependa de cómo mide la fuente cada motor) y «Mi
+  ubicación» 46, así que su borde de abajo va 1 px más arriba (12 + 1 = 13).
+  El aviso (`.toast`) sigue arriba del botón azul.
+
+  Sin pisarse: el botón azul va centrado en la pantalla y «Mi ubicación»
+  ocupa los últimos 58 px de la derecha (46 + 12 de margen). Con un texto
+  largo en un iPhone angosto se tocarían (en 375 px, «Buscando en esta
+  zona…» mide 260 px y quedaría a −0,5 px). Para eso `bridge.js` calcula
+  `--fab-shift` (ver «Shims de `bridge.js`»): los px que el botón azul tiene
+  que correrse a la izquierda para dejar 10 px hasta «Mi ubicación», o `0px`
+  si centrado ya los deja (el caso de casi todos los textos desde 375 px y de
+  todos desde 402). Si ni corriéndose entra (en 320 px, el iPhone SE de 1.ª
+  generación con iOS 15), `max-width` lo limita al lugar libre
+  (`100vw − 80px`: 12 de margen izquierdo, 10 de separación y 58 de «Mi
+  ubicación») y el texto termina en «…». `width: max-content` hace falta
+  porque, con el texto recortable (`min-width: 0`), el ancho automático de un
+  `position: fixed` con `left: 50%` sería la mitad de la pantalla.
+
   `--sheet-peek` lo cambia app.js según la vista (214 px con la lista o el
-  detalle, 132 con la tarjeta del más cercano) y los tres lo siguen solos. Con
-  la hoja entera, la web oculta el botón azul y «Mi ubicación» como siempre
+  detalle, 132 con la tarjeta del más cercano) y todo lo sigue solo. Con la
+  hoja entera, la web oculta el botón azul y «Mi ubicación» como siempre
   (`body[data-sheet="full"]`).

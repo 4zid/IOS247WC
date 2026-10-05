@@ -47,11 +47,28 @@ html.native #scan[data-onb="2"] #onb-skip {
   visibility: hidden;
 }
 
-/* Botón azul y «Mi ubicación» más cerca de la hoja. La web les suma el área
-   segura de abajo (la barra de inicio), pero en el iPhone esa franja ya la
-   cubre la hoja: quedaban a ~50 px. Ahora el botón azul queda a 12 px. */
+/* Botón azul más cerca de la hoja y «Mi ubicación» en la misma fila. La web
+   les suma el área segura de abajo (la barra de inicio), pero en el iPhone
+   esa franja ya la cubre la hoja: el botón azul quedaba a ~50 px. Ahora queda
+   a 12 px, y «Mi ubicación» a su derecha, con los centros alineados: el
+   botón azul mide 48 px de alto (15 + 18 + 15, con el alto de línea fijo
+   para que no dependa de la fuente) y «Mi ubicación» 46, así que va 1 px más
+   arriba.
+   Con un texto largo en un iPhone angosto («Buscando en esta zona…» en uno de
+   375 px) el botón azul se acercaría a «Mi ubicación»: bridge.js lo corre a
+   la izquierda lo justo (--fab-shift) para dejar 10 px entre los dos. Si ni
+   así entra (320 px), se limita al ancho libre y el texto termina en «…».
+   width: max-content porque, con el texto recortable (min-width: 0), el ancho
+   «automático» de un fixed con left: 50% sería la mitad de la pantalla. */
 @media (max-width: 759px) {
-  html.native .scan-fab { bottom: calc(var(--sheet-peek) + 12px); }
-  html.native .map-controls { bottom: calc(var(--sheet-peek) + 82px); }
+  html.native .scan-fab {
+    bottom: calc(var(--sheet-peek) + 12px);
+    line-height: 18px;
+    width: max-content;
+    max-width: calc(100vw - 80px);
+    margin-left: calc(-1 * var(--fab-shift, 0px));
+  }
+  html.native #fab-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  html.native .map-controls { bottom: calc(var(--sheet-peek) + 13px); }
   html.native .toast { bottom: calc(var(--sheet-peek) + 76px); }
 }
