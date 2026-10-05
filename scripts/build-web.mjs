@@ -36,7 +36,7 @@ export const WEB_FILES = [
 ];
 
 // Archivos propios de la capa nativa (más capacitor.js, que sale de node_modules).
-const NATIVE_FILES = ['native.css', 'text.js', 'bridge.js'];
+const NATIVE_FILES = ['native.css', 'text.js', 'bridge.js', 'gestures.js'];
 
 export class BuildError extends Error {}
 
@@ -50,6 +50,7 @@ const NATIVE_BLOCK = [
   '<script src="native/capacitor.js"></script>',
   '<script src="native/text.js"></script>',
   '<script src="native/bridge.js"></script>',
+  '<script src="native/gestures.js"></script>',
 ].join('\n');
 
 // Inter va empaquetada: en la app no dependemos de Google Fonts (ni de red
@@ -58,6 +59,47 @@ const LOCAL_FONT = [
   '<style>',
   "@font-face { font-family: 'Inter'; src: url('fonts/inter.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }",
   '</style>',
+].join('\n');
+
+// «Mi ubicación»: en vez de la flecha de navegación, tu punto azul con su
+// halo (el mismo que ves en el mapa). El ancla es el botón entero, porque la
+// flecha también la usa el botón azul.
+const LOCATE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+  '<circle cx="12" cy="12" r="7.6"/>' +
+  '<circle cx="12" cy="12" r="3.9" style="fill: var(--blue); stroke: none"/></svg>';
+
+// Al tocarlo, en la web: tu punto solo, a zoom 17. En la app: vos en el centro
+// y alrededor los baños más cercanos, para ver si hay uno a mano.
+const LOCATE_HANDLER_OLD = [
+  "$('#btn-locate').addEventListener('click', () => {",
+  '  state.userMoved = false;',
+  '  if (state.me) setView(map, state.me.lat, state.me.lng, 17);',
+  '  else quickScan();',
+  '});',
+].join('\n');
+const LOCATE_HANDLER_NEW = [
+  '// App iOS: «Mi ubicación» te deja en el centro y encuadra alrededor los',
+  '// baños más cercanos (hasta 3, a menos de 1 km), con un zoom de barrio. Si',
+  '// no hay ninguno cerca, igual se ve la zona (~1,5 km de ancho).',
+  'function locateMe() {',
+  '  const me = state.me;',
+  '  const near = visiblePlaces()',
+  '    .map((p) => ({ p, d: distance(me, p) }))',
+  '    .filter((x) => x.d <= 1000)',
+  '    .sort((a, b) => a.d - b.d)',
+  '    .slice(0, 3);',
+  '  if (!near.length) return setView(map, me.lat, me.lng, 15);',
+  '  // Cada baño y su reflejo respecto de vos: el encuadre queda centrado en tu punto.',
+  '  const pts = [[me.lat, me.lng]];',
+  '  for (const { p } of near) pts.push([p.lat, p.lng], [2 * me.lat - p.lat, 2 * me.lng - p.lng]);',
+  '  fitPoints(map, pts, { top: 130, bottom: PEEK() + 110, left: 60, right: 60, maxZoom: 16 });',
+  '}',
+  '',
+  "$('#btn-locate').addEventListener('click', () => {",
+  '  state.userMoved = false;',
+  '  if (state.me) locateMe();',
+  '  else quickScan();',
+  '});',
 ].join('\n');
 
 const LANG_LINE_OLD = 'const v = (MOUSE ? dict.mouse?.[key] : undefined) ?? dict[key] ?? DICT.es[key] ?? key;';
@@ -105,6 +147,11 @@ const PATCHES = {
       anchor: wholeLine('<link rel="apple-touch-icon"[^>]*>'),
       replace: () => '',
     },
+    {
+      name: 'ícono de «Mi ubicación»: tu punto azul',
+      anchor: /(<button id="btn-locate"[^>]*>\s*)<svg[^>]*>[\s\S]*?<\/svg>/g,
+      replace: (_m, open) => `${open}${LOCATE_ICON}`,
+    },
   ],
   'lang.js': [
     {
@@ -123,6 +170,11 @@ const PATCHES = {
       name: 'respaldo a Overpass sin el espejo de Mail.ru',
       anchor: wholeLine("'https://maps\\.mail\\.ru/osm/tools/overpass/api/interpreter',"),
       replace: () => '',
+    },
+    {
+      name: '«Mi ubicación» con los baños cercanos a la vista',
+      anchor: new RegExp(LOCATE_HANDLER_OLD.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+      replace: () => LOCATE_HANDLER_NEW,
     },
     {
       name: 'respaldo a Overpass con el punto redondeado',

@@ -46,3 +46,12 @@ html.native .about a {
 html.native #scan[data-onb="2"] #onb-skip {
   visibility: hidden;
 }
+
+/* Botón azul y «Mi ubicación» más cerca de la hoja. La web les suma el área
+   segura de abajo (la barra de inicio), pero en el iPhone esa franja ya la
+   cubre la hoja: quedaban a ~50 px. Ahora el botón azul queda a 12 px. */
+@media (max-width: 759px) {
+  html.native .scan-fab { bottom: calc(var(--sheet-peek) + 12px); }
+  html.native .map-controls { bottom: calc(var(--sheet-peek) + 82px); }
+  html.native .toast { bottom: calc(var(--sheet-peek) + 76px); }
+}
