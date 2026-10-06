@@ -69,7 +69,7 @@ Marcá cada casilla (en GitHub podés editar este archivo y cambiar `[ ]` por
 
 - [ ] **Capturas** de iPhone 6,9" (1320 × 2868 o 1290 × 2796 px), al menos 1 (mejor entre 4 y 6), sin transparencia. `npm run screenshots` las genera en `store/screenshots/es/` y `store/screenshots/en/`. Subí primero las de la app en uso y dejá afuera la portada (dice «Gratis», y Apple no quiere precios en las capturas): español `03-mas-cercano`, `04-guia`, `02-mapa`, `05-lista-oscuro`; inglés `03-nearest`, `04-guide`, `02-map`, `05-list-dark`.
 - [ ] **Texto promocional, descripción y palabras clave** en los dos idiomas.
-- [ ] **URL de soporte:** `https://ios247.vercel.app/support.html` (o tu URL). **URL de marketing:** vacía (no la landing; ver `store/listing-es.md`).
+- [ ] **URL de soporte:** `https://ios247.vercel.app/support.html` (o tu URL). **URL de marketing:** vacía en la 1.0; desde la próxima versión, `https://ios247.vercel.app/` (la landing de la app de iPhone, no la de la web; ver `store/listing-es.md`).
 - [ ] **Derechos de autor.**
 - [ ] **Build** elegido.
 - [ ] **App Review Information:** «Sign-in required» desmarcado, tus datos de contacto y las notas de `store/review-notes.md`.

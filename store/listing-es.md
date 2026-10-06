@@ -116,14 +116,16 @@ contacto (lautarolacazeok@gmail.com), que es lo que Apple pide. Si la publicás 
 
 ## URL de marketing
 
-Dejala **vacía**: es opcional.
+Para la versión 1.0 quedó **vacía** (es opcional).
 
-No uses la landing (`https://247-wc.vercel.app/landing`): promociona la
-versión web y explica cómo instalarla en Android, y App Review puede
-rechazar una ficha que manda a la gente a usar la app por fuera del App Store
-o a otra plataforma (pautas 2.3.10 y 4.2). Si algún día hacés una página solo
-de la app de iPhone (por ejemplo en Framer, con el botón del App Store), esa
-sí puede ir acá.
+Desde la próxima versión podés poner la landing de promo de la app de
+iPhone, **`https://ios247.vercel.app/`** (README → «La landing de promo»):
+es solo de la app de iPhone, con el botón del App Store.
+
+No uses la landing de la web (`https://247-wc.vercel.app/landing`):
+promociona la versión web y explica cómo instalarla en Android, y App Review
+puede rechazar una ficha que manda a la gente a usar la app por fuera del App
+Store o a otra plataforma (pautas 2.3.10 y 4.2).
 
 ## Categorías
 

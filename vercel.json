@@ -5,8 +5,26 @@
   "buildCommand": "echo 'Sitio estático (site/): no hay nada que compilar'",
   "outputDirectory": "site",
   "redirects": [
-    { "source": "/", "destination": "/support.html", "permanent": false },
-    { "source": "/privacy", "destination": "/privacy.html", "permanent": false },
-    { "source": "/support", "destination": "/support.html", "permanent": false }
+    {
+      "source": "/privacy",
+      "destination": "/privacy.html",
+      "permanent": false
+    },
+    {
+      "source": "/support",
+      "destination": "/support.html",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
   ]
 }

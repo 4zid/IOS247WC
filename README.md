@@ -28,7 +28,8 @@ enviar a revisión, recorré [`store/CHECKLIST.md`](store/CHECKLIST.md).
 12. [Costos de GitHub Actions](#costos-de-github-actions)
 13. [Problemas comunes](#problemas-comunes)
 14. [Pruebas](#pruebas)
-15. [Estructura del repo](#estructura-del-repo)
+15. [La landing de promo](#la-landing-de-promo)
+16. [Estructura del repo](#estructura-del-repo)
 
 ---
 
@@ -493,8 +494,9 @@ Vercel propio de este repo**, independiente del de la web:
 2. Nombre del proyecto: `ios247` (es el que está creado). No cambies nada más: el
    archivo [`vercel.json`](vercel.json) ya le dice que publique solo la
    carpeta `site/`, sin instalar ni compilar nada. Tocá **Deploy**.
-3. Quedan en **https://ios247.vercel.app/privacy.html** y **https://ios247.vercel.app/support.html** (la raíz,
-   https://ios247.vercel.app, lleva a soporte). Abrilas desde el celular, en una pestaña
+3. Quedan en **https://ios247.vercel.app/privacy.html** y **https://ios247.vercel.app/support.html** (en la raíz,
+   https://ios247.vercel.app, está la landing de promo: ver
+   [La landing de promo](#la-landing-de-promo)). Abrilas desde el celular, en una pestaña
    privada, para confirmar que cargan sin pedir login de Vercel.
 
 Vercel vuelve a publicar con cada push a `prod`; las páginas solo cambian si
@@ -845,11 +847,55 @@ Para correr solo algunas: `node tests/bridge.e2e.mjs T2 T4`.
 Estas pruebas no compilan el Swift; eso lo hacen Xcode (Camino A) y el
 workflow **iOS build** (Camino B).
 
+## La landing de promo
+
+La página de promo de la app de iPhone está en **https://ios247.vercel.app**
+(la raíz del mismo proyecto de Vercel que publica la privacidad y el soporte).
+Es tu diseño de Claude Design, armado como sitio estático liviano.
+
+**De dónde sale.** El export de Claude Design está en
+[`landing/247WC_Landing.html`](landing/247WC_Landing.html): un solo HTML de
+~6 MB que trae todo adentro (fuentes, capturas, React, el motor de componentes
+y Babel, que traduce un componente en cada visita). `npm run landing`
+([`scripts/build-landing.mjs`](scripts/build-landing.mjs)) lo desarma una vez
+y deja en `site/`:
+
+- `index.html` con título, descripción, vista previa para redes (`og.png`) e
+  ícono;
+- `assets/` con cada recurso en su archivo (con un hash en el nombre, así
+  Vercel los deja en caché un año): las fuentes, las capturas achicadas a
+  960 px y en WebP, React, el motor y el componente del iPhone ya traducido
+  (sin Babel). Nada se pide a otros sitios (ni unpkg ni Google Fonts).
+
+En vez de ~6 MB, la primera visita baja unos 600 KB.
+
+**Cambios de contenido que hace el build** (parches anclados, como los de la
+app: si exportás de nuevo y un ancla ya no aparece, el build falla y avisa):
+
+- «Sin ubicación: mové el mapa a cualquier zona» pasa a «buscá en la zona
+  que se ve en el mapa» (lo mismo que se corrigió en la ficha).
+- El aviso de Android: como no hay un servicio que guarde los emails, en vez
+  de decir «Listo» sin mandar nada, abre un mail ya escrito a
+  lautarolacazeok@gmail.com para que la persona lo envíe.
+- El idioma de la página y el título de la pestaña siguen al botón ES / EN.
+- Las imágenes de la plantilla no se piden antes de tiempo (eran tres 404).
+
+**Para actualizarla:** exportá de nuevo desde Claude Design, reemplazá
+`landing/247WC_Landing.html`, corré `npm run landing`, mirá `site/index.html`
+en el navegador (por ejemplo con `npx serve site`) y hacé commit y push:
+Vercel la publica sola.
+
+**Cuando Apple apruebe la app:** en App Store Connect → **App Information**,
+copiá el **Apple ID** (un número) y ponelo en `APP_STORE_ID`, arriba de todo en
+`scripts/build-landing.mjs`. Corré `npm run landing` y subilo: los botones
+«Descargar» pasan a abrir la app en el App Store (hoy bajan a la sección
+final) y Safari en el iPhone muestra el banner de la app arriba de la página.
+
 ## Estructura del repo
 
 ```
 README.md                  esta guía
-package.json               scripts: build, sync, ios, test, assets, web:update, screenshots
+package.json               scripts: build, sync, ios, test, assets, web:update, screenshots, landing
 capacitor.config.json      id de la app (com.wc247.app), nombre y ajustes de Capacitor
 
 web/                       copia de la web 4zid/247wc. NO se edita a mano
@@ -883,6 +929,7 @@ scripts/
   update-web.mjs           trae la web nueva (npm run web:update)
   make-assets.mjs          genera ícono y arranque (npm run assets)
   store-screenshots.mjs    capturas para el App Store (npm run screenshots)
+  build-landing.mjs        arma la landing de promo en site/ (npm run landing)
   dev/configure-xcode.rb   deja el proyecto de Xcode configurado (para desarrolladores)
 tests/
   bridge.e2e.mjs           pruebas de la capa nativa (npm test)
@@ -893,8 +940,11 @@ tests/
   ci/                      ayudantes de esos workflows (incluida la firma manual)
 docs/NATIVE-API.md         contrato entre la web y la capa nativa
 site/                      lo que publica el proyecto de Vercel de este repo
+  index.html               la landing de promo (la arma npm run landing)
+  assets/, og.png          sus fuentes, capturas, scripts y la vista previa para redes
   privacy.html             política de privacidad (en español e inglés)
   support.html             página de soporte (en español e inglés)
+landing/247WC_Landing.html el export de Claude Design de la landing
 vercel.json                le dice a Vercel que publique solo site/
 store/                     todo para el App Store
   listing-es.md            ficha en español (con los caracteres contados)

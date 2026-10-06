@@ -113,8 +113,10 @@ La misma página que en español: `site/support.html` tiene las dos versiones
 
 ## Marketing URL
 
-Vacía (es opcional). Por qué no la landing: está en `store/listing-es.md`, «URL
-de marketing».
+Vacía en la 1.0 (es opcional). Desde la próxima versión,
+`https://ios247.vercel.app/` (la landing tiene inglés con el botón EN). Por
+qué no la landing de la web: está en `store/listing-es.md`, «URL de
+marketing».
 
 ## Categorías, derechos de autor y precio
 
