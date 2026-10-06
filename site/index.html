@@ -6,8 +6,8 @@
 <meta name="description" content="Escaneá 3 km a la redonda, elegí el mejor baño público y seguí la flecha hasta la puerta. Gratis, sin cuenta y sin publicidad. Para iPhone.">
 <meta name="theme-color" content="#0a6cff">
 <link rel="canonical" href="https://ios247.vercel.app/">
-<link rel="icon" type="image/webp" href="assets/img/icon.9ea6f951.webp">
-<link rel="apple-touch-icon" href="assets/img/icon.9ea6f951.webp">
+<link rel="icon" type="image/webp" href="assets/img/icon.f7c8d41b.webp">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/img/apple-touch-icon.5abdf301.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="247WC">
 <meta property="og:url" content="https://ios247.vercel.app/">
@@ -19,6 +19,9 @@
 <meta property="og:locale" content="es_AR">
 <meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
+<noscript><style>x-dc{display:none!important}</style></noscript>
+<link rel="preload" href="assets/js/react.aa77ae4c.js" as="script">
+<link rel="preload" href="assets/js/react-dom.feb8ddc9.js" as="script">
 <script>window.__resources = {"esHome":"assets/img/esHome.a116174f.webp","enGuide":"assets/img/enGuide.1477652b.webp","esNearest":"assets/img/esNearest.f363a014.webp","esGuide":"assets/img/esGuide.ce042211.webp","esDark":"assets/img/esDark.54ebf5c4.webp","enNearest":"assets/img/enNearest.46178d85.webp","enDark":"assets/img/enDark.abd1057c.webp","enHome":"assets/img/enHome.6eb67521.webp","enMap":"assets/img/enMap.34ed0e84.webp","esMap":"assets/img/esMap.cd17d9de.webp","https://unpkg.com/react@18.3.1/umd/react.production.min.js":"assets/js/react.aa77ae4c.js","https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js":"assets/js/react-dom.feb8ddc9.js"};</script>
 
 
@@ -413,6 +416,23 @@ input::placeholder{color:rgba(255,255,255,.6)}
 @media (prefers-reduced-motion: reduce){[data-reveal]{animation:none !important}}
 [data-motion="off"] [data-reveal]{animation:none !important}
 @keyframes wcPulse{0%,100%{box-shadow:0 0 0 0 rgba(10,160,110,.45)}70%{box-shadow:0 0 0 7px rgba(10,160,110,0)}}
+/* Encabezado en teléfonos: logo y botones arriba, los enlaces en una fila */
+@media (max-width:759px){
+header>div{row-gap:4px !important;padding-top:8px !important;padding-bottom:4px !important}
+header nav{order:3;flex:1 0 100% !important;flex-wrap:nowrap !important;justify-content:flex-start !important;overflow-x:auto;scrollbar-width:none;margin:0 -12px}
+header nav::-webkit-scrollbar{display:none}
+header nav a{flex:none;white-space:nowrap}
+header>div>div:last-child{margin-left:auto}
+[data-chip]{display:none !important}
+}
+@media (max-width:400px){header>div{padding-left:16px !important;padding-right:16px !important}}
+@media (max-width:379px){
+header nav{margin:0 -7px}
+header nav a{padding:8px 7px !important;font-size:14px !important}
+header>div>div:last-child>a{display:none !important}
+}
+@media (max-width:360px){[data-hero-phone]{transform:translateX(-50%) scale(.88) !important;transform-origin:50% 0}}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}[style*="wcPulse"]{animation:none !important}}
 </style>
 </helmet>
 <div id="top" ref="{{ rootRef }}" data-motion="{{ motionAttr }}" style="min-height:100vh;background:#fff;color:#0a0e17">
@@ -429,11 +449,10 @@ input::placeholder{color:rgba(255,255,255,.6)}
     <div style="display:flex;align-items:center;gap:10px;flex:none">
       <div role="group" aria-label="Language" style="display:flex;padding:3px;background:#f3f6fb;border-radius:999px">
         <sc-for list="{{ langs }}" as="l" hint-placeholder-count="2">
-          <button type="button" sc-camel-on-click="{{ l.select }}" style="border:0;cursor:pointer;padding:0 12px;height:30px;border-radius:999px;font:600 13px Inter,sans-serif;letter-spacing:.02em;background:{{ l.bg }};color:{{ l.color }};box-shadow:{{ l.shadow }};transition:background .25s,color .25s,box-shadow .25s">{{ l.label }}</button>
+          <button type="button" sc-camel-on-click="{{ l.select }}" aria-pressed="{{ l.pressed }}" style="border:0;cursor:pointer;padding:0 12px;height:30px;border-radius:999px;font:600 13px Inter,sans-serif;letter-spacing:.02em;background:{{ l.bg }};color:{{ l.color }};box-shadow:{{ l.shadow }};transition:background .25s,color .25s,box-shadow .25s">{{ l.label }}</button>
         </sc-for>
       </div>
-      <a href="{{ storeHref }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px 0 14px;border-radius:999px;background:#0a0e17;color:#fff;font-size:14px;font-weight:600;transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s;box-shadow:0 6px 18px -8px rgba(10,14,23,.5)" style-hover="transform:translateY(-1px);box-shadow:0 12px 24px -10px rgba(10,14,23,.6);color:#fff" style-active="transform:scale(.97)">
-        <svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"></path></svg>
+      <a href="{{ storeHref }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:999px;background:#0a0e17;color:#fff;font-size:14px;font-weight:600;transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s;box-shadow:0 6px 18px -8px rgba(10,14,23,.5)" style-hover="transform:translateY(-1px);box-shadow:0 12px 24px -10px rgba(10,14,23,.6);color:#fff" style-active="transform:scale(.97)">
         <span>{{ t.navCta }}</span>
       </a>
     </div>
@@ -450,8 +469,7 @@ input::placeholder{color:rgba(255,255,255,.6)}
     <h1 style="margin:24px 0 0;font-family:Geist,Inter,sans-serif;font-weight:800;font-size:clamp(42px,7vw,86px);line-height:.98;letter-spacing:-.04em;color:#0a0e17;text-wrap:balance">{{ t.h1a1 }} <span style="color:#0a6cff">{{ t.h1a2 }}</span></h1>
     <p style="margin:26px auto 0;max-width:640px;font-size:clamp(17px,1.5vw,20px);line-height:1.55;color:#4b5567;text-wrap:pretty">{{ t.subA }}</p>
     <div style="margin-top:36px;display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap">
-      <a href="{{ storeHref }}" style="display:inline-flex;align-items:center;gap:11px;height:58px;padding:0 24px 0 18px;border-radius:999px;background:#0a0e17;color:#fff;box-shadow:0 14px 34px -12px rgba(10,14,23,.55);transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s" style-hover="transform:translateY(-2px);box-shadow:0 22px 44px -14px rgba(10,14,23,.6);color:#fff" style-active="transform:translateY(0) scale(.98)">
-        <svg width="24" height="24" sc-camel-view-box="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"></path></svg>
+      <a href="{{ storeHref }}" style="display:inline-flex;align-items:center;gap:11px;height:58px;padding:0 26px;border-radius:999px;background:#0a0e17;color:#fff;box-shadow:0 14px 34px -12px rgba(10,14,23,.55);transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s" style-hover="transform:translateY(-2px);box-shadow:0 22px 44px -14px rgba(10,14,23,.6);color:#fff" style-active="transform:translateY(0) scale(.98)">
         <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.05"><span style="font-size:11px;font-weight:500;opacity:.8">{{ t.storeSmall }}</span><span style="font-size:19px;font-weight:600;letter-spacing:-.01em">{{ t.storeBig }}</span></span>
       </a>
       <div title="{{ t.androidBig }}" style="display:inline-flex;align-items:center;gap:11px;height:58px;padding:0 24px 0 18px;border-radius:999px;background:#f3f6fb;color:#6d7789;border:1px solid #e4e9f2;cursor:default;box-sizing:border-box">
@@ -463,7 +481,7 @@ input::placeholder{color:rgba(255,255,255,.6)}
   </div>
   <div id="stage" style="position:relative;margin-top:56px;height:clamp(500px,56vw,640px);overflow:hidden;background:linear-gradient(180deg,#ffffff 0%,#e8f1ff 26%,#5c9dff 66%,#0a6cff 100%)">
     {{ ringsA }}
-    <div style="position:absolute;left:50%;top:44px;transform:translateX(-50%)">
+    <div data-hero-phone="" style="position:absolute;left:50%;top:44px;transform:translateX(-50%)">
       <div style="width:341px;height:718px">
         <div style="width:426px;height:898px;transform:scale(.8);transform-origin:top left;padding:12px;box-sizing:border-box;border-radius:66px;background:linear-gradient(160deg,#3a4150 0%,#141926 55%,#0a0e17 100%);box-shadow:0 60px 120px -30px rgba(12,26,56,.6),inset 0 0 0 1px rgba(255,255,255,.1);overflow:hidden">
           <x-import component-from-global-scope="IOSDevice" from="assets/js/ios-frame.ca5d8aae.js" chrome="false" radius="54" hint-size="402px,874px">
@@ -490,8 +508,7 @@ input::placeholder{color:rgba(255,255,255,.6)}
       <h1 style="margin:24px 0 0;font-family:Geist,Inter,sans-serif;font-weight:800;font-size:clamp(42px,5.6vw,76px);line-height:.98;letter-spacing:-.04em;color:#0a0e17;text-wrap:balance">{{ t.h1b1 }} <span style="color:#0a6cff">{{ t.h1b2 }}</span></h1>
       <p style="margin:26px 0 0;max-width:540px;font-size:clamp(17px,1.5vw,20px);line-height:1.55;color:#4b5567;text-wrap:pretty">{{ t.subB }}</p>
       <div style="margin-top:36px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <a href="{{ storeHref }}" style="display:inline-flex;align-items:center;gap:11px;height:58px;padding:0 24px 0 18px;border-radius:999px;background:#0a0e17;color:#fff;box-shadow:0 14px 34px -12px rgba(10,14,23,.55);transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s" style-hover="transform:translateY(-2px);box-shadow:0 22px 44px -14px rgba(10,14,23,.6);color:#fff" style-active="transform:translateY(0) scale(.98)">
-          <svg width="24" height="24" sc-camel-view-box="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"></path></svg>
+        <a href="{{ storeHref }}" style="display:inline-flex;align-items:center;gap:11px;height:58px;padding:0 26px;border-radius:999px;background:#0a0e17;color:#fff;box-shadow:0 14px 34px -12px rgba(10,14,23,.55);transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s" style-hover="transform:translateY(-2px);box-shadow:0 22px 44px -14px rgba(10,14,23,.6);color:#fff" style-active="transform:translateY(0) scale(.98)">
           <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.05"><span style="font-size:11px;font-weight:500;opacity:.8">{{ t.storeSmall }}</span><span style="font-size:19px;font-weight:600;letter-spacing:-.01em">{{ t.storeBig }}</span></span>
         </a>
         <div title="{{ t.androidBig }}" style="display:inline-flex;align-items:center;gap:11px;height:58px;padding:0 24px 0 18px;border-radius:999px;background:#f3f6fb;color:#6d7789;border:1px solid #e4e9f2;cursor:default;box-sizing:border-box">
@@ -567,7 +584,7 @@ input::placeholder{color:rgba(255,255,255,.6)}
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;padding:14px 0 8px">
         <sc-for list="{{ chips }}" as="c" hint-placeholder-count="4">
-          <button type="button" sc-camel-on-click="{{ c.toggle }}" style="border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.color }};cursor:pointer;height:36px;padding:0 14px;border-radius:999px;font:600 14px Inter,sans-serif;letter-spacing:-.01em;transition:background .25s,color .25s,border-color .25s,transform .15s" style-active="transform:scale(.96)">{{ c.label }}</button>
+          <button type="button" sc-camel-on-click="{{ c.toggle }}" aria-pressed="{{ c.pressed }}" style="border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.color }};cursor:pointer;height:36px;padding:0 14px;border-radius:999px;font:600 14px Inter,sans-serif;letter-spacing:-.01em;transition:background .25s,color .25s,border-color .25s,transform .15s" style-active="transform:scale(.96)">{{ c.label }}</button>
         </sc-for>
       </div>
       <div style="min-height:200px">
@@ -609,8 +626,8 @@ input::placeholder{color:rgba(255,255,255,.6)}
     <div data-reveal="1" ref="{{ shortRef }}" style="animation:wcReveal linear both;animation-timeline:view();animation-range:entry 0% entry 35%;position:relative;border-radius:32px;background:linear-gradient(160deg,#e8f1ff 0%,#f7faff 100%);border:1px solid #e4e9f2;min-height:440px;display:grid;place-items:center;overflow:hidden;user-select:none;-webkit-user-select:none">
       <div style="position:absolute;inset:0;background:rgba(243,246,251,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);opacity:{{ dimOpacity }};transition:opacity .35s;pointer-events:none"></div>
       <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:-56px">
-        <div sc-camel-on-pointer-down="{{ onIconDown }}" sc-camel-on-pointer-up="{{ onIconUp }}" sc-camel-on-pointer-cancel="{{ onIconUp }}" sc-camel-on-context-menu="{{ onIconContext }}" role="button" sc-camel-tab-index="0" aria-label="247WC" style="width:112px;height:112px;border-radius:26px;overflow:hidden;box-shadow:0 20px 44px -14px rgba(10,108,255,.55);transform:{{ iconTransform }};transition:transform .3s cubic-bezier(.2,.7,.2,1);cursor:pointer;touch-action:none">
-          <img src="assets/img/icon.9ea6f951.webp" alt="" draggable="false" style="width:100%;height:100%;display:block;pointer-events:none">
+        <div sc-camel-on-pointer-down="{{ onIconDown }}" sc-camel-on-pointer-up="{{ onIconUp }}" sc-camel-on-pointer-cancel="{{ onIconUp }}" sc-camel-on-context-menu="{{ onIconContext }}" sc-camel-on-key-down="{{ onIconKey }}" aria-expanded="{{ menuExpanded }}" role="button" sc-camel-tab-index="0" aria-label="247WC" style="width:112px;height:112px;border-radius:26px;overflow:hidden;box-shadow:0 20px 44px -14px rgba(10,108,255,.55);transform:{{ iconTransform }};transition:transform .3s cubic-bezier(.2,.7,.2,1);cursor:pointer;touch-action:none">
+          <img src="assets/img/icon.f7c8d41b.webp" alt="" draggable="false" style="width:100%;height:100%;display:block;pointer-events:none">
         </div>
         <span style="font-size:13px;font-weight:500;color:#0a0e17">247WC</span>
       </div>
@@ -666,12 +683,12 @@ input::placeholder{color:rgba(255,255,255,.6)}
     <div data-reveal="1" style="animation:wcReveal linear both;animation-timeline:view();animation-range:entry 0% entry 35%;margin-top:40px;border-bottom:1px solid #e4e9f2">
       <sc-for list="{{ faqs }}" as="q" hint-placeholder-count="6">
         <div style="border-top:1px solid #e4e9f2">
-          <button type="button" sc-camel-on-click="{{ q.toggle }}" style="border:0;background:none;font:inherit;color:inherit;text-align:left;display:flex;width:100%;box-sizing:border-box;align-items:center;gap:20px;padding:22px 0;cursor:pointer">
+          <button type="button" sc-camel-on-click="{{ q.toggle }}" aria-expanded="{{ q.expanded }}" style="border:0;background:none;font:inherit;color:inherit;text-align:left;display:flex;width:100%;box-sizing:border-box;align-items:center;gap:20px;padding:22px 0;cursor:pointer">
             <span style="font-family:Geist,Inter,sans-serif;font-weight:600;font-size:14px;color:#0a6cff;width:28px;flex:none;font-variant-numeric:tabular-nums">{{ q.num }}</span>
             <span style="flex:1;font-weight:600;font-size:18px;letter-spacing:-.015em;color:#0a0e17;line-height:1.3">{{ q.q }}</span>
             <span style="width:34px;height:34px;flex:none;border-radius:50%;display:grid;place-items:center;background:{{ q.chevBg }};color:{{ q.chevColor }};transform:rotate({{ q.rot }});transition:transform .4s cubic-bezier(.2,.7,.2,1),background .3s,color .3s"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span>
           </button>
-          <div style="display:grid;grid-template-rows:{{ q.rows }};transition:grid-template-rows .45s cubic-bezier(.2,.7,.2,1)">
+          <div aria-hidden="{{ q.hidden }}" style="display:grid;grid-template-rows:{{ q.rows }};transition:grid-template-rows .45s cubic-bezier(.2,.7,.2,1)">
             <div style="overflow:hidden"><p style="margin:0 0 24px 48px;max-width:600px;font-size:16px;line-height:1.6;color:#6d7789;text-wrap:pretty;opacity:{{ q.aOpacity }};transition:opacity .35s">{{ q.a }}</p></div>
           </div>
         </div>
@@ -689,8 +706,7 @@ input::placeholder{color:rgba(255,255,255,.6)}
         <h2 style="margin:0;font-family:Geist,Inter,sans-serif;font-weight:800;font-size:clamp(32px,4vw,54px);line-height:1.02;letter-spacing:-.035em;color:#fff;text-wrap:balance">{{ t.ctaTitle }}</h2>
         <p style="margin:18px 0 0;max-width:480px;font-size:17px;line-height:1.6;color:#fff;text-wrap:pretty">{{ t.ctaSub }}</p>
         <div style="margin-top:30px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <a href="{{ storeHref }}" style="display:inline-flex;align-items:center;gap:11px;height:58px;padding:0 24px 0 18px;border-radius:999px;background:#fff;color:#0a0e17;box-shadow:0 14px 34px -12px rgba(0,30,90,.5);transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s" style-hover="transform:translateY(-2px);box-shadow:0 22px 44px -14px rgba(0,30,90,.55);color:#0a0e17" style-active="transform:translateY(0) scale(.98)">
-            <svg width="24" height="24" sc-camel-view-box="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"></path></svg>
+          <a href="{{ storeHref }}" style="display:inline-flex;align-items:center;gap:11px;height:58px;padding:0 26px;border-radius:999px;background:#fff;color:#0a0e17;box-shadow:0 14px 34px -12px rgba(0,30,90,.5);transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s" style-hover="transform:translateY(-2px);box-shadow:0 22px 44px -14px rgba(0,30,90,.55);color:#0a0e17" style-active="transform:translateY(0) scale(.98)">
             <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.05"><span style="font-size:11px;font-weight:500;opacity:.75">{{ t.storeSmall }}</span><span style="font-size:19px;font-weight:600;letter-spacing:-.01em">{{ t.storeBig }}</span></span>
           </a>
         </div>
@@ -702,12 +718,12 @@ input::placeholder{color:rgba(255,255,255,.6)}
         </div>
         <sc-if value="{{ emailPending }}" hint-placeholder-val="{{ true }}">
           <form sc-camel-on-submit="{{ onSubmit }}" style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-            <input type="email" name="email" required="required" value="{{ email }}" sc-camel-on-change="{{ onEmail }}" placeholder="{{ t.emailPh }}" aria-label="Email" style="flex:1;min-width:200px;height:50px;box-sizing:border-box;padding:0 18px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;font:500 15px Inter,sans-serif;outline:none;transition:border-color .2s,background .2s" style-focus="border-color:#fff;background:rgba(255,255,255,.2)">
+            <input type="email" name="email" required="required" value="{{ email }}" sc-camel-on-change="{{ onEmail }}" placeholder="{{ t.emailPh }}" aria-label="Email" style="flex:1;min-width:min(200px,100%);height:50px;box-sizing:border-box;padding:0 18px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;font:500 15px Inter,sans-serif;outline:none;transition:border-color .2s,background .2s" style-focus="border-color:#fff;background:rgba(255,255,255,.2)">
             <button type="submit" style="height:50px;padding:0 22px;border-radius:999px;border:0;background:#0a0e17;color:#fff;font:600 15px Inter,sans-serif;cursor:pointer;transition:transform .25s cubic-bezier(.2,.7,.2,1),background .2s" style-hover="transform:translateY(-1px);background:#000" style-active="transform:scale(.97)">{{ notifyLabel }}</button>
           </form>
         </sc-if>
         <sc-if value="{{ emailDone }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-top:16px;display:flex;align-items:center;gap:12px;height:50px;animation:wcIn .4s ease both">
+          <div role="status" style="margin-top:16px;display:flex;align-items:center;gap:12px;min-height:50px;animation:wcIn .4s ease both">
             <span style="width:34px;height:34px;border-radius:50%;background:#fff;color:#0a6cff;display:grid;place-items:center;flex:none"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg></span>
             <span style="font-size:15px;font-weight:500;color:#fff">{{ t.thanks }}</span>
           </div>
@@ -721,8 +737,8 @@ input::placeholder{color:rgba(255,255,255,.6)}
   <div style="max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:20px 32px;align-items:center;justify-content:space-between;border-top:1px solid #e4e9f2;padding-top:32px">
     <img src="assets/img/logo.a7f468c0.svg" alt="247WC" style="height:24px;width:auto;display:block">
     <nav style="display:flex;gap:24px;flex-wrap:wrap;font-size:14px;font-weight:500">
-      <a href="https://ios247.vercel.app/privacy.html" target="_blank" rel="noopener" style="color:#3b4556" style-hover="color:#0a6cff">{{ t.footPrivacy }}</a>
-      <a href="https://ios247.vercel.app/support.html" target="_blank" rel="noopener" style="color:#3b4556" style-hover="color:#0a6cff">{{ t.footSupport }}</a>
+      <a href="{{ privacyHref }}" target="_blank" rel="noopener" style="color:#3b4556" style-hover="color:#0a6cff">{{ t.footPrivacy }}</a>
+      <a href="{{ supportHref }}" target="_blank" rel="noopener" style="color:#3b4556" style-hover="color:#0a6cff">{{ t.footSupport }}</a>
     </nav>
     <p style="margin:0;font-size:12.5px;color:#6d7789">{{ t.footOsm }} · {{ t.footRights }}</p>
   </div>
@@ -733,13 +749,13 @@ input::placeholder{color:rgba(255,255,255,.6)}
 <script type="text/x-dc" data-dc-script="" data-props="{&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;es&quot;,&quot;en&quot;],&quot;default&quot;:&quot;es&quot;,&quot;tsType&quot;:&quot;'es' | 'en'&quot;,&quot;section&quot;:&quot;Contenido&quot;},&quot;hero&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;a&quot;,&quot;b&quot;],&quot;default&quot;:&quot;a&quot;,&quot;tsType&quot;:&quot;'a' | 'b'&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;motion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;appStoreUrl&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Enlaces&quot;},&quot;formAction&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Enlaces&quot;}}">
 const T = {
   es: {
-    navHow: 'Cómo funciona', navFilters: 'Filtros', navPrivacy: 'Privacidad', navFaq: 'FAQ', navCta: 'Descargar',
+    navHow: 'Cómo funciona', navFilters: 'Filtros', navPrivacy: 'Privacidad', navFaq: 'FAQ', navCta: 'Muy pronto',
     eyebrow: 'Gratis · Sin cuenta · Sin publicidad',
     h1a1: 'El baño más cercano,', h1a2: 'a un toque.',
     subA: 'Escaneá 3 km a la redonda, elegí el mejor y seguí la flecha hasta la puerta. Cuando es urgente, no hay tiempo para buscar.',
     h1b1: 'Cuando es urgente,', h1b2: 'no busques. Escaneá.',
     subB: '247WC encuentra los baños públicos que tenés alrededor, te dice si son gratis o abren 24 h, y te lleva caminando hasta la puerta.',
-    storeSmall: 'Descargala en el', storeBig: 'App Store', androidSmall: 'Android', androidBig: 'Próximamente',
+    storeSmall: 'Muy pronto en el', storeBig: 'App Store', androidSmall: 'Android', androidBig: 'Próximamente',
     trust1: 'Solo iPhone · iOS 15+', trust2: 'Datos de OpenStreetMap', trust3: 'Español e inglés',
     chipDist: '130 m · 2 min', chipFree: 'Gratis', chip24: 'Abierto 24 h', chipAcc: 'Accesible',
     howLabel: 'Cómo funciona', howTitle: 'Escaneá, elegí, llegá.',
@@ -754,7 +770,7 @@ const T = {
     tagFree: 'Gratis', tag24: 'Abierto 24 h', tagAcc: 'Accesible', tagChg: 'Cambiador', tagUni: 'Unisex', days: 'Lu–Do',
     noResults: 'Ningún baño cumple con todos los filtros.', reset: 'Limpiar filtros', dataFrom: 'Datos de OpenStreetMap y Refuge Restrooms',
     shortLabel: 'Pensada para la urgencia', shortTitle: 'Mantené apretado el ícono. Listo.',
-    shortText: 'Sin abrir la app: desde la pantalla de inicio, «Baño más cercano» escanea solo y, si ya diste permiso, arranca la guía.',
+    shortText: 'Directo desde la pantalla de inicio: «Baño más cercano» abre la app, escanea solo y, si ya diste permiso, arranca la guía.',
     shortMenu: 'Baño más cercano', holdHint: 'Mantené apretado el ícono',
     bullets: [
       { t: 'Sin señal', d: 'Te muestra los últimos baños que encontró.' },
@@ -765,7 +781,7 @@ const T = {
     privSub: '247WC la usa solo mientras usás la app, para buscar y para guiarte. Nada más.',
     facts: [
       { big: 'Solo en uso', title: 'Nunca en segundo plano', text: 'El permiso es «al usar la app». Cuando la cerrás, la ubicación se apaga.' },
-      { big: '~250 m', title: 'Una zona, no un punto', text: 'A nuestro servidor llega solo un área redondeada. No guardamos tu ubicación.' },
+      { big: '~250 m', title: 'Para buscar, una zona', text: 'Para buscar, a nuestro servidor llega solo un área redondeada. Tu posición exacta va solo al servicio de ruta a pie. No guardamos tu ubicación.' },
       { big: '0', title: 'Cuentas, analytics, anuncios', text: 'Ninguno. Tampoco rastreo. Es una app para encontrar un baño, no para seguirte.' },
     ],
     faqLabel: 'FAQ', faqTitle: 'Preguntas frecuentes',
@@ -773,24 +789,24 @@ const T = {
       { q: '¿Cuánto cuesta?', a: 'Nada. 247WC es gratis, sin compras dentro de la app y sin publicidad.' },
       { q: '¿Necesito crear una cuenta?', a: 'No. Abrís la app, tocás escanear y listo. No pedimos email, ni nombre, ni nada.' },
       { q: '¿De dónde salen los baños?', a: 'De OpenStreetMap y Refuge Restrooms, cargados por la comunidad. La cobertura cambia según la ciudad y puede que algún baño esté cerrado o haya cambiado. Si conocés uno que falta, lo podés sumar desde la app.' },
-      { q: '¿Funciona sin señal?', a: 'Te muestra los últimos baños que encontró. Para una búsqueda nueva, las calles del mapa y la ruta a pie necesita internet.' },
+      { q: '¿Funciona sin señal?', a: 'Te muestra los últimos baños que encontró. Para una búsqueda nueva, las calles del mapa y la ruta a pie necesitan internet.' },
       { q: '¿Qué iPhone necesito?', a: 'Cualquiera con iOS 15 o más nuevo. Es solo para iPhone, en vertical.' },
       { q: '¿Y en Android?', a: 'Está en camino. Dejanos tu email abajo y te avisamos el día que salga.' },
     ],
     ctaTitle: 'Descargala antes de necesitarla.',
-    ctaSub: 'Gratis en el App Store. No pide cuenta, pesa poco y funciona en español e inglés.',
+    ctaSub: 'Muy pronto, gratis en el App Store. No pide cuenta, pesa poco y funciona en español e inglés.',
     emailLabel: '¿Android? Te avisamos cuando salga.', emailPh: 'tu@email.com', notify: 'Avisame', sending: 'Enviando…',
-    thanks: 'Se abrió un mail: mandalo y te avisamos el día que salga.',
-    footPrivacy: 'Política de privacidad', footSupport: 'Soporte', footOsm: 'Datos del mapa © colaboradores de OpenStreetMap', footRights: '© 2026 247WC',
+    thanks: 'Te abrimos un mail para que lo mandes. ¿No se abrió? Escribinos a lautarolacazeok@gmail.com.',
+    footPrivacy: 'Política de privacidad', footSupport: 'Soporte', footOsm: 'Datos del mapa © colaboradores de OpenStreetMap · OpenFreeMap © OpenMapTiles', footRights: '© 2026 247WC',
   },
   en: {
-    navHow: 'How it works', navFilters: 'Filters', navPrivacy: 'Privacy', navFaq: 'FAQ', navCta: 'Download',
+    navHow: 'How it works', navFilters: 'Filters', navPrivacy: 'Privacy', navFaq: 'FAQ', navCta: 'Coming soon',
     eyebrow: 'Free · No account · No ads',
     h1a1: 'The closest toilet,', h1a2: 'one tap away.',
     subA: 'Scan 3 km around you, pick the best one and follow the arrow to the door. When it’s urgent, there’s no time to search.',
     h1b1: 'When it’s urgent,', h1b2: 'don’t search. Scan.',
     subB: '247WC finds the public toilets around you, tells you whether they’re free or open 24 h, and walks you right to the door.',
-    storeSmall: 'Download on the', storeBig: 'App Store', androidSmall: 'Android', androidBig: 'Coming soon',
+    storeSmall: 'Coming soon to the', storeBig: 'App Store', androidSmall: 'Android', androidBig: 'Coming soon',
     trust1: 'iPhone only · iOS 15+', trust2: 'OpenStreetMap data', trust3: 'English & Spanish',
     chipDist: '130 m · 2 min', chipFree: 'Free', chip24: 'Open 24 h', chipAcc: 'Accessible',
     howLabel: 'How it works', howTitle: 'Scan, pick, arrive.',
@@ -805,7 +821,7 @@ const T = {
     tagFree: 'Free', tag24: 'Open 24 h', tagAcc: 'Accessible', tagChg: 'Changing table', tagUni: 'Unisex', days: 'Mon–Sun',
     noResults: 'No toilet matches all the filters.', reset: 'Clear filters', dataFrom: 'Data from OpenStreetMap and Refuge Restrooms',
     shortLabel: 'Made for urgent moments', shortTitle: 'Touch and hold the icon. Done.',
-    shortText: 'Without opening the app: from your home screen, “Nearest toilet” scans on its own and, if you’ve already allowed location, starts guiding you.',
+    shortText: 'Straight from your Home Screen: “Nearest toilet” opens the app, scans on its own and, if you’ve already allowed location, starts guiding you.',
     shortMenu: 'Nearest toilet', holdHint: 'Touch and hold the icon',
     bullets: [
       { t: 'No signal', d: 'It shows the last toilets it found.' },
@@ -816,7 +832,7 @@ const T = {
     privSub: '247WC uses it only while you use the app, to search and to guide you. Nothing else.',
     facts: [
       { big: 'In use only', title: 'Never in the background', text: 'The permission is “while using the app”. Close it and location is off.' },
-      { big: '~250 m', title: 'An area, not a point', text: 'Our server only receives a rounded area. We don’t store your location.' },
+      { big: '~250 m', title: 'To search, an area', text: 'To search, our server only gets a rounded area. Your exact position only goes to the walking-route service. We don’t store your location.' },
       { big: '0', title: 'Accounts, analytics, ads', text: 'None. No tracking either. It’s an app to find a toilet, not to follow you.' },
     ],
     faqLabel: 'FAQ', faqTitle: 'Frequently asked questions',
@@ -829,10 +845,10 @@ const T = {
       { q: 'What about Android?', a: 'It’s on the way. Leave your email below and we’ll let you know the day it ships.' },
     ],
     ctaTitle: 'Download it before you need it.',
-    ctaSub: 'Free on the App Store. No account, a tiny download, works in English and Spanish.',
+    ctaSub: 'Coming soon, free on the App Store. No account, a tiny download, works in English and Spanish.',
     emailLabel: 'Android? We’ll let you know when it ships.', emailPh: 'you@email.com', notify: 'Notify me', sending: 'Sending…',
-    thanks: 'We opened an email: send it and we’ll let you know the day it ships.',
-    footPrivacy: 'Privacy policy', footSupport: 'Support', footOsm: 'Map data © OpenStreetMap contributors', footRights: '© 2026 247WC',
+    thanks: 'We opened an email for you to send. Didn’t open? Write to lautarolacazeok@gmail.com.',
+    footPrivacy: 'Privacy policy', footSupport: 'Support', footOsm: 'Map data © OpenStreetMap contributors · OpenFreeMap © OpenMapTiles', footRights: '© 2026 247WC',
   },
 };
 
@@ -868,7 +884,7 @@ class Component extends DCLogic {
     super(props);
     let saved = null;
     try { saved = localStorage.getItem('247wc-landing:lang'); } catch (e) {}
-    this.state = { langOverride: saved === 'es' || saved === 'en' ? saved : null, step: 0, tick: 0, filters: {}, pressing: false, menuOpen: false, openFaq: -1, email: '', emailDone: false, sending: false };
+    this.state = { langOverride: saved === 'es' || saved === 'en' ? saved : (/^es\b/i.test((navigator.languages && navigator.languages[0]) || navigator.language || 'es') ? null : 'en'), step: 0, tick: 0, filters: {}, pressing: false, menuOpen: false, openFaq: -1, email: '', emailDone: false, sending: false };
     this.rootRef = React.createRef(); this.stepsRef = React.createRef(); this.heroRef = React.createRef(); this.phoneRef = React.createRef(); this.shortRef = React.createRef();
     this.chipRefs = [0, 1, 2, 3].map(() => React.createRef());
     this._stepsVisible = true; this._demoDone = false; this._raf = 0;
@@ -895,6 +911,8 @@ class Component extends DCLogic {
     }
     this._onDoc = e => { if (this.state.menuOpen && this.shortRef.current && !this.shortRef.current.contains(e.target)) this.setState({ menuOpen: false }); };
     document.addEventListener('pointerdown', this._onDoc);
+    const hdr = this.rootRef.current && this.rootRef.current.querySelector('header');
+    if (hdr && 'ResizeObserver' in window) { this._ro = new ResizeObserver(() => { document.documentElement.style.scrollPaddingTop = hdr.offsetHeight + 'px'; }); this._ro.observe(hdr); }
   }
   componentDidUpdate(prev) {
     if (prev.lang !== this.props.lang && this.state.langOverride) this.setState({ langOverride: null });
@@ -903,6 +921,7 @@ class Component extends DCLogic {
     clearInterval(this._timer); clearTimeout(this._hold); clearTimeout(this._demo1); clearTimeout(this._demo2); clearTimeout(this._demo3);
     if (this._io1) this._io1.disconnect();
     document.removeEventListener('pointerdown', this._onDoc);
+    if (this._ro) this._ro.disconnect();
   }
   startTimer() {
     clearInterval(this._timer);
@@ -947,6 +966,10 @@ class Component extends DCLogic {
   };
   onIconUp = () => { clearTimeout(this._hold); if (this.state.pressing) this.setState({ pressing: false }); };
   onIconContext = e => e.preventDefault();
+  onIconKey = e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setState(s => ({ pressing: false, menuOpen: !s.menuOpen })); }
+    else if (e.key === 'Escape') this.setState({ menuOpen: false });
+  };
   onEmail = e => this.setState({ email: e.target.value });
   onSubmit = e => {
     e.preventDefault();
@@ -971,28 +994,28 @@ class Component extends DCLogic {
     const el = React.createElement;
     const ico = (name, color, size) => el('svg', { width: size || 16, height: size || 16, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true, style: { flex: 'none' } },
       ICONS[name].map((p, i) => p.t === 'circle' ? el('circle', { key: i, cx: p.cx, cy: p.cy, r: p.r }) : el('path', { key: i, d: p.d })));
-    const chip = (i, pos, bg, color, icon, text) => el('div', { key: i, ref: this.chipRefs[i], style: Object.assign({ position: 'absolute', zIndex: 2, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 15px 10px 12px', borderRadius: 999, background: bg, color, fontWeight: 700, fontSize: 15, letterSpacing: '-.01em', whiteSpace: 'nowrap', boxShadow: '0 14px 34px -10px rgba(12,26,56,.28)', border: '1px solid rgba(255,255,255,.6)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', animation: motion ? `wcFloat ${5.5 + i * .8}s ease-in-out ${i * .9}s infinite` : 'none', transition: 'translate .6s cubic-bezier(.2,.7,.2,1)', pointerEvents: 'none' }, pos) }, icon, text);
+    const chip = (i, pos, bg, color, icon, text) => el('div', { key: i, ref: this.chipRefs[i], 'data-chip': '', style: Object.assign({ position: 'absolute', zIndex: 2, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 15px 10px 12px', borderRadius: 999, background: bg, color, fontWeight: 700, fontSize: 15, letterSpacing: '-.01em', whiteSpace: 'nowrap', boxShadow: '0 14px 34px -10px rgba(12,26,56,.28)', border: '1px solid rgba(255,255,255,.6)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', animation: motion ? `wcFloat ${5.5 + i * .8}s ease-in-out ${i * .9}s infinite` : 'none', transition: 'translate .6s cubic-bezier(.2,.7,.2,1)', pointerEvents: 'none' }, pos) }, icon, text);
     const chipSet = P => [
       chip(0, P[0], '#0a6cff', '#fff', ico('nav', '#fff', 16), t.chipDist),
       chip(1, P[1], 'rgba(255,255,255,.92)', '#0a0e17', ico('check', '#0aa06e', 16), t.chipFree),
       chip(2, P[2], 'rgba(255,255,255,.92)', '#0a0e17', ico('clock', '#0aa06e', 16), t.chip24),
       chip(3, P[3], 'rgba(255,255,255,.92)', '#0a0e17', ico('wheel', '#0a6cff', 16), t.chipAcc),
     ];
-    const chipsA = chipSet([{ left: 'calc(50% - 360px)', top: 150 }, { right: 'calc(50% - 330px)', top: 220 }, { left: 'calc(50% - 320px)', top: 420 }, { right: 'calc(50% - 350px)', top: 480 }]);
+    const chipsA = chipSet([{ left: 'calc(50% - 360px)', top: 150 }, { right: 'calc(50% - 330px)', top: 220 }, { left: 'calc(50% - 320px)', top: 420 }, { right: 'calc(50% - 350px)', top: 'min(480px, calc(100% - 64px))' }]);
     const chipsB = chipSet([{ left: '1%', top: 120 }, { right: '0%', top: 200 }, { left: '3%', bottom: 200 }, { right: '-1%', bottom: 130 }]);
     const ringsA = [0, 1, 2].map(i => el('div', { key: i, style: { position: 'absolute', left: '50%', top: '54%', width: 560, height: 560, marginLeft: -280, marginTop: -280, borderRadius: '50%', border: '1.5px solid rgba(255,255,255,.75)', pointerEvents: 'none', animation: motion ? `wcRing 7.5s cubic-bezier(.2,.5,.3,1) ${i * 2.5}s infinite` : 'none', opacity: motion ? 0 : .5, transform: motion ? undefined : `scale(${.6 + i * .35})` } }));
 
     const steps = t.steps.map((s, i) => { const on = i === step; return {
       n: '0' + (i + 1), title: s.title, desc: s.desc,
       select: () => { this.setState(x => ({ step: i, tick: x.tick + 1 })); this.startTimer(); },
-      numBg: on ? '#0a6cff' : '#f3f6fb', numColor: on ? '#fff' : '#6d7789', opacity: on ? 1 : .5,
+      numBg: on ? '#0a6cff' : '#f3f6fb', numColor: on ? '#fff' : '#6d7789', opacity: on || !motion ? 1 : .5,
       progress: on ? el('span', { key: 'p' + st.tick, style: { display: 'block', height: '100%', background: '#0a6cff', transformOrigin: 'left', animation: motion ? 'wcFill 4.8s linear forwards' : 'none', transform: motion ? undefined : 'scaleX(1)' } }) : null,
     }; });
     const stepShots = [shots.map, shots.nearest, shots.guide].map((src, i) => ({ src, op: i === step ? 1 : 0 }));
 
     const chips = FK.map((k, i) => { const on = !!st.filters[k]; return {
       label: t.chips[i], toggle: () => this.setState(x => ({ filters: Object.assign({}, x.filters, { [k]: !x.filters[k] }) })),
-      bg: on ? '#0a6cff' : '#fff', color: on ? '#fff' : '#6d7789', border: on ? '#0a6cff' : '#e4e9f2',
+      pressed: String(on), bg: on ? '#0a6cff' : '#fff', color: on ? '#fff' : '#6d7789', border: on ? '#0a6cff' : '#e4e9f2',
     }; });
     const active = FK.filter(k => st.filters[k]);
     const tagOf = tag => {
@@ -1010,13 +1033,13 @@ class Component extends DCLogic {
     }));
 
     const faqs = t.faqs.map((f, i) => { const on = st.openFaq === i; return {
-      num: '0' + (i + 1), q: f.q, a: f.a,
+      num: '0' + (i + 1), q: f.q, a: f.a, expanded: String(on), hidden: String(!on),
       toggle: () => this.setState(x => ({ openFaq: x.openFaq === i ? -1 : i })),
       rows: on ? '1fr' : '0fr', rot: on ? '180deg' : '0deg', chevBg: on ? '#0a6cff' : '#f3f6fb', chevColor: on ? '#fff' : '#0a0e17', aOpacity: on ? 1 : 0,
     }; });
 
     const langs = [['es', 'ES'], ['en', 'EN']].map(([c, l]) => ({
-      label: l, select: () => this.setLang(c),
+      label: l, select: () => this.setLang(c), pressed: String(lang === c),
       bg: lang === c ? '#fff' : 'transparent', color: lang === c ? '#0a0e17' : '#6d7789', shadow: lang === c ? '0 1px 4px rgba(12,26,56,.14)' : 'none',
     }));
 
@@ -1024,6 +1047,7 @@ class Component extends DCLogic {
     return {
       t, langs, heroIsA: !heroIsB, heroIsB, motion, motionAttr: motion ? 'on' : 'off',
       storeHref: this.props.appStoreUrl || '#download',
+      privacyHref: 'privacy.html' + (lang === 'en' ? '#en' : ''), supportHref: 'support.html' + (lang === 'en' ? '#en' : ''),
       shotMap: shots.map, shotNearest: shots.nearest, shotGuide: shots.guide, shotDark: shots.dark, shotHome: shots.home,
       ringsA, chipsA, chipsB,
       rootRef: this.rootRef, stepsRef: this.stepsRef, heroRef: this.heroRef, phoneRef: this.phoneRef, shortRef: this.shortRef,
@@ -1031,7 +1055,7 @@ class Component extends DCLogic {
       steps, stepShots,
       chips, toilets, count: toilets.length, noResults: toilets.length === 0, hasFilters: active.length > 0, resetFilters: this.resetFilters,
       bullets: t.bullets, facts: t.facts, faqs,
-      onIconDown: this.onIconDown, onIconUp: this.onIconUp, onIconContext: this.onIconContext,
+      onIconDown: this.onIconDown, onIconUp: this.onIconUp, onIconContext: this.onIconContext, onIconKey: this.onIconKey, menuExpanded: String(st.menuOpen),
       iconTransform: st.pressing ? 'scale(.9)' : 'scale(1)',
       menuTransform: st.menuOpen ? 'translateY(0) scale(1)' : 'translateY(-6px) scale(.86)',
       menuOpacity: st.menuOpen ? 1 : 0, menuPointer: st.menuOpen ? 'auto' : 'none',

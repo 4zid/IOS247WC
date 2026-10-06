@@ -869,16 +869,39 @@ y deja en `site/`:
 
 En vez de ~6 MB, la primera visita baja unos 600 KB.
 
-**Cambios de contenido que hace el build** (parches anclados, como los de la
-app: si exportás de nuevo y un ancla ya no aparece, el build falla y avisa):
+**Cambios que hace el build** (parches anclados, como los de la app: si
+exportás de nuevo y un ancla ya no aparece, el build falla y avisa):
 
-- «Sin ubicación: mové el mapa a cualquier zona» pasa a «buscá en la zona
-  que se ve en el mapa» (lo mismo que se corrigió en la ficha).
-- El aviso de Android: como no hay un servicio que guarde los emails, en vez
-  de decir «Listo» sin mandar nada, abre un mail ya escrito a
-  lautarolacazeok@gmail.com para que la persona lo envíe.
-- El idioma de la página y el título de la pestaña siguen al botón ES / EN.
-- Las imágenes de la plantilla no se piden antes de tiempo (eran tres 404).
+- Textos que no coincidían con la app: «Sin ubicación» (ahora «buscá en la
+  zona que se ve en el mapa»), el acceso rápido (sí abre la app), la tarjeta
+  de privacidad «Una zona, no un punto» (la posición exacta va al servicio
+  de ruta a pie, como dice la política) y «necesitan» en una respuesta.
+- Mientras la app no está publicada (`APP_STORE_ID` vacío), los botones
+  dicen «Muy pronto en el App Store» y bajan a la sección final. Los botones
+  no llevan el logo de Apple: sus pautas de marketing no dejan usarlo en
+  botones propios que imitan el badge oficial.
+- El aviso de Android: como no hay un servicio que guarde los emails, abre
+  un mail ya escrito a lautarolacazeok@gmail.com y, si no se abre, muestra la
+  dirección.
+- En el celular, el encabezado queda en dos filas (logo y botones arriba,
+  enlaces abajo) en vez de ocupar hasta un tercio de la pantalla, y los
+  enlaces del menú no quedan tapados por él.
+- La primera visita sale en el idioma del navegador (como la app con el del
+  iPhone); el botón ES / EN manda y se recuerda. El idioma de la página y el
+  título de la pestaña lo siguen.
+- Accesibilidad: el estado de los botones (idioma, filtros, preguntas) para
+  lectores de pantalla, el ícono de la demo con teclado, los pasos legibles
+  con «reducir movimiento» y sin animaciones de más en ese modo.
+- Detalles: créditos de OpenFreeMap / OpenMapTiles en el pie, privacidad y
+  soporte en el idioma elegido, el ícono para «Agregar a inicio» en PNG, las
+  etiquetas flotantes y el iPhone del encabezado sin cortes en pantallas
+  chicas, y sin pedidos de más al cargar.
+
+**Antes de usarla como URL de marketing del App Store**, tené en cuenta que
+menciona Android («Próximamente», una pregunta y el aviso por email). En la
+web propia es normal, pero la pauta 2.3.10 de Apple pide no nombrar otras
+plataformas en la ficha; si un revisor lo marca, se puede sacar con un
+parche más.
 
 **Para actualizarla:** exportá de nuevo desde Claude Design, reemplazá
 `landing/247WC_Landing.html`, corré `npm run landing`, mirá `site/index.html`
@@ -888,8 +911,10 @@ Vercel la publica sola.
 **Cuando Apple apruebe la app:** en App Store Connect → **App Information**,
 copiá el **Apple ID** (un número) y ponelo en `APP_STORE_ID`, arriba de todo en
 `scripts/build-landing.mjs`. Corré `npm run landing` y subilo: los botones
-«Descargar» pasan a abrir la app en el App Store (hoy bajan a la sección
-final) y Safari en el iPhone muestra el banner de la app arriba de la página.
+pasan a decir «Descargala en el App Store» y a abrir la app en el App Store,
+y Safari en el iPhone muestra el banner de la app arriba de la página. (Si
+querés el badge oficial de Apple en vez de los botones propios, bajalo de
+Apple Marketing Tools y se cambia con un parche.)
 
 ## Estructura del repo
 
